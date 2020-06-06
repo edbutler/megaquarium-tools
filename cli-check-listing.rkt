@@ -4,6 +4,7 @@
 
 (require
   "data.rkt"
+  "tank.rkt"
   "types.rkt"
   "lift.rkt"
   "constraint.rkt"

@@ -5,6 +5,7 @@
   "cli-extract.rkt"
   "cli-info.rkt"
   "cli-lookup.rkt"
+  "tank.rkt"
   "types.rkt"
   "localization.rkt"
   "lift.rkt"
@@ -64,7 +65,7 @@
     (for ([data dom-data])
       (match-define (cons tnk animals) data)
       (printf "~a:\n\tsize: ~a\n\ttemp: ~a\n\tquality: ~a\n"
-              (tank-display-name tnk)
+              (tank-name tnk)
               (tank-size tnk)
               (environment-temperature (tank-environment tnk))
               (environment-quality (tank-environment tnk)))

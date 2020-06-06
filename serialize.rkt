@@ -15,6 +15,7 @@
   json
   yaml
   "lift.rkt"
+  "tank.rkt"
   "types.rkt")
 
 (define (fuzzy-match-search f search-str lst)
@@ -279,7 +280,7 @@
     (define tnk (car pr))
     (define animals (cdr pr))
     (define grouped-animals (group-by animal-species animals))
-    (cons (tank-display-name tnk)
+    (cons (tank-name tnk)
           (make-hash (map group->yaml grouped-animals))))
 
   (define (map-key key)

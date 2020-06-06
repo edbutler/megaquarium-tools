@@ -8,6 +8,7 @@
   find-violated-restrictions)
 
 (require
+  "tank.rkt"
   "types.rkt"
   "lift.rkt"
   (only-in racket error local-require)

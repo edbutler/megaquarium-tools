@@ -4,6 +4,7 @@
 
 (require
   yaml
+  "tank.rkt"
   "types.rkt"
   "localization.rkt")
 

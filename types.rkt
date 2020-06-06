@@ -5,59 +5,13 @@
 (provide (all-defined-out))
 
 (require
+  "tank.rkt"
   (only-in racket local-require))
 
 (module+ test
   (require
     (only-in racket exn:fail:contract?)
     rackunit))
-
-(struct environment
-  ; temperature?
-  (temperature
-   ; nonnegative-integer? (between 0 and 100)
-   quality)
-  #:transparent)
-
-(struct tank-info
-  (min-dimensions
-   max-dimensions
-   volume-per-tile
-   ; boolean?
-   rounded?)
-  #:transparent)
-
-; A fully specified tank.
-
-(struct tank
-   ; symbol?: The identifier for this tank
-  (id
-   ; string?: The name used in game
-   display-name
-   ; tank-info? (TODO clean this up)
-   type
-   ; positive-integer?
-   size
-   ; environment?
-   environment
-   ; nonnegative-integer?
-   lighting)
-  #:transparent)
-
-(define (make-tank
-          [id #f]
-          #:name [name #f]
-          #:type [type #f]
-          #:size size
-          #:environment env
-          #:lighting [light 0])
-  (tank (or id 0) (or name "unnamed-tank") type size env light))
-
-; TODO unused
-(define (make-tank-of-type type temp x-dim y-dim)
-  (local-require (only-in racket exact-ceiling))
-  (define sz (exact-ceiling (* x-dim y-dim (tank-info-volume-per-tile type))))
-  (tank type sz temp))
 
 (struct species
    ; symbol?
@@ -89,11 +43,6 @@
    armored?)
   #:transparent)
 (struct species-stage (size duration) #:transparent)
-
-; temperatures
-(define warm-water 'warm-water)
-(define cold-water 'cold-water)
-(define (temperature? t) (or (equal? t warm-water) (equal? t cold-water)))
 
 (struct diet () #:transparent)
 (struct food diet (type period) #:transparent)
