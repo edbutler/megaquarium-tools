@@ -15,8 +15,7 @@
   json
   yaml
   "lift.rkt"
-  "tank.rkt"
-  "types.rkt")
+  "core.rkt")
 
 (define (fuzzy-match-search f search-str lst)
   (define words (string-split search-str " "))

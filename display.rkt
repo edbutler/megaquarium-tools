@@ -4,8 +4,7 @@
 
 (require
   yaml
-  "tank.rkt"
-  "types.rkt"
+  "core.rkt"
   "localization.rkt")
 
 (define (pretty-display-data data [out (current-output-port)])

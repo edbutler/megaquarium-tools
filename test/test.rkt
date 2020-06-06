@@ -1,7 +1,7 @@
 #lang errortrace racket
 
 (require
-  "../types.rkt"
+  "../core.rkt"
   "../constraint.rkt"
   rackunit)
 

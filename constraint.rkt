@@ -8,8 +8,7 @@
   find-violated-restrictions)
 
 (require
-  "tank.rkt"
-  "types.rkt"
+  "core.rkt"
   "lift.rkt"
   (only-in racket error local-require)
   rosette/lib/match)

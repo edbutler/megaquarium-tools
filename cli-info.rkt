@@ -5,7 +5,7 @@
 (require
   "display.rkt"
   "localization.rkt"
-  "types.rkt"
+  "core.rkt"
   "data.rkt")
 
 (define show-types? (make-parameter #f))

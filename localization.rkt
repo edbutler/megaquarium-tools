@@ -8,7 +8,7 @@
 
 (require
   racket/hash
-  "types.rkt")
+  "core.rkt")
 
 (struct localization
   ; (hashof string? string?)

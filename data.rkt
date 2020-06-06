@@ -7,7 +7,7 @@
   read-save-file)
 
 (require
-  "types.rkt"
+  "core.rkt"
   "localization.rkt"
   "serialize.rkt")
 

@@ -4,8 +4,7 @@
 
 (require
   "data.rkt"
-  "tank.rkt"
-  "types.rkt"
+  "core.rkt"
   "lift.rkt"
   "constraint.rkt"
   "serialize.rkt"
