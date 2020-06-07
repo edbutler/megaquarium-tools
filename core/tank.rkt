@@ -2,6 +2,9 @@
 
 (provide (all-defined-out))
 
+(require
+  (only-in racket local-require))
+
 (module+ test
   (require
     rackunit))
@@ -44,6 +47,62 @@
    ; boolean?
    rounded?)
   #:transparent)
+
+(define tank-kind-id game-object-template-id)
+
+(module+ test
+  (test-case "can create tank-kind"
+    (define id 'someid)
+    (define min-dim (cons 5 6))
+    (define max-dim (cons 7 8))
+    (define density 2)
+    (define rounded? #t)
+
+    (define val (tank-kind id min-dim max-dim density rounded?))
+    (check-eq? (tank-kind-id val) id)
+    (check-eq? (tank-kind-min-dimensions val) min-dim)
+    (check-eq? (tank-kind-max-dimensions val) max-dim)
+    (check-eq? (tank-kind-volume-per-tile val) density)
+    (check-eq? (tank-kind-rounded? val) rounded?)))
+
+(define (make-tank-kind
+          id
+          #:min min-dim
+          #:max max-dim
+          #:density density
+          #:rounded? rounded?)
+  (local-require (only-in racket raise-argument-error symbol? positive-integer?))
+
+  (define (err contract pos)
+    (raise-argument-error 'make-fish contract pos id min-dim max-dim density rounded?))
+  (define (int-pair? v) (and (pair? v) (positive-integer? (car v)) (positive-integer? (cdr v))))
+
+  (unless (symbol? id) (err "symbol?" 0))
+  (unless (int-pair? min-dim) (err "(pairof positive-integer? positive-integer?)" 1))
+  (unless (int-pair? max-dim) (err "(pairof positive-integer? positive-integer?)" 2))
+  (unless (positive-integer? density) (err "positive-integer?" 3))
+  (unless (boolean? rounded?) (err "boolean?" 4))
+
+  (tank-kind id min-dim max-dim density rounded?))
+
+(module+ test
+  (test-case "can use make-tank-kind"
+    (define id 'someid)
+    (define min-dim (cons 5 6))
+    (define max-dim (cons 7 8))
+    (define density 2)
+    (define rounded? #t)
+
+    (define val
+      (make-tank-kind
+        id
+        #:min min-dim
+        #:max max-dim
+        #:density density
+        #:rounded? rounded?))
+
+    (define expected (tank-kind id min-dim max-dim density rounded?))
+    (check-equal? val expected)))
 
 ; A fully specified tank.
 
