@@ -17,7 +17,7 @@
   (require
     (only-in racket for)
     rackunit
-    "test-util.rkt")
+    "test.rkt")
 
   ; make a fish for testing, 
   (define (make-simple-species [typ 't] . args)

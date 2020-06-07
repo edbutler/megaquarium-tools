@@ -1,3 +1,4 @@
+; test utilities
 #lang racket
 
 (provide fresh-string fresh-symbol check-contract)

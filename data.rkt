@@ -8,7 +8,6 @@
   read-save)
 
 (require
-  "test-util.rkt"
   "core.rkt"
   "data/paths.rkt"
   "data/loader.rkt"
@@ -44,7 +43,7 @@
   (read-save-from-file (save-file-path) #:species (game-data-animals data)))
 
 (module+ test
-  (require rackunit racket/contract)
+  (require rackunit racket/contract "test.rkt")
   (test-case "can read data"
     (define data (read-game-data))
     (check-contract (listof species?) (game-data-animals data))
