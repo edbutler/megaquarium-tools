@@ -1,7 +1,6 @@
 ; module for loading game data
 #lang racket
 
-
 (provide
   read-json-file
   read-species-from-file
@@ -12,27 +11,54 @@
   "../lift.rkt"
   "../core.rkt")
 
+(module+ test
+  (require rackunit))
 
-(define (obj-ref/rec obj . keys)
+(define (jsexpr-ref obj . keys)
   (match keys
    [(cons head tail)
     (define next
       (cond
        [(number? head) (list-ref obj head)]
        [else (hash-ref obj head)]))
-    (apply obj-ref/rec next tail)]
+    (apply jsexpr-ref next tail)]
    ['() obj]))
 
+(module+ test
+  (test-case "jsexpr-ref can reference nested json"
+    (define js (string->jsexpr "[0,{\"key\":[\"hamster\"]}]"))
+    (check-equal? (jsexpr-ref js 1 'key 0) "hamster")))
+
 ; find all the subobjects of this json-like with the given key
-(define (obj-search obj key)
+(define (jsexpr-search obj key)
   (cond
    [(list? obj)
-    (append-map (λ (x) (obj-search x key)) obj)]
+    (append-map (λ (x) (jsexpr-search x key)) obj)]
    [(hash? obj)
+    (define rest (jsexpr-search (hash-values obj) key))
     (if (hash-has-key? obj key)
-      (list (hash-ref obj key))
-      (obj-search (hash-values obj) key))]
+      (cons (hash-ref obj key) rest)
+      rest)]
    [else '()]))
+
+(module+ test
+  (test-case "jsexpr-search finds all keys"
+    (define str #<<JSON
+      {
+        "key1":[1,{"key2":"pika"}],
+        "key2":"hamster",
+        "key3":{"key1":true},
+        "key4":[[[{"a":"b","key2":"mouse"}]]]
+      }
+JSON
+    )
+    (define js (string->jsexpr str))
+    (check-equal? (jsexpr-search js 'key1)
+                  (list (list 1 (hasheq 'key2 "pika"))
+                        #t))
+    (check-equal? (jsexpr-search js 'key2)
+                  '("hamster" "mouse" "pika"))
+    (check-equal? (jsexpr-search js 'otherkey) '())))
 
 ; takes care of bad stuff like trailing commas
 (define (read-json-file filename)
@@ -166,11 +192,11 @@
          [else #f]))
       j-object-list))
 
-  (define max-rank (obj-ref/rec jdata 'gameParameters 'maxRank))
+  (define max-rank (jsexpr-ref jdata 'gameParameters 'maxRank))
 
-  (define j-unlocks (obj-ref/rec jdata 'playerData 'unlockableManager))
+  (define j-unlocks (jsexpr-ref jdata 'playerData 'unlockableManager))
 
-  (define j-objectives (obj-ref/rec jdata 'playerData 'scenario 'sections))
+  (define j-objectives (jsexpr-ref jdata 'playerData 'scenario 'sections))
 
   (define all-animal-ids
     (map species-id
@@ -185,7 +211,7 @@
   (define researchable
     (set-subtract all-animal-ids (set-union available (read-spec-list j-unlocks 'excludedSpecs))))
 
-  (define j-merchants (obj-search (hash-ref jdata 'playerData) 'merchant))
+  (define j-merchants (jsexpr-search (hash-ref jdata 'playerData) 'merchant))
 
   (define acquirable
     (map (λ (x) (cons (string->symbol (hash-ref x 'id))
@@ -201,9 +227,9 @@
         (define condition
           (cond
            [obj
-            (define cond1 (obj-ref/rec obj 'conditions 0))
+            (define cond1 (jsexpr-ref obj 'conditions 0))
             ;(displayln cond1)
-            (define val (obj-ref/rec cond1 'tank 'hostsMany 0))
+            (define val (jsexpr-ref cond1 'tank 'hostsMany 0))
             (define num (hash-ref val 'quantity))
             ; not sure if this is necessary seems to be true on all relevant conditions
             (define ds (hash-ref val 'differentSpec #f))
