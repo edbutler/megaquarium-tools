@@ -9,7 +9,7 @@
 
 (define (do-lookup search-term)
   (define data (read-game-data))
-  (define species (fuzzy-match-species search-term (game-data-animals data)))
+  (define species (fuzzy-match-species search-term (game-data-species data)))
   (define l10n (game-data-localization data))
   (cond
    [(empty? species)

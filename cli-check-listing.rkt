@@ -47,7 +47,7 @@
     (map
       (λ (i)
         (define search-str (list-ref items (* 2 i)))
-        (define possible-species (fuzzy-match-species search-str (game-data-animals data)))
+        (define possible-species (fuzzy-match-species search-str (game-data-species data)))
         (when (empty? possible-species) (error (format "no matching species for '~a'" search-str)))
         (when (> (length possible-species) 1) (error (format "ambiguous match for '~a':\n\t~a" search-str (map species-id possible-species))))
         (define number (string->number (list-ref items (add1 (* 2 i)))))

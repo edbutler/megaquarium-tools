@@ -8,9 +8,10 @@
   "tank.rkt"
   "../test.rkt")
 
-(define (make-test-species #:type [typ 't] . args)
+(define (make-test-species #:id [id #f] #:type [typ #f] . args)
   (define (not-exists? pred) (not (ormap pred args)))
-  (define id (fresh-symbol))
+  (set! id (or id (fresh-symbol)))
+  (set! typ (or typ (fresh-symbol)))
   (define extra-args
     (filter
       (λ (x) x)

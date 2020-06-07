@@ -2,7 +2,9 @@
 
 (provide fuzzy-match-species)
 
-(require "animal.rkt")
+(require
+  "animal.rkt"
+  "test.rkt")
 
 (define (fuzzy-match-search f search-str lst)
   (define words (string-split search-str " "))
@@ -18,7 +20,7 @@
 (module+ test
   (require rackunit)
 
-  (test-case "search str allows dropping leading id number"
+  (test-case "search works on substrings"
     (define lst '("2_crescent_earthen" "4_pancake_scuppernong" "7_violet_crescent"))
     (check-equal? (fuzzy-match-search identity "pancake" lst) (list (second lst)))
     (check-equal? (fuzzy-match-search identity "olet" lst) (list (third lst)))
@@ -26,5 +28,12 @@
     (check-equal? (fuzzy-match-search identity "cresc" lst) (list (first lst) (third lst)))
     (check-equal? (fuzzy-match-search identity "xyz" lst) empty))
 
-
-)
+  (test-case "matching species works"
+    (define lst
+      (map (λ (id) (make-test-species #:id id))
+           '(2_crescent_earthen 4_pancake_scuppernong 7_violet_crescent)))
+    (check-equal? (fuzzy-match-species "pancake" lst) (list (second lst)))
+    (check-equal? (fuzzy-match-species "olet" lst) (list (third lst)))
+    (check-equal? (fuzzy-match-species "then" lst) (list (first lst)))
+    (check-equal? (fuzzy-match-species "cresc" lst) (list (first lst) (third lst)))
+    (check-equal? (fuzzy-match-species "xyz" lst) empty)))

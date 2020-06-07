@@ -24,11 +24,11 @@
 
 (define (show-types data)
   (define all-types
-    (remove-duplicates (map species-type (game-data-animals data))))
+    (remove-duplicates (map species-type (game-data-species data))))
   (print-ids "Types" all-types))
 
 (define (show-foods data)
-  (define all-diets (map species-diet (game-data-animals data)))
+  (define all-diets (map species-diet (game-data-species data)))
   (define all-foods
     (remove-duplicates (filter-map (λ (d) (and (food? d) (food-type d))) all-diets)))
   (print-ids "Foods" all-foods))

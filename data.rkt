@@ -14,14 +14,14 @@
   "data/serialization.rkt")
 
 (struct game-data
-  (animals
+  (species
    localization)
   #:transparent) 
 
 (define (species-ref data id)
   (findf
     (λ (a) (equal? id (species-id a)))
-    (game-data-animals data)))
+    (game-data-species data)))
 
 (define (read-localization data-dir)
   (let* ([map-filename (λ (f) (build-path data-dir (format localization-path-format language f)))]
@@ -40,11 +40,11 @@
     (read-localization dir)))
 
 (define (read-save data name)
-  (read-save-from-file (save-file-path) #:species (game-data-animals data)))
+  (read-save-from-file (save-file-path) #:species (game-data-species data)))
 
 (module+ test
   (require rackunit racket/contract "test.rkt")
   (test-case "can read data"
     (define data (read-game-data))
-    (check-contract (listof species?) (game-data-animals data))
+    (check-contract (listof species?) (game-data-species data))
     (check-contract localization? (game-data-localization data))))
