@@ -11,6 +11,7 @@
   "test-util.rkt"
   "core.rkt"
   "data/paths.rkt"
+  "data/loader.rkt"
   "data/serialization.rkt")
 
 (struct game-data
