@@ -1,6 +1,7 @@
 #lang racket
 
 (provide
+  localization?
   make-localization
   localize
   localize-species
@@ -8,7 +9,7 @@
 
 (require
   racket/hash
-  "core.rkt")
+  "animal.rkt")
 
 (struct localization
   ; (hashof string? string?)

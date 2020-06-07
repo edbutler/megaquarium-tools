@@ -6,10 +6,8 @@
   "cli-info.rkt"
   "cli-lookup.rkt"
   "core.rkt"
-  "localization.rkt"
   "lift.rkt"
   "constraint.rkt"
-  "serialize.rkt"
   "display.rkt"
   "data.rkt")
 
@@ -37,55 +35,56 @@
                                (apply max (map (compose1 environment-quality animal-environment) animals)))
     #:lighting (max-by (λ (a) (or (ormap (λ (r) (and (requires-light? r) (requires-light-amount r))) (animal-restrictions a)) 0)) animals)))
 
-(define (format-violation violtn)
+(define (format-violation data violtn)
   (match violtn
    [(cons (? animal? animl) restr)
-    (format "\t~a has unmet requirement ~v\n" (localize-animal default-l10n animl) restr)]
+    (format "\t~a has unmet requirement ~v\n" (localize-animal (game-data-localization data) animl) restr)]
    [(cons subj message)
     (format "\tTank has unmet requirement ~a\n" message)]))
 
 (define (do-check-tank-listing)
-  (define argv (current-command-line-arguments))
-  (define input-filename (vector-ref argv 0))
-  (define data (call-with-input-file input-filename (λ (f) (read-tank-yaml f #:species all-species))))
-  (define dom-data
-    (map
-      (λ (i spec)
-        (define animals (make-fishes (tank-spec-contents spec) #:id-suffix (format "-~a" i)))
-        (define tnk (minimum-viable-tank animals #:name (tank-spec-name spec) #:id i))
-        (cons tnk animals))
-      (range (length data))
-      data))
-  (define dom (make-concrete-domain dom-data))
-  (define satisfied? (all-constraints-satisfied? dom))
-  (printf "Valid acquarium? ~a\n" satisfied?)
-  (cond
-   [satisfied?
-    (for ([data dom-data])
-      (match-define (cons tnk animals) data)
-      (printf "~a:\n\tsize: ~a\n\ttemp: ~a\n\tquality: ~a\n"
-              (tank-name tnk)
-              (tank-size tnk)
-              (environment-temperature (tank-environment tnk))
-              (environment-quality (tank-environment tnk)))
-      (when (> (tank-lighting tnk) 0)
-        (printf "\tlight level: ~a\n" (tank-lighting tnk)))
-      (when (tank-info-rounded? (tank-type tnk))
-        (printf "\trounded\n"))
-      (define animals-grouped-by-food
-        (group-by (compose1 food-type animal-diet)
-                  (filter (compose1 food? animal-diet) animals)))
-      (for ([lst animals-grouped-by-food])
-        (printf "\t~a ~a\n"
-                (sum animal-required-food-amount lst)
-                (food-type (animal-diet (first lst))))))]
-   [else
-    (define strs
-      (append
-        (map format-violation (find-violated-restrictions dom))
-        (map format-violation (find-violated-tank-constraints dom))))
-    (for ([s (remove-duplicates strs)])
-      (printf "~a" s))]))
+  (void))
+;  (define argv (current-command-line-arguments))
+;  (define input-filename (vector-ref argv 0))
+;  (define data (call-with-input-file input-filename (λ (f) (read-tank-yaml f #:species all-specie))))
+;  (define dom-data
+;    (map
+;      (λ (i spec)
+;        (define animals (make-fishes (tank-spec-contents spec) #:id-suffix (format "-~a" i)))
+;        (define tnk (minimum-viable-tank animals #:name (tank-spec-name spec) #:id i))
+;        (cons tnk animals))
+;      (range (length data))
+;      data))
+;  (define dom (make-concrete-domain dom-data))
+;  (define satisfied? (all-constraints-satisfied? dom))
+;  (printf "Valid acquarium? ~a\n" satisfied?)
+;  (cond
+;   [satisfied?
+;    (for ([data dom-data])
+;      (match-define (cons tnk animals) data)
+;      (printf "~a:\n\tsize: ~a\n\ttemp: ~a\n\tquality: ~a\n"
+;              (tank-name tnk)
+;              (tank-size tnk)
+;              (environment-temperature (tank-environment tnk))
+;              (environment-quality (tank-environment tnk)))
+;      (when (> (tank-lighting tnk) 0)
+;        (printf "\tlight level: ~a\n" (tank-lighting tnk)))
+;      (when (tank-info-rounded? (tank-type tnk))
+;        (printf "\trounded\n"))
+;      (define animals-grouped-by-food
+;        (group-by (compose1 food-type animal-diet)
+;                  (filter (compose1 food? animal-diet) animals)))
+;      (for ([lst animals-grouped-by-food])
+;        (printf "\t~a ~a\n"
+;                (sum animal-required-food-amount lst)
+;                (food-type (animal-diet (first lst))))))]
+;   [else
+;    (define strs
+;      (append
+;        (map format-violation (find-violated-restrictions dom))
+;        (map format-violation (find-violated-tank-constraints dom))))
+;    (for ([s (remove-duplicates strs)])
+;      (printf "~a" s))]))
 
 ;(define (do-help)
 ;  (printf "Usage: program <subcommand> where subcommand is one of:\n")

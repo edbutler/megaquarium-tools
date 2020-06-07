@@ -4,13 +4,12 @@
 
 (require
   "data.rkt"
-  "display.rkt"
-  "localization.rkt"
-  "serialize.rkt")
+  "core.rkt"
+  "display.rkt")
 
 (define (do-extract input-filename output-filename)
   (define argv (current-command-line-arguments))
-  (define data (read-save-file input-filename))
+  (define data (read-save input-filename))
   (define do-write (thunk (write-tank-yaml data (current-output-port))))
   (cond
    [output-filename (with-output-to-file output-filename do-write #:exists 'replace)]

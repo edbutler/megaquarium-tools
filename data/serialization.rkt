@@ -14,8 +14,8 @@
 (require
   json
   yaml
-  "lift.rkt"
-  "core.rkt")
+  "../lift.rkt"
+  "../core.rkt")
 
 (define (fuzzy-match-search f search-str lst)
   (define words (string-split search-str " "))

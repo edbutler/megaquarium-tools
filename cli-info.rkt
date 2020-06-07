@@ -4,7 +4,6 @@
 
 (require
   "display.rkt"
-  "localization.rkt"
   "core.rkt"
   "data.rkt")
 
@@ -12,7 +11,7 @@
 (define show-foods? (make-parameter #f))
 (define localize? (make-parameter #f))
 
-(define (localize-id id) (localize default-l10n id))
+(define (localize-id data id) (localize (game-data-localization data) id))
 
 (define (print-ids header lst)
   ; use the same sort even if localizing so ids can be compared
@@ -23,25 +22,26 @@
       (map symbol->string lst)))
   (pretty-display-data (hash header data)))
 
-(define (show-types)
+(define (show-types data)
   (define all-types
-    (remove-duplicates (map species-type all-species)))
+    (remove-duplicates (map species-type (game-data-animals data))))
   (print-ids "Types" all-types))
 
-(define (show-foods)
-  (define all-diets (map species-diet all-species))
+(define (show-foods data)
+  (define all-diets (map species-diet (game-data-animals data)))
   (define all-foods
     (remove-duplicates (filter-map (λ (d) (and (food? d) (food-type d))) all-diets)))
   (print-ids "Foods" all-foods))
 
 (define (do-info)
+  (define data (read-game-data))
   (define did-show-something #f)
   (when (show-types?)
     (set! did-show-something #t)
-    (show-types))
+    (show-types data))
   (when (show-foods?)
     (set! did-show-something #t)
-    (show-foods))
+    (show-foods data))
   (unless did-show-something
     (printf "No flags set; set at least one flag to see output.\n")))
 

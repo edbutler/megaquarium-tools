@@ -4,8 +4,7 @@
 
 (require
   yaml
-  "core.rkt"
-  "localization.rkt")
+  "core.rkt")
 
 (define (pretty-display-data data [out (current-output-port)])
   (write-yaml

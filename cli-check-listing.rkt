@@ -6,9 +6,7 @@
   "data.rkt"
   "core.rkt"
   "lift.rkt"
-  "constraint.rkt"
-  "serialize.rkt"
-  "localization.rkt")
+  "constraint.rkt")
 
 (define (make-fishes specs #:id-suffix [id-suffix ""])
   (define (make sspec)
@@ -32,20 +30,24 @@
                                (apply max (map (compose1 environment-quality animal-environment) animals)))
     #:lighting (max-by (λ (a) (or (ormap (λ (r) (and (requires-light? r) (requires-light-amount r))) (animal-restrictions a)) 0)) animals)))
 
-(define (format-violation violtn)
+(define (format-violation data violtn)
+  (define l10n (game-data-localization data))
   (match violtn
    [(cons (? animal? animl) restr)
-    (format "\t~a has unmet requirement ~v\n" (localize-animal default-l10n animl) restr)]
+    (format "\t~a has unmet requirement ~v\n" (localize-animal l10n animl) restr)]
    [(cons subj message)
     (format "\tTank has unmet requirement ~a\n" message)]))
 
 (define (do-check-listing items)
   (unless (even? (length items)) (error "need even args"))
+
+  (define data (read-game-data))
+
   (define species/counts
     (map
       (λ (i)
         (define search-str (list-ref items (* 2 i)))
-        (define possible-species (fuzzy-match-species search-str all-species))
+        (define possible-species (fuzzy-match-species search-str (game-data-animals data)))
         (when (empty? possible-species) (error (format "no matching species for '~a'" search-str)))
         (when (> (length possible-species) 1) (error (format "ambiguous match for '~a':\n\t~a" search-str (map species-id possible-species))))
         (define number (string->number (list-ref items (add1 (* 2 i)))))
@@ -83,8 +85,8 @@
     ; do a brain-dead de-duplication on the final printed strings
     (define strs
       (append
-        (map format-violation (find-violated-restrictions dom))
-        (map format-violation (find-violated-tank-constraints dom))))
+        (map (curry format-violation data) (find-violated-restrictions dom))
+        (map (curry format-violation data) (find-violated-tank-constraints dom))))
     (for ([s (remove-duplicates strs)])
       (printf "~a" s))
     (printf "Minimum tank necessitated by other animals:\n\tsize: ~a\n\ttemp: ~a\n\tquality: ~a\n\tlight level: ~a\n\trounded? ~a\n"
