@@ -15,6 +15,7 @@
 
 (struct game-data
   (species
+   tanks
    localization)
   #:transparent) 
 
@@ -37,6 +38,7 @@
   (define dir (find-data-dir))
   (game-data
     (read-species dir)
+    empty
     (read-localization dir)))
 
 (define (read-save data name)

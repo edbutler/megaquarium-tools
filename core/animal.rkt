@@ -11,11 +11,10 @@
     (only-in racket exn:fail:contract?)
     rackunit))
 
-(struct species
+(struct species game-object-template
    ; symbol?
-  (id
    ; symbol? ('fish, 'coral', ...)
-   class
+  (class
    ; symbol? ('stony_coral, 'grouper, ...)
    type
    ; size?
@@ -32,6 +31,8 @@
    ; unlockable?: when this fish can be researched
    unlockable)
   #:transparent)
+
+(define species-id game-object-template-id)
 
 ; duration=#f for final stage
 (struct size

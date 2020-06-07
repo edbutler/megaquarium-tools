@@ -16,12 +16,12 @@
 (define warm-env (environment warm-water 50))
 (define cold-env (environment cold-water 50))
 
-(define basic-tank-info (tank-info (cons 2 2) (cons 6 6) 2 #f))
-(define rounded-tank-info (tank-info (cons 2 2) (cons 6 6) 2 #t))
-(define tank-warm-100 (make-tank 1 #:type basic-tank-info #:size 100 #:environment warm-env #:lighting 0))
-(define tank-cold-100 (make-tank 2 #:type basic-tank-info #:size 100 #:environment cold-env #:lighting 0))
-(define tank-warm-20  (make-tank 3 #:type basic-tank-info #:size  20 #:environment warm-env #:lighting 0))
-(define tank-cold-20  (make-tank 4 #:type basic-tank-info #:size  20 #:environment cold-env #:lighting 0))
+(define basic-tank-kind 'name (tank-kind (cons 2 2) (cons 6 6) 2 #f))
+(define rounded-tank-kind 'name (tank-kind (cons 2 2) (cons 6 6) 2 #t))
+(define tank-warm-100 (make-tank 1 #:type basic-tank-kind #:size 100 #:environment warm-env #:lighting 0))
+(define tank-cold-100 (make-tank 2 #:type basic-tank-kind #:size 100 #:environment cold-env #:lighting 0))
+(define tank-warm-20  (make-tank 3 #:type basic-tank-kind #:size  20 #:environment warm-env #:lighting 0))
+(define tank-cold-20  (make-tank 4 #:type basic-tank-kind #:size  20 #:environment cold-env #:lighting 0))
 
 (define (make-fishes spec cnt)
   (define (name i) (format "~a-~a" (species-id spec) i))
@@ -113,8 +113,8 @@
   (define swimmers (make-fishes swimmer 6))
   (define normies (make-fishes normie 6))
 
-  (define tank-warm-35 (make-tank 1 #:type basic-tank-info #:size 35 #:environment warm-env))
-  (define tank-warm-36 (make-tank 2 #:type basic-tank-info #:size 36 #:environment warm-env))
+  (define tank-warm-35 (make-tank 1 #:type basic-tank-kind #:size 35 #:environment warm-env))
+  (define tank-warm-36 (make-tank 2 #:type basic-tank-kind #:size 36 #:environment warm-env))
 
   (check-tank-not-ok? tank-warm-20 (take swimmers 1))
   (check-tank-not-ok? tank-warm-35 (take swimmers 1))
@@ -182,8 +182,8 @@
   (define roundies (make-fishes roundie 7))
   (define normies (make-fishes normie 7))
 
-  (define square-tank (make-tank 1 #:type   basic-tank-info #:size 100 #:environment warm-env))
-  (define round-tank  (make-tank 2 #:type rounded-tank-info #:size 100 #:environment warm-env))
+  (define square-tank (make-tank 1 #:type   basic-tank-kind #:size 100 #:environment warm-env))
+  (define round-tank  (make-tank 2 #:type rounded-tank-kind #:size 100 #:environment warm-env))
 
   (check-tank-ok? round-tank (take roundies 1))
   (check-tank-ok? round-tank roundies)
@@ -235,8 +235,8 @@
   (define darklovers (make-fishes darklover 7))
   (define normies (make-fishes normie 7))
 
-  (define bright-tank (make-tank 1 #:type basic-tank-info #:size 100 #:environment warm-env #:lighting 1))
-  (define dark-tank   (make-tank 2 #:type basic-tank-info #:size 100 #:environment warm-env #:lighting 0))
+  (define bright-tank (make-tank 1 #:type basic-tank-kind #:size 100 #:environment warm-env #:lighting 1))
+  (define dark-tank   (make-tank 2 #:type basic-tank-kind #:size 100 #:environment warm-env #:lighting 0))
 
   (check-tank-ok? dark-tank (take darklovers 1))
   (check-tank-ok? dark-tank darklovers)
@@ -254,9 +254,9 @@
   (define lightlovers (make-fishes lightlover 7))
   (define normies (make-fishes normie 7))
 
-  (define bright-tank (make-tank 1 #:type basic-tank-info #:size 100 #:environment warm-env #:lighting 10))
-  (define dim-tank    (make-tank 1 #:type basic-tank-info #:size 100 #:environment warm-env #:lighting 9))
-  (define dark-tank   (make-tank 2 #:type basic-tank-info #:size 100 #:environment warm-env #:lighting 0))
+  (define bright-tank (make-tank 1 #:type basic-tank-kind #:size 100 #:environment warm-env #:lighting 10))
+  (define dim-tank    (make-tank 1 #:type basic-tank-kind #:size 100 #:environment warm-env #:lighting 9))
+  (define dark-tank   (make-tank 2 #:type basic-tank-kind #:size 100 #:environment warm-env #:lighting 0))
 
   (check-tank-not-ok? dark-tank (take lightlovers 1))
   (check-tank-not-ok? dark-tank lightlovers)

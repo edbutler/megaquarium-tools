@@ -25,7 +25,7 @@
   (make-tank
     id
     #:name (or name "tank")
-    #:type (tank-info #f #f #f (ormap (λ (a) (ormap rounded-tank? (animal-restrictions a))) animals))
+    #:type (tank-kind #f #f #f (ormap (λ (a) (ormap rounded-tank? (animal-restrictions a))) animals))
     #:size (max (sum animal-final-size animals)
                 (max-by (λ (a) (or (ormap (λ (r) (and (active-swimmer? r) (* (active-swimmer-multiplier r) (animal-final-size a))))
                                           (animal-restrictions a))
@@ -69,7 +69,7 @@
 ;              (environment-quality (tank-environment tnk)))
 ;      (when (> (tank-lighting tnk) 0)
 ;        (printf "\tlight level: ~a\n" (tank-lighting tnk)))
-;      (when (tank-info-rounded? (tank-type tnk))
+;      (when (tank-kind-rounded? (tank-type tnk))
 ;        (printf "\trounded\n"))
 ;      (define animals-grouped-by-food
 ;        (group-by (compose1 food-type animal-diet)

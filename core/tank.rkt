@@ -32,7 +32,12 @@
 
 )
 
-(struct tank-info
+(struct game-object-template
+  ; symbol?
+  (id)
+  #:transparent)
+
+(struct tank-kind game-object-template
   (min-dimensions
    max-dimensions
    volume-per-tile
@@ -47,7 +52,7 @@
   (id
    ; string?: The name used in game
    name
-   ; tank-info? (TODO clean this up)
+   ; tank-kind? (TODO clean this up)
    type
    ; positive-integer?
    size
@@ -88,5 +93,5 @@
 ; TODO unused
 ;(define (make-tank-of-type type temp x-dim y-dim)
 ;  (local-require (only-in racket exact-ceiling))
-;  (define sz (exact-ceiling (* x-dim y-dim (tank-info-volume-per-tile type))))
+;  (define sz (exact-ceiling (* x-dim y-dim (tank-kind-volume-per-tile type))))
 ;  (tank type sz temp))
