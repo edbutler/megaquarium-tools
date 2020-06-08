@@ -2,6 +2,7 @@
 #lang racket
 
 (provide
+  (struct-out game-data)
   read-json-file
   read-tanks-from-file
   read-species-from-file
@@ -14,6 +15,12 @@
 
 (module+ test
   (require rackunit))
+
+(struct game-data
+  (species
+   tanks
+   localization)
+  #:transparent) 
 
 (define (jsexpr-ref obj . keys)
   (match keys
@@ -83,15 +90,15 @@ JSON
   (define rounded? (hash-ref (hash-ref jsexpr 'tank) 'isRounded #f))
 
   (make-tank-kind
-    id
+    #:id id
     #:min min-dim
     #:max max-dim
     #:density density
     #:rounded? rounded?))
 
 (define (read-tanks-from-file filename)
-  (define jdata (read-json-file filename))
-  (map read-tank-kind (hash-ref jdata 'objects)))
+  (define jsexpr (read-json-file filename))
+  (map read-tank-kind (hash-ref jsexpr 'objects)))
 
 ; number?, symbol? -> predator?
 ; the game mechanics for eating, based on final size
@@ -176,14 +183,14 @@ JSON
 (define (read-species-from-file #:animals animal-filename #:corals coral-filename)
   (append-map
     (λ (fname cls)
-      (let ([jdata (read-json-file fname)])
-        (map (curry read-species cls) (hash-ref jdata 'objects))))
+      (let ([jsexpr (read-json-file fname)])
+        (map (curry read-species cls) (hash-ref jsexpr 'objects))))
     (list animal-filename coral-filename)
     (list 'fish 'coral)))
 
-; (listof species?) -> json? -> aquarium?
-(define (read-save-data all-species jdata)
-  (define j-object-list (hash-ref jdata 'objects))
+; game-data? -> json? -> aquarium?
+(define (read-save-data gdata jsexpr)
+  (define j-object-list (hash-ref jsexpr 'objects))
 
   ; extract animals, paired with tank ids
   ; (listof (pairof animal? integer?))
@@ -208,24 +215,25 @@ JSON
         (cond
          [(and (hash-has-key? jobj 'tank) (hash-ref jobj 'inGameWorld #f))
           (make-tank
-            (hash-ref jobj 'uid)
+            #:id (hash-ref jobj 'uid)
             #:name (hash-ref jobj 'name)
-            #:size #f
-            #:environment #f
-            #:lighting #f)]
+            #:kind (last (game-data-tanks gdata))
+            #:size 2
+            #:environment (environment warm-water 30)
+            #:lighting 0)] ; TODO need to actually load all of these
          [else #f]))
       j-object-list))
 
-  (define max-rank (jsexpr-ref jdata 'gameParameters 'maxRank))
+  (define max-rank (jsexpr-ref jsexpr 'gameParameters 'maxRank))
 
-  (define j-unlocks (jsexpr-ref jdata 'playerData 'unlockableManager))
+  (define j-unlocks (jsexpr-ref jsexpr 'playerData 'unlockableManager))
 
-  (define j-objectives (jsexpr-ref jdata 'playerData 'scenario 'sections))
+  (define j-objectives (jsexpr-ref jsexpr 'playerData 'scenario 'sections))
 
   (define all-animal-ids
     (map species-id
          (filter (λ (s) (<= (unlockable-rank (species-unlockable s)) max-rank))
-                 all-species)))
+                 (game-data-species gdata))))
 
   (define (read-spec-list jobj key)
     (map string->symbol (hash-ref jobj key)))
@@ -235,7 +243,7 @@ JSON
   (define researchable
     (set-subtract all-animal-ids (set-union available (read-spec-list j-unlocks 'excludedSpecs))))
 
-  (define j-merchants (jsexpr-search (hash-ref jdata 'playerData) 'merchant))
+  (define j-merchants (jsexpr-search (hash-ref jsexpr 'playerData) 'merchant))
 
   (define acquirable
     (map (λ (x) (cons (string->symbol (hash-ref x 'id))
@@ -281,6 +289,6 @@ JSON
     (market available researchable acquirable)
     objectives))
 
-(define (read-save-from-file filename #:species species-list)
-  (let ([jdata (read-json-file filename)])
-    (read-save-data species-list jdata)))
+(define (read-save-from-file gdata filename)
+  (let ([jsexpr (read-json-file filename)])
+    (read-save-data gdata jsexpr)))

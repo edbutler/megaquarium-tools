@@ -9,7 +9,7 @@
 
 (define (do-extract input-filename output-filename)
   (define argv (current-command-line-arguments))
-  (define data (read-save input-filename))
+  (define data (read-save (read-game-data) input-filename))
   (define do-write (thunk (write-tank-yaml data (current-output-port))))
   (cond
    [output-filename (with-output-to-file output-filename do-write #:exists 'replace)]

@@ -13,12 +13,6 @@
   "data/loader.rkt"
   "data/serialization.rkt")
 
-(struct game-data
-  (species
-   tanks
-   localization)
-  #:transparent) 
-
 (define (species-ref data id)
   (findf
     (λ (a) (equal? id (species-id a)))
@@ -44,8 +38,8 @@
     (read-tanks dir)
     (read-localization dir)))
 
-(define (read-save data name)
-  (read-save-from-file (save-file-path) #:species (game-data-species data)))
+(define (read-save gdata name)
+  (read-save-from-file gdata (save-file-path name)))
 
 (module+ test
   (require rackunit racket/contract "test.rkt")

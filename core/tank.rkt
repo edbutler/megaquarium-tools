@@ -51,7 +51,7 @@
 (define tank-kind-id game-object-template-id)
 
 (define (make-tank-kind
-          id
+          #:id id
           #:min min-dim
           #:max max-dim
           #:density density
@@ -89,7 +89,7 @@
     (test-case "can use make-tank-kind"
       (define val
         (make-tank-kind
-          id
+          #:id id
           #:min min-dim
           #:max max-dim
           #:density density
@@ -104,7 +104,7 @@
             #:density [density 3]
             #:rounded? [rounded? #f])
     (make-tank-kind
-      (or id (fresh-symbol))
+      #:id (or id (fresh-symbol))
       #:min min-dim
       #:max max-dim
       #:density density
