@@ -6,8 +6,8 @@
   (only-in racket local-require))
 
 (module+ test
-  (require
-    rackunit))
+  (provide make-test-tank-kind)
+  (require rackunit "../test.rkt"))
 
 (define warm-water 'warm-water)
 (define cold-water 'cold-water)
@@ -50,21 +50,6 @@
 
 (define tank-kind-id game-object-template-id)
 
-(module+ test
-  (test-case "can create tank-kind"
-    (define id 'someid)
-    (define min-dim (cons 5 6))
-    (define max-dim (cons 7 8))
-    (define density 2)
-    (define rounded? #t)
-
-    (define val (tank-kind id min-dim max-dim density rounded?))
-    (check-eq? (tank-kind-id val) id)
-    (check-eq? (tank-kind-min-dimensions val) min-dim)
-    (check-eq? (tank-kind-max-dimensions val) max-dim)
-    (check-eq? (tank-kind-volume-per-tile val) density)
-    (check-eq? (tank-kind-rounded? val) rounded?)))
-
 (define (make-tank-kind
           id
           #:min min-dim
@@ -86,32 +71,53 @@
   (tank-kind id min-dim max-dim density rounded?))
 
 (module+ test
-  (test-case "can use make-tank-kind"
+  (let ()
     (define id 'someid)
     (define min-dim (cons 5 6))
     (define max-dim (cons 7 8))
     (define density 2)
     (define rounded? #t)
 
-    (define val
-      (make-tank-kind
-        id
-        #:min min-dim
-        #:max max-dim
-        #:density density
-        #:rounded? rounded?))
+    (test-case "can create tank-kind"
+      (define val (tank-kind id min-dim max-dim density rounded?))
+      (check-eq? (tank-kind-id val) id)
+      (check-eq? (tank-kind-min-dimensions val) min-dim)
+      (check-eq? (tank-kind-max-dimensions val) max-dim)
+      (check-eq? (tank-kind-volume-per-tile val) density)
+      (check-eq? (tank-kind-rounded? val) rounded?))
 
-    (define expected (tank-kind id min-dim max-dim density rounded?))
-    (check-equal? val expected)))
+    (test-case "can use make-tank-kind"
+      (define val
+        (make-tank-kind
+          id
+          #:min min-dim
+          #:max max-dim
+          #:density density
+          #:rounded? rounded?))
+      (define expected (tank-kind id min-dim max-dim density rounded?))
+      (check-equal? val expected)))
+
+  (define (make-test-tank-kind
+            #:id [id #f]
+            #:min [min-dim (cons 2 2)]
+            #:max [max-dim (cons 4 4)]
+            #:density [density 3]
+            #:rounded? [rounded? #f])
+    (make-tank-kind
+      (or id (fresh-symbol))
+      #:min min-dim
+      #:max max-dim
+      #:density density
+      #:rounded? rounded?)))
 
 ; A fully specified tank.
 
 (struct tank
-   ; symbol?: The identifier for this tank
+   ; integer?
   (id
    ; string?: The name used in game
    name
-   ; tank-kind? (TODO clean this up)
+   ; tank-kind?
    type
    ; positive-integer?
    size
@@ -121,40 +127,76 @@
    lighting)
   #:transparent)
 
-(define (make-tank
-          [id #f]
-          #:name [name #f]
-          #:type [type #f]
-          #:size size
-          #:environment env
-          #:lighting [light 0])
-  (tank (or id 0) (or name "unnamed-tank") type size env light))
-
-(module+ test
-  (test-case "can create tank"
-    (define id 'someid)
-    (define name "A name")
-    (define type (void))
-    (define size 45)
-    (define env (environment warm-water 50))
-    (define lighting 15)
-
-    (define val (tank id name type size env lighting))
-    (check-eq? (tank-id val) id)
-    (check-eq? (tank-name val) name)
-    (check-eq? (tank-type val) type)
-    (check-eq? (tank-size val) size)
-    (check-eq? (tank-environment val) env)
-    (check-eq? (tank-lighting val) lighting))
-  
-  )
-
 (define (calculate-tank-size kind x-dim y-dim)
   (local-require (only-in racket exact-ceiling))
   (exact-ceiling (* x-dim y-dim (tank-kind-volume-per-tile kind))))
 
-; TODO unused
-;(define (make-tank-of-type type temp x-dim y-dim)
-;  (local-require (only-in racket exact-ceiling))
-;  (define sz (exact-ceiling (* x-dim y-dim (tank-kind-volume-per-tile type))))
-;  (tank type sz temp))
+(define (make-tank
+          #:id id
+          #:name name
+          #:kind kind
+          #:dimensions [dim #f]
+          #:size [size #f]
+          #:environment env
+          #:lighting light)
+  (local-require
+    (only-in racket raise-argument-error symbol? positive-integer? nonnegative-integer? string? error))
+
+  (define (err contract pos)
+    (raise-argument-error 'make-tank contract pos id name kind dim size env light))
+  (define (int-pair? v) (and (pair? v) (positive-integer? (car v)) (positive-integer? (cdr v))))
+
+  (unless (nonnegative-integer? id) (err "nonnegative-integer?" 0))
+  (unless (string? name) (err "string?" 1))
+  (unless (tank-kind? kind) (err "tank-kind?" 2))
+  (unless (or dim size) (error "need to define either size or dimensions"))
+  (unless (or (not dim) (int-pair? dim)) (err "(pairof positive-integer? positive-integer?" 3))
+  (unless (or (not size) (positive-integer? size)) (err "positive-integer?" 4))
+  (unless (environment? env) (err "environment?" 5))
+  (unless (nonnegative-integer? light) (err "nonnegative-integer?" 6))
+
+  (define sz (or size (calculate-tank-size kind (car dim) (cdr dim))))
+  (tank id name kind sz env light))
+
+(module+ test
+  (let ()
+    (define id 2534)
+    (define name "A name")
+    (define kind (make-test-tank-kind #:density 5))
+    (define dim (cons 3 6))
+    (define size 90)
+    (define env (environment warm-water 50))
+    (define lighting 15)
+
+    (test-case "can create tank"
+      (define val (tank id name kind size env lighting))
+      (check-eq? (tank-id val) id)
+      (check-eq? (tank-name val) name)
+      (check-eq? (tank-type val) kind)
+      (check-eq? (tank-size val) size)
+      (check-eq? (tank-environment val) env)
+      (check-eq? (tank-lighting val) lighting))
+
+    (test-case "can use make-tank with size"
+      (define val
+        (make-tank
+          #:id id
+          #:name name
+          #:kind kind
+          #:dimensions dim
+          #:environment env
+          #:lighting lighting))
+      (define expected (tank id name kind size env lighting))
+      (check-equal? val expected))
+
+    (test-case "can use make-tank with size"
+      (define val
+        (make-tank
+          #:id id
+          #:name name
+          #:kind kind
+          #:size size
+          #:environment env
+          #:lighting lighting))
+      (define expected (tank id name kind size env lighting))
+      (check-equal? val expected))))
