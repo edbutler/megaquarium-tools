@@ -177,7 +177,7 @@
       (check-eq? (tank-environment val) env)
       (check-eq? (tank-lighting val) lighting))
 
-    (test-case "can use make-tank with size"
+    (test-case "can use make-tank with dimensions"
       (define val
         (make-tank
           #:id id
