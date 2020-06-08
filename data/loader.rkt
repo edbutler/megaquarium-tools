@@ -65,6 +65,7 @@ JSON
 (define (read-json-file filename)
   (define text (file->string filename))
   ; racket's json parser is strict, so first remove trailing commas, comments, multiline strings
+  ; it's not pretty, but it's better than writing an entire parser
   (set! text (regexp-replace* #rx"\"map\":\".*?\"" text "\"map\":\"\"\n"))
   (set! text (regexp-replace* #rx"//.*?\n" text "\n"))
   (set! text (regexp-replace* #rx"/\\*.*?\\*/" text ""))
