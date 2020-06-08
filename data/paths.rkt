@@ -13,7 +13,7 @@
 (define coral-path "Data/corals.data")
 (define tank-path "Data/tanks.data")
 (define localization-path-format "Strings/~a/~a.json")
-(define localization-files '("animals" "fishFood"))
+(define localization-files '("animals" "fishFood" "tanks"))
 
 (define extra-localization
   (hash 'fish "Fish"

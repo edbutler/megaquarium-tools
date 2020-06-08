@@ -53,13 +53,30 @@
    [(requires-light amt) (format "Requires ~a light" amt)]
    [_ "ERROR"]))
 
-; species? -> output-port? -> void?
-(define (print-species l10n spc [out (current-output-port)])
-  (define yml (make-hash))
-  (define (add key entry) (hash-set! yml (symbol->string key) entry))
+(define (print-object l10n obj [out (current-output-port)])
+  (define display-func
+    (cond
+      [(species? obj) display-species]
+      [(tank-kind? obj) display-tank]
+      [else (error "unknown object type")]))
 
   ; want a hash for nice printing, but want to keep them in order
-  (define key-order '(id type size water properties))
+  (define key-order '(id type size density water properties))
+
+  (define yml (display-func l10n obj))
+
+  (write-yaml
+    (hash (localize l10n (game-object-template-id obj)) yml)
+    out
+    #:indent 2
+    #:sort-mapping-key (λ (s) (index-of key-order (string->symbol (car s))))
+    #:sort-mapping (λ (key1 key2) (and key1 key2 (< key1 key2)))
+    #:style 'block))
+
+; species? -> output-port? -> void?
+(define (display-species l10n spc)
+  (define yml (make-hash))
+  (define (add key entry) (hash-set! yml (symbol->string key) entry))
 
   (add 'id (tweak-species-name (species-id spc)))
   (add 'type (localize l10n (species-type spc)))
@@ -83,11 +100,22 @@
          (for/list ([r (species-restrictions spc)])
            (format-restriction l10n spc r))))
 
-  (write-yaml
-    (hash (localize-species l10n spc) yml)
-    out
-    #:indent 2
-    #:sort-mapping-key (λ (s) (index-of key-order (string->symbol (car s))))
-    #:sort-mapping (λ (key1 key2) (and key1 key2 (< key1 key2)))
-    #:style 'block))
+  yml)
+
+(define (display-tank l10n tnk)
+  (define yml (make-hash))
+  (define (add key entry) (hash-set! yml (symbol->string key) entry))
+
+  (add 'id (tweak-species-name (tank-kind-id tnk)))
+  (match-define (cons min-x min-y) (tank-kind-min-dimensions tnk))
+  (match-define (cons max-x max-y) (tank-kind-max-dimensions tnk))
+  (define density (tank-kind-volume-per-tile tnk))
+  (define min-size (calculate-tank-size tnk min-x min-y))
+  (define max-size (calculate-tank-size tnk max-x max-y))
+  (add 'size
+       (format "~ax~a to ~ax~a, ~a vol/tile (~a to ~a)"
+               min-x min-y max-x max-y density min-size max-size))
+  (when (tank-kind-rounded? tnk)
+    (add 'properties (list "Rounded")))
+  yml)
 

@@ -149,6 +149,10 @@
   
   )
 
+(define (calculate-tank-size kind x-dim y-dim)
+  (local-require (only-in racket exact-ceiling))
+  (exact-ceiling (* x-dim y-dim (tank-kind-volume-per-tile kind))))
+
 ; TODO unused
 ;(define (make-tank-of-type type temp x-dim y-dim)
 ;  (local-require (only-in racket exact-ceiling))

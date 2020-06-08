@@ -79,13 +79,14 @@ JSON
   (define (dim pr) (cons (hash-ref pr 'm) (hash-ref pr 'n)))
   (define min-dim (dim (jsexpr-ref jsexpr 'multisize 'minSize)))
   (define max-dim (dim (jsexpr-ref jsexpr 'multisize 'baseSize)))
+  (define rounded? (hash-ref (hash-ref jsexpr 'tank) 'isRounded #f))
 
   (make-tank-kind
     id
     #:min min-dim
     #:max max-dim
     #:density density
-    #:rounded? #f))
+    #:rounded? rounded?))
 
 (define (read-tanks-from-file filename)
   (define jdata (read-json-file filename))

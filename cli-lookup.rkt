@@ -14,15 +14,19 @@
   (define objects
     (match class
       ['animal (game-data-species data)]
-      ['animal (game-data-tanks data)]))
+      ['tank (game-data-tanks data)]))
   (define lst (fuzzy-match-species search-term objects))
   (define l10n (game-data-localization data))
   (cond
    [(empty? lst)
     (printf "No objects found matching '~a'.\n" search-term)]
    [else
-    (for ([s (sort lst string<? #:key (λ (obj) (localize l10n (game-object-template-id obj))))])
-      (print-species l10n s))]))
+    ; sort animals alphabetically, but not tanks
+    (when (equal? class 'animal)
+      (set! lst
+        (sort lst string<? #:key (λ (obj) (localize l10n (game-object-template-id obj))))))
+    (for ([s lst])
+      (print-object l10n s))]))
 
 (define (lookup program-name args)
   (command-line
