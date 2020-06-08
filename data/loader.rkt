@@ -3,6 +3,7 @@
 
 (provide
   read-json-file
+  read-tanks-from-file
   read-species-from-file
   read-save-from-file)
 
@@ -63,11 +64,32 @@ JSON
 ; takes care of bad stuff like trailing commas
 (define (read-json-file filename)
   (define text (file->string filename))
+  ; racket's json parser is strict, so first remove trailing commas, comments, multiline strings
+  (set! text (regexp-replace* #rx"\"map\":\".*?\"" text "\"map\":\"\"\n"))
+  (set! text (regexp-replace* #rx"//.*?\n" text "\n"))
+  (set! text (regexp-replace* #rx"/\\*.*?\\*/" text ""))
   (set! text (regexp-replace* #rx",([\r\n |\t]*})" text "\\1"))
   (set! text (regexp-replace* #rx",([\r\n |\t]*])" text "\\1"))
-  (set! text (regexp-replace* #rx"//.*?\n" text "\n"))
   ;(display-to-file text "test.json" #:exists 'replace) ; for debugging when things go wrong
   (string->jsexpr text))
+
+(define (read-tank-kind jsexpr)
+  (define id (string->symbol (hash-ref jsexpr 'id)))
+  (define density (jsexpr-ref jsexpr 'tank 'volumePerTile))
+  (define (dim pr) (cons (hash-ref pr 'm) (hash-ref pr 'n)))
+  (define min-dim (dim (jsexpr-ref jsexpr 'multisize 'minSize)))
+  (define max-dim (dim (jsexpr-ref jsexpr 'multisize 'baseSize)))
+
+  (make-tank-kind
+    id
+    #:min min-dim
+    #:max max-dim
+    #:density density
+    #:rounded? #f))
+
+(define (read-tanks-from-file filename)
+  (define jdata (read-json-file filename))
+  (map read-tank-kind (hash-ref jdata 'objects)))
 
 ; number?, symbol? -> predator?
 ; the game mechanics for eating, based on final size

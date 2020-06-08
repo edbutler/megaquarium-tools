@@ -74,13 +74,13 @@
   (local-require (only-in racket raise-argument-error symbol? positive-integer?))
 
   (define (err contract pos)
-    (raise-argument-error 'make-fish contract pos id min-dim max-dim density rounded?))
+    (raise-argument-error 'make-tank-kind contract pos id min-dim max-dim density rounded?))
   (define (int-pair? v) (and (pair? v) (positive-integer? (car v)) (positive-integer? (cdr v))))
 
   (unless (symbol? id) (err "symbol?" 0))
   (unless (int-pair? min-dim) (err "(pairof positive-integer? positive-integer?)" 1))
   (unless (int-pair? max-dim) (err "(pairof positive-integer? positive-integer?)" 2))
-  (unless (positive-integer? density) (err "positive-integer?" 3))
+  (unless (positive? density) (err "positive?" 3))
   (unless (boolean? rounded?) (err "boolean?" 4))
 
   (tank-kind id min-dim max-dim density rounded?))

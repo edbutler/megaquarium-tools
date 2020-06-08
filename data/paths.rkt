@@ -11,6 +11,7 @@
 (define local-data-path "steamapps/common/Megaquarium/Megaquarium_Data/GameData/")
 (define animal-path "Data/animals.data")
 (define coral-path "Data/corals.data")
+(define tank-path "Data/tanks.data")
 (define localization-path-format "Strings/~a/~a.json")
 (define localization-files '("animals" "fishFood"))
 

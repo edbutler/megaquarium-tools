@@ -29,6 +29,9 @@
          [files (map (compose1 read-json-file map-filename) localization-files)])
     (make-localization (cons extra-localization files))))
 
+(define (read-tanks data-dir)
+  (read-tanks-from-file (build-path data-dir tank-path)))
+
 (define (read-species data-dir)
   (read-species-from-file
     #:animals (build-path data-dir animal-path)
@@ -38,7 +41,7 @@
   (define dir (find-data-dir))
   (game-data
     (read-species dir)
-    empty
+    (read-tanks dir)
     (read-localization dir)))
 
 (define (read-save data name)
