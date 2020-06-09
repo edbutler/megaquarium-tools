@@ -203,17 +203,30 @@ JSON
          [else #f]))
       j-object-list))
 
+  (define str-ids/tank-kinds
+    (map
+      (λ (kind) (cons (symbol->string (tank-kind-id kind)) kind))
+      (game-data-tanks gdata)))
+
   (define tanks
     (filter-map
       (λ (jobj)
         (cond
          [(and (hash-has-key? jobj 'tank) (hash-ref jobj 'inGameWorld #f))
+          (define id-str (hash-ref jobj 'specId))
+
+          ; id-strs look like "<tank-type-id>_<x-dim>-<y-dim>" (e.g., lagoon_tank_3_4)
+          (define id/kind (findf (λ (pr) (string-prefix? id-str (car pr))) str-ids/tank-kinds))
+          (match-define (list x y)
+            (map string->number
+                 (string-split (substring id-str (add1 (string-length (car id/kind)))) "_")))
+
           (make-tank
             #:id (hash-ref jobj 'uid)
             #:name (hash-ref jobj 'name)
-            #:kind (last (game-data-tanks gdata))
-            #:size 2
-            #:environment (environment warm-water 30)
+            #:kind (cdr id/kind)
+            #:dimensions (cons x y)
+            #:environment (environment warm-water 0)
             #:lighting 0)] ; TODO need to actually load all of these
          [else #f]))
       j-object-list))

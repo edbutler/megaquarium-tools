@@ -3,6 +3,7 @@
 (provide lookup)
 
 (define search-class (make-parameter 'animal))
+(define debug-print? (make-parameter #f))
 
 (require
   "data.rkt"
@@ -25,13 +26,19 @@
     (when (equal? class 'animal)
       (set! lst
         (sort lst string<? #:key (λ (obj) (localize l10n (game-object-template-id obj))))))
-    (for ([s lst])
-      (print-object l10n s))]))
+    (cond
+     [debug-print?
+      (pretty-print lst)]
+     [else
+      (for ([s lst])
+        (print-object l10n s))])]))
 
 (define (lookup program-name args)
   (command-line
     #:program program-name 
     #:argv args
+    #:once-each
+    [("-d" "--debug") "Print raw racket value instead of a formatted value" (debug-print? #t)]
     #:once-any
     [("-a" "--animal") "Search animals (default)" (search-class 'animal)]
     [("-t" "--tank") "Search tanks" (search-class 'tank)]

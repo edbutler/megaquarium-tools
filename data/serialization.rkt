@@ -39,10 +39,21 @@
 
   (define (exhibit->yaml exh)
     (define tnk (exhibit-tank exh))
+    (define env (tank-environment tnk))
     (define animals (exhibit-animals exh))
-    (define grouped-animals (group-by animal-species animals))
+
+    (define animal-counts (make-hash (map group->yaml (group-by animal-species animals))))
+
+    (define tank-info
+      (hasheq "type" (tweak-species-name (tank-kind-id (tank-type tnk)))
+              "size" (tank-size tnk)))
+              ;"temp" (symbol->string (environment-temperature env))
+              ;"quality" (environment-quality env)
+              ;"lighting" (tank-lighting tnk)))
+
     (cons (tank-name tnk)
-          (make-hash (map group->yaml grouped-animals))))
+          (hasheq "animals" animal-counts
+                  "tank" tank-info)))
 
   (define (map-key key)
     (cond
