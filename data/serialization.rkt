@@ -8,6 +8,7 @@
 (require
   json
   yaml
+  "game-data.rkt"
   "../lift.rkt"
   "../core.rkt")
 
@@ -36,9 +37,9 @@
     (cons (tweak-species-name (animal-species (first animals)))
           (length animals)))
 
-  (define (tank-data->yaml pr)
-    (define tnk (car pr))
-    (define animals (cdr pr))
+  (define (exhibit->yaml exh)
+    (define tnk (exhibit-tank exh))
+    (define animals (exhibit-animals exh))
     (define grouped-animals (group-by animal-species animals))
     (cons (tank-name tnk)
           (make-hash (map group->yaml grouped-animals))))
@@ -72,7 +73,7 @@
 
   (write-yaml
     (hash
-      "tanks" (make-hash (map tank-data->yaml (aquarium-tanks aqrm)))
+      "exhibits" (make-hash (map exhibit->yaml (aquarium-exhibits aqrm)))
       "market" (market->yaml (aquarium-market aqrm))
       "objectives" (map objective->yaml (aquarium-objectives aqrm)))
     out

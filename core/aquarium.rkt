@@ -18,9 +18,16 @@
    acquirable)
   #:transparent)
 
+; a tank plus its contents
+(struct exhibit
+  ; tank?
+  (tank
+  ; listof animal?
+   animals)
+  #:transparent)
+
 (struct aquarium
-  ; (pairof tank? (listof animal?))
- (tanks
+ (exhibits
   ; market?
   market
   ; (listof objective?)

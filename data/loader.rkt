@@ -2,7 +2,6 @@
 #lang racket
 
 (provide
-  (struct-out game-data)
   read-json-file
   read-tanks-from-file
   read-species-from-file
@@ -10,17 +9,12 @@
 
 (require
   json
+  "game-data.rkt"
   "../lift.rkt"
   "../core.rkt")
 
 (module+ test
   (require rackunit))
-
-(struct game-data
-  (species
-   tanks
-   localization)
-  #:transparent) 
 
 (define (jsexpr-ref obj . keys)
   (match keys
@@ -282,7 +276,7 @@ JSON
   (aquarium
     (map
       (λ (tnk)
-        (cons
+        (exhibit
           tnk
           (filter-map (λ (pr) (and (= (tank-id tnk) (cdr pr)) (car pr))) animals)))
       tanks)

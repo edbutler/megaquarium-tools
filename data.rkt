@@ -9,6 +9,7 @@
 
 (require
   "core.rkt"
+  "data/game-data.rkt"
   "data/paths.rkt"
   "data/loader.rkt"
   "data/serialization.rkt")
