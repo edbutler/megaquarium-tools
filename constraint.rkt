@@ -237,8 +237,8 @@
     (define dom (make-concrete-domain (list (cons tnk animals))))
     (equal? expected (tank-constraints-satisfied? dom tnk)))
 
-  (define basic-tank-kind (tank-kind 'name (cons 2 2) (cons 6 6) 2 #f))
-  (define rounded-tank-kind (tank-kind 'name (cons 2 2) (cons 6 6) 2 #t))
+  (define basic-tank-kind (make-tank-kind 'name (cons 2 2) (cons 6 6) 2 #f))
+  (define rounded-tank-kind (make-tank-kind 'name (cons 2 2) (cons 6 6) 2 #t))
 
   (define (make-simple-tank
             #:size sz

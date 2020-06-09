@@ -1,6 +1,10 @@
 #lang rosette/safe
 
-(provide (all-defined-out))
+(provide
+  (except-out
+    (all-defined-out)
+    tank-kind
+    tank))
 
 (require
   (only-in racket local-require))

@@ -25,7 +25,7 @@
   (make-tank
     id
     #:name (or name "tank")
-    #:type (tank-kind #f #f #f (ormap (λ (a) (ormap rounded-tank? (animal-restrictions a))) animals))
+    #:type (make-tank-kind #f #f #f (ormap (λ (a) (ormap rounded-tank? (animal-restrictions a))) animals))
     #:size (max (sum animal-final-size animals)
                 (max-by (λ (a) (or (ormap (λ (r) (and (active-swimmer? r) (* (active-swimmer-multiplier r) (animal-final-size a))))
                                           (animal-restrictions a))
