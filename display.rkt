@@ -78,7 +78,7 @@
   (define yml (make-hash))
   (define (add key entry) (hash-set! yml (symbol->string key) entry))
 
-  (add 'id (tweak-species-name (species-id spc)))
+  (add 'id (tweak-id/string (species-id spc)))
   (add 'type (localize l10n (species-type spc)))
 
   (let ([sze (species-size spc)])
@@ -106,7 +106,7 @@
   (define yml (make-hash))
   (define (add key entry) (hash-set! yml (symbol->string key) entry))
 
-  (add 'id (tweak-species-name (tank-kind-id tnk)))
+  (add 'id (tweak-id/string (tank-kind-id tnk)))
   (match-define (cons min-x min-y) (tank-kind-min-dimensions tnk))
   (match-define (cons max-x max-y) (tank-kind-max-dimensions tnk))
   (define density (tank-kind-volume-per-tile tnk))

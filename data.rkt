@@ -4,7 +4,7 @@
   fuzzy-match-species
   (struct-out game-data)
   read-game-data
-  write-tank-yaml
+  write-aquarium
   read-save)
 
 (require

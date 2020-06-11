@@ -182,9 +182,3 @@
 
 (define (make-size n #:armored? [armored? #f]) (size (list (species-stage n #f)) armored?))
 (define (make-active-swimmer) (active-swimmer 6))
-
-; drop the excess stuff from the names, specifically the leading number
-(define (tweak-species-name name)
-  (local-require (only-in racket regexp-replace* symbol->string symbol?))
-  (when (symbol? name) (set! name (symbol->string name)))
-  (regexp-replace* #rx"[0-9]+_(.*)" name "\\1"))

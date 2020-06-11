@@ -46,7 +46,7 @@
   (void))
 ;  (define argv (current-command-line-arguments))
 ;  (define input-filename (vector-ref argv 0))
-;  (define data (call-with-input-file input-filename (λ (f) (read-tank-yaml f #:species all-specie))))
+;  (define data (call-with-input-file input-filename (λ (f) (read-aquarium f #:species all-specie))))
 ;  (define dom-data
 ;    (map
 ;      (λ (i spec)
