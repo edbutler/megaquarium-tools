@@ -16,6 +16,7 @@
 (module+ test
   (require
     (only-in racket for)
+    (submod "core/tank.rkt" test)
     rackunit
     "test.rkt")
 
@@ -237,8 +238,8 @@
     (define dom (make-concrete-domain (list (cons tnk animals))))
     (equal? expected (tank-constraints-satisfied? dom tnk)))
 
-  (define basic-tank-kind (make-tank-kind 'name (cons 2 2) (cons 6 6) 2 #f))
-  (define rounded-tank-kind (make-tank-kind 'name (cons 2 2) (cons 6 6) 2 #t))
+  (define basic-tank-kind (make-test-tank-kind))
+  (define rounded-tank-kind (make-test-tank-kind #:rounded? #t))
 
   (define (make-simple-tank
             #:size sz
@@ -247,10 +248,10 @@
             #:temp [temp warm-water]
             #:quality [qlty 100])
     (define env (environment temp qlty))
-    (make-tank 1 #:type typ #:size sz #:environment env #:lighting lght))
+    (make-tank #:id 1 #:name "T" #:kind typ #:size sz #:environment env #:lighting lght))
 
   (test-case "Empty tank is okay"
-    (for ([sz '(0 1 10 50)])
+    (for ([sz '(1 10 50)])
       (check-tank-ok? #t (make-simple-tank #:size sz) '())))
 
   (test-case "Single fish fits if <= tank size"
