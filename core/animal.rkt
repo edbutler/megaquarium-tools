@@ -1,9 +1,8 @@
 #lang rosette/safe
 
-(provide (all-defined-out))
-
 (require
   "tank.rkt"
+  racket/contract
   (only-in racket local-require))
 
 (module+ test
@@ -34,6 +33,8 @@
 
 (define species-id game-object-template-id)
 
+(provide (struct-out species) species-id)
+
 ; duration=#f for final stage
 (struct size
    ; (listof species-stage?)
@@ -43,13 +44,24 @@
   #:transparent)
 (struct species-stage (size duration) #:transparent)
 
+(provide (struct-out size)
+         (struct-out species-stage))
+
 (struct diet () #:transparent)
 (struct food diet (type period) #:transparent)
 (struct scavenger diet () #:transparent)
 (struct does-not-eat diet () #:transparent)
 
+(provide (struct-out diet)
+         (struct-out food)
+         (struct-out scavenger)
+         (struct-out does-not-eat))
+
 (struct property () #:transparent)
 (struct bully property () #:transparent)
+
+(provide (struct-out property)
+         (struct-out bully))
 
 (struct restriction () #:transparent)
 (struct shoaler restriction (count) #:transparent)
@@ -65,12 +77,29 @@
 (struct requires-light restriction (amount) #:transparent)
 (struct wimp restriction () #:transparent)
 
+(provide (struct-out restriction)
+         (struct-out shoaler)
+         (struct-out active-swimmer)
+         (struct-out predator)
+         (struct-out dislikes-conspecifics)
+         (struct-out dislikes-congeners)
+         (struct-out only-congeners)
+         (struct-out rounded-tank)
+         (struct-out dislikes-food-competitors)
+         (struct-out dislikes-light)
+         (struct-out requires-light)
+         (struct-out wimp))
+
 (struct unlockable (rank) #:transparent)
+
+(provide (struct-out unlockable))
 
 (struct animal
   (id
    species)
   #:transparent)
+
+(provide (struct-out animal))
 
 ; access helpers
 
@@ -89,6 +118,19 @@
   (size-armored? (species-size (animal-species a))))
 (define animal-diet (compose1 species-diet animal-species))
 
+(provide
+  species-final-size
+  animal-species-id
+  animal-class
+  animal-type
+  animal-environment
+  animal-properties
+  animal-restrictions
+  animal-final-size
+  animal-armored?
+  animal-diet)
+
+
 (define (animal-required-food-amount a)
   (define f (animal-diet a))
   (cond
@@ -96,6 +138,8 @@
     ; this is wrong but correct-ish for small animals, have to figure out pattern for real
     (animal-final-size a)]
    [else 0]))
+
+(provide animal-required-food-amount)
 
 ; build helpers
 
@@ -138,6 +182,8 @@
            properties
            restrictions
            (unlockable 1)))
+
+(provide make-fish)
 
 (module+ test
   (test-case "make-fish"
@@ -182,3 +228,5 @@
 
 (define (make-size n #:armored? [armored? #f]) (size (list (species-stage n #f)) armored?))
 (define (make-active-swimmer) (active-swimmer 6))
+
+(provide make-size make-active-swimmer)
