@@ -1,14 +1,11 @@
-#lang rosette/safe
+#lang racket
 
 (require
   "tank.rkt"
-  racket/contract
-  (only-in racket local-require))
+  racket/contract)
 
 (module+ test
-  (require
-    (only-in racket exn:fail:contract?)
-    rackunit))
+  (require rackunit))
 
 (struct species game-object-template
    ; symbol?
@@ -44,8 +41,11 @@
   #:transparent)
 (struct species-stage (size duration) #:transparent)
 
-(provide (struct-out size)
-         (struct-out species-stage))
+(provide (contract-out
+          [struct size ((stages (listof species-stage?))
+                        (armored? boolean?))]
+          [struct species-stage ((size exact-positive-integer?)
+                                 (duration exact-positive-integer?))]))
 
 (struct diet () #:transparent)
 (struct food diet (type period) #:transparent)

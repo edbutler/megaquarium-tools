@@ -1,13 +1,10 @@
-#lang rosette/safe
+#lang racket
 
 (provide
   (except-out
     (all-defined-out)
     tank-kind
     tank))
-
-(require
-  (only-in racket local-require))
 
 (module+ test
   (provide make-test-tank-kind)
