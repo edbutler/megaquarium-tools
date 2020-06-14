@@ -41,20 +41,13 @@
     (check-eq? (environment-temperature val) temp)
     (check-eq? (environment-quality val) quality)))
 
-(struct game-object-template (id) #:transparent)
-
-(provide
-  (contract-out
-   [struct game-object-template ((id symbol?))]))
-
-(struct tnktyp game-object-template
-  (min-dimensions
+(struct tnktyp
+  (id
+   min-dimensions
    max-dimensions
    volume-per-tile
    rounded?)
   #:transparent)
-
-(define tnktyp-id game-object-template-id)
 
 (define (make-tnktyp
           #:id id
@@ -81,7 +74,6 @@
                             exact-positive-integer?
                             exact-positive-integer?
                             exact-positive-integer?)])
-  tnktyp-id
   make-tnktyp)
 
 (module+ test

@@ -1,36 +1,10 @@
 #lang racket
 
 (require
-  "tank.rkt"
-  racket/contract)
+  "tank.rkt")
 
 (module+ test
   (require rackunit))
-
-(struct species game-object-template
-   ; symbol?
-   ; symbol? ('fish, 'coral', ...)
-  (class
-   ; symbol? ('stony_coral, 'grouper, ...)
-   type
-   ; size?
-   size
-   ; environment?: the min environment required (desired temp, min quality)
-   environment
-   ; diet?: what this species eats
-   diet
-   ; (listof property?): properties of this fish that impact others
-   properties
-   ; (listof restriction?): restrictions for this fishes placement.
-   ; all must hold for fish to be happy.
-   restrictions
-   ; unlockable?: when this fish can be researched
-   unlockable)
-  #:transparent)
-
-(define species-id game-object-template-id)
-
-(provide (struct-out species) species-id)
 
 ; duration=#f for final stage
 (struct size
@@ -41,11 +15,12 @@
   #:transparent)
 (struct species-stage (size duration) #:transparent)
 
-(provide (contract-out
-          [struct size ((stages (listof species-stage?))
-                        (armored? boolean?))]
-          [struct species-stage ((size exact-nonnegative-integer?)
-                                 (duration (or/c #f exact-positive-integer?)))]))
+(provide
+  (contract-out
+   [struct size ((stages (listof species-stage?))
+                 (armored? boolean?))]
+   [struct species-stage ((size exact-nonnegative-integer?)
+                          (duration (or/c #f exact-positive-integer?)))]))
 
 (struct diet () #:transparent)
 (struct food diet (type period) #:transparent)
@@ -90,6 +65,31 @@
          (struct-out requires-light)
          (struct-out wimp))
 
+(struct species
+   ; symbol?
+   ; symbol? ('fish, 'coral', ...)
+  (id
+   class
+   ; symbol? ('stony_coral, 'grouper, ...)
+   type
+   ; size?
+   size
+   ; environment?: the min environment required (desired temp, min quality)
+   environment
+   ; diet?: what this species eats
+   diet
+   ; (listof property?): properties of this fish that impact others
+   properties
+   ; (listof restriction?): restrictions for this fishes placement.
+   ; all must hold for fish to be happy.
+   restrictions
+   ; unlockable?: when this fish can be researched
+   unlockable)
+  #:transparent)
+
+(provide (struct-out species) species-id)
+
+; TODO why is this here?
 (struct unlockable (rank) #:transparent)
 
 (provide (struct-out unlockable))

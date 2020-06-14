@@ -25,7 +25,7 @@
     ; sort animals alphabetically, but not tanks
     (when (equal? class 'animal)
       (set! lst
-        (sort lst string<? #:key (λ (obj) (localize l10n (game-object-template-id obj))))))
+        (sort lst string<? #:key (λ (obj) (localize l10n (game-object-type-id obj))))))
     (cond
      [debug-print?
       (pretty-print lst)]

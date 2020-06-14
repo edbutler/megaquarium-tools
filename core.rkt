@@ -24,3 +24,9 @@
 
 ; symbol? -> symbol?
 (define tweak-id/symbol (compose1 string->symbol tweak-id/string))
+
+(define (game-object-type-id typ)
+  (cond
+   [(tnktyp? typ) (tnktyp-id typ)]
+   [(species? typ) (species-id typ)]
+   [else (error "unknown game object type")]))

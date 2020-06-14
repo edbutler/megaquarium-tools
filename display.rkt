@@ -66,7 +66,7 @@
   (define yml (display-func l10n obj))
 
   (write-yaml
-    (hash (localize l10n (game-object-template-id obj)) yml)
+    (hash (localize l10n (game-object-type-id obj)) yml)
     out
     #:indent 2
     #:sort-mapping-key (λ (s) (index-of key-order (string->symbol (car s))))
