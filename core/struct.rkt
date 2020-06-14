@@ -31,7 +31,5 @@
   
 (provide struct/kw)
 
-(define (test x) (add1 x))
-
 (module+ main
   (expand-once #'(struct/kw foo (bar [baz 25]))))
