@@ -1,11 +1,5 @@
 #lang racket
 
-(provide
-  (except-out
-    (all-defined-out)
-    tnktyp
-    tank))
-
 (module+ test
   (provide make-test-tnktyp)
   (require rackunit "../test.rkt"))
@@ -14,10 +8,14 @@
 (define cold-water 'cold-water)
 (define (temperature? t) (or (equal? t warm-water) (equal? t cold-water)))
 
+(provide warm-water cold-water temperature?)
+
 ; TODO unused
 (define salt-water 'salt-water)
 (define fresh-water 'fresh-water)
 (define (salinity? t) (or (equal? t salt-water) (equal? t fresh-water)))
+
+(provide salt-water fresh-water salinity?)
 
 (struct environment
   ; temperature?
@@ -25,6 +23,8 @@
    ; nonnegative-integer? (between 0 and 100)
    quality)
   #:transparent)
+
+(provide (struct-out environment))
 
 (module+ test
   (test-case "can create environment"
@@ -40,6 +40,8 @@
   ; symbol?
   (id)
   #:transparent)
+
+(provide (struct-out game-object-template))
 
 (struct tnktyp game-object-template
   (min-dimensions
@@ -70,6 +72,10 @@
   (unless (boolean? rounded?) (err "boolean?" 4))
 
   (tnktyp id min-dim max-dim density rounded?))
+
+(provide (struct-out tnktyp)
+         tnktyp-id
+         make-tnktyp)
 
 (module+ test
   (let ()
@@ -158,6 +164,10 @@
 
   (define sz (or size (calculate-tank-size kind (car dim) (cdr dim))))
   (tank id name kind sz env light))
+
+(provide (struct-out tank)
+         calculate-tank-size
+         make-tank)
 
 (module+ test
   (let ()
