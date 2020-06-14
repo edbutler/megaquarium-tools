@@ -190,7 +190,7 @@
       self)]
    [(rounded-tank)
     (for-tank-of
-      (λ (tnk) (tank-kind-rounded? (tank-type tnk)))
+      (λ (tnk) (tnktyp-rounded? (tank-type tnk)))
       dom
       self)]
    [(dislikes-food-competitors)
@@ -238,12 +238,12 @@
     (define dom (make-concrete-domain (list (cons tnk animals))))
     (equal? expected (tank-constraints-satisfied? dom tnk)))
 
-  (define basic-tank-kind (make-test-tank-kind))
-  (define rounded-tank-kind (make-test-tank-kind #:rounded? #t))
+  (define basic-tnktyp (make-test-tnktyp))
+  (define rounded-tnktyp (make-test-tnktyp #:rounded? #t))
 
   (define (make-simple-tank
             #:size sz
-            #:type [typ basic-tank-kind]
+            #:type [typ basic-tnktyp]
             #:lighting [lght 0]
             #:temp [temp warm-water]
             #:quality [qlty 100])

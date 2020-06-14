@@ -3,11 +3,11 @@
 (provide
   (except-out
     (all-defined-out)
-    tank-kind
+    tnktyp
     tank))
 
 (module+ test
-  (provide make-test-tank-kind)
+  (provide make-test-tnktyp)
   (require rackunit "../test.rkt"))
 
 (define warm-water 'warm-water)
@@ -41,7 +41,7 @@
   (id)
   #:transparent)
 
-(struct tank-kind game-object-template
+(struct tnktyp game-object-template
   (min-dimensions
    max-dimensions
    volume-per-tile
@@ -49,9 +49,9 @@
    rounded?)
   #:transparent)
 
-(define tank-kind-id game-object-template-id)
+(define tnktyp-id game-object-template-id)
 
-(define (make-tank-kind
+(define (make-tnktyp
           #:id id
           #:min min-dim
           #:max max-dim
@@ -60,7 +60,7 @@
   (local-require (only-in racket raise-argument-error symbol? positive-integer?))
 
   (define (err contract pos)
-    (raise-argument-error 'make-tank-kind contract pos id min-dim max-dim density rounded?))
+    (raise-argument-error 'make-tnktyp contract pos id min-dim max-dim density rounded?))
   (define (int-pair? v) (and (pair? v) (positive-integer? (car v)) (positive-integer? (cdr v))))
 
   (unless (symbol? id) (err "symbol?" 0))
@@ -69,7 +69,7 @@
   (unless (positive? density) (err "positive?" 3))
   (unless (boolean? rounded?) (err "boolean?" 4))
 
-  (tank-kind id min-dim max-dim density rounded?))
+  (tnktyp id min-dim max-dim density rounded?))
 
 (module+ test
   (let ()
@@ -79,32 +79,32 @@
     (define density 2)
     (define rounded? #t)
 
-    (test-case "can create tank-kind"
-      (define val (tank-kind id min-dim max-dim density rounded?))
-      (check-eq? (tank-kind-id val) id)
-      (check-eq? (tank-kind-min-dimensions val) min-dim)
-      (check-eq? (tank-kind-max-dimensions val) max-dim)
-      (check-eq? (tank-kind-volume-per-tile val) density)
-      (check-eq? (tank-kind-rounded? val) rounded?))
+    (test-case "can create tnktyp"
+      (define val (tnktyp id min-dim max-dim density rounded?))
+      (check-eq? (tnktyp-id val) id)
+      (check-eq? (tnktyp-min-dimensions val) min-dim)
+      (check-eq? (tnktyp-max-dimensions val) max-dim)
+      (check-eq? (tnktyp-volume-per-tile val) density)
+      (check-eq? (tnktyp-rounded? val) rounded?))
 
-    (test-case "can use make-tank-kind"
+    (test-case "can use make-tnktyp"
       (define val
-        (make-tank-kind
+        (make-tnktyp
           #:id id
           #:min min-dim
           #:max max-dim
           #:density density
           #:rounded? rounded?))
-      (define expected (tank-kind id min-dim max-dim density rounded?))
+      (define expected (tnktyp id min-dim max-dim density rounded?))
       (check-equal? val expected)))
 
-  (define (make-test-tank-kind
+  (define (make-test-tnktyp
             #:id [id #f]
             #:min [min-dim (cons 2 2)]
             #:max [max-dim (cons 4 4)]
             #:density [density 3]
             #:rounded? [rounded? #f])
-    (make-tank-kind
+    (make-tnktyp
       #:id (or id (fresh-symbol))
       #:min min-dim
       #:max max-dim
@@ -118,7 +118,7 @@
   (id
    ; string?: The name used in game
    name
-   ; tank-kind?
+   ; tnktyp?
    type
    ; positive-integer?
    size
@@ -130,7 +130,7 @@
 
 (define (calculate-tank-size kind x-dim y-dim)
   (local-require (only-in racket exact-ceiling))
-  (exact-ceiling (* x-dim y-dim (tank-kind-volume-per-tile kind))))
+  (exact-ceiling (* x-dim y-dim (tnktyp-volume-per-tile kind))))
 
 (define (make-tank
           #:id id
@@ -149,7 +149,7 @@
 
   (unless (nonnegative-integer? id) (err "nonnegative-integer?" 0))
   (unless (string? name) (err "string?" 1))
-  (unless (tank-kind? kind) (err "tank-kind?" 2))
+  (unless (tnktyp? kind) (err "tnktyp?" 2))
   (unless (or dim size) (error "need to define either size or dimensions"))
   (unless (or (not dim) (int-pair? dim)) (err "(pairof positive-integer? positive-integer?" 3))
   (unless (or (not size) (positive-integer? size)) (err "positive-integer?" 4))
@@ -163,7 +163,7 @@
   (let ()
     (define id 2534)
     (define name "A name")
-    (define kind (make-test-tank-kind #:density 5))
+    (define kind (make-test-tnktyp #:density 5))
     (define dim (cons 3 6))
     (define size 90)
     (define env (environment warm-water 50))

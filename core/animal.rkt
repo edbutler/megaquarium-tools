@@ -44,8 +44,8 @@
 (provide (contract-out
           [struct size ((stages (listof species-stage?))
                         (armored? boolean?))]
-          [struct species-stage ((size exact-positive-integer?)
-                                 (duration exact-positive-integer?))]))
+          [struct species-stage ((size exact-nonnegative-integer?)
+                                 (duration (or/c #f exact-positive-integer?)))]))
 
 (struct diet () #:transparent)
 (struct food diet (type period) #:transparent)

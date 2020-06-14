@@ -75,7 +75,7 @@ JSON
   ;(display-to-file text "test.json" #:exists 'replace) ; for debugging when things go wrong
   (string->jsexpr text))
 
-(define (read-tank-kind jsexpr)
+(define (read-tnktyp jsexpr)
   (define id (string->symbol (hash-ref jsexpr 'id)))
   (define density (jsexpr-ref jsexpr 'tank 'volumePerTile))
   (define (dim pr) (cons (hash-ref pr 'm) (hash-ref pr 'n)))
@@ -83,7 +83,7 @@ JSON
   (define max-dim (dim (jsexpr-ref jsexpr 'multisize 'baseSize)))
   (define rounded? (hash-ref (hash-ref jsexpr 'tank) 'isRounded #f))
 
-  (make-tank-kind
+  (make-tnktyp
     #:id id
     #:min min-dim
     #:max max-dim
@@ -92,7 +92,7 @@ JSON
 
 (define (read-tanks-from-file filename)
   (define jsexpr (read-json-file filename))
-  (map read-tank-kind (hash-ref jsexpr 'objects)))
+  (map read-tnktyp (hash-ref jsexpr 'objects)))
 
 ; number?, symbol? -> predator?
 ; the game mechanics for eating, based on final size
@@ -203,9 +203,9 @@ JSON
          [else #f]))
       j-object-list))
 
-  (define str-ids/tank-kinds
+  (define str-ids/tnktyps
     (map
-      (λ (kind) (cons (symbol->string (tank-kind-id kind)) kind))
+      (λ (kind) (cons (symbol->string (tnktyp-id kind)) kind))
       (game-data-tanks gdata)))
 
   (define tanks
@@ -216,7 +216,7 @@ JSON
           (define id-str (hash-ref jobj 'specId))
 
           ; id-strs look like "<tank-type-id>_<x-dim>-<y-dim>" (e.g., lagoon_tank_3_4)
-          (define id/kind (findf (λ (pr) (string-prefix? id-str (car pr))) str-ids/tank-kinds))
+          (define id/kind (findf (λ (pr) (string-prefix? id-str (car pr))) str-ids/tnktyps))
           (match-define (list x y)
             (map string->number
                  (string-split (substring id-str (add1 (string-length (car id/kind)))) "_")))

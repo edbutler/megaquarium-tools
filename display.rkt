@@ -57,7 +57,7 @@
   (define display-func
     (cond
       [(species? obj) display-species]
-      [(tank-kind? obj) display-tank]
+      [(tnktyp? obj) display-tank]
       [else (error "unknown object type")]))
 
   ; want a hash for nice printing, but want to keep them in order
@@ -106,16 +106,16 @@
   (define yml (make-hash))
   (define (add key entry) (hash-set! yml (symbol->string key) entry))
 
-  (add 'id (tweak-id/string (tank-kind-id tnk)))
-  (match-define (cons min-x min-y) (tank-kind-min-dimensions tnk))
-  (match-define (cons max-x max-y) (tank-kind-max-dimensions tnk))
-  (define density (tank-kind-volume-per-tile tnk))
+  (add 'id (tweak-id/string (tnktyp-id tnk)))
+  (match-define (cons min-x min-y) (tnktyp-min-dimensions tnk))
+  (match-define (cons max-x max-y) (tnktyp-max-dimensions tnk))
+  (define density (tnktyp-volume-per-tile tnk))
   (define min-size (calculate-tank-size tnk min-x min-y))
   (define max-size (calculate-tank-size tnk max-x max-y))
   (add 'size
        (format "~ax~a to ~ax~a, ~a vol/tile (~a to ~a)"
                min-x min-y max-x max-y density min-size max-size))
-  (when (tank-kind-rounded? tnk)
+  (when (tnktyp-rounded? tnk)
     (add 'properties (list "Rounded")))
   yml)
 

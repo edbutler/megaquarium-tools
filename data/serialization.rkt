@@ -23,7 +23,7 @@
 
   (define (format-tank tnk)
     `(tank
-      #:type ,(tweak-id/symbol (tank-kind-id (tank-type tnk)))
+      #:type ,(tweak-id/symbol (tnktyp-id (tank-type tnk)))
       #:size ,(tank-size tnk)))
 
   (define (format-exhibit exh)
