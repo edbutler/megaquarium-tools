@@ -4,27 +4,34 @@
   (provide make-test-tnktyp)
   (require rackunit "../test.rkt"))
 
+(define (temperature? t) (or (equal? t warm-water) (equal? t cold-water)))
 (define warm-water 'warm-water)
 (define cold-water 'cold-water)
-(define (temperature? t) (or (equal? t warm-water) (equal? t cold-water)))
 
-(provide warm-water cold-water temperature?)
+(provide
+  (contract-out [temperature? predicate/c]
+                [warm-water temperature?]
+                [cold-water temperature?]))
 
 ; TODO unused
 (define salt-water 'salt-water)
 (define fresh-water 'fresh-water)
 (define (salinity? t) (or (equal? t salt-water) (equal? t fresh-water)))
 
-(provide salt-water fresh-water salinity?)
+(provide
+  (contract-out [salinity? predicate/c]
+                [salt-water salinity?]
+                [fresh-water salinity?]))
 
 (struct environment
-  ; temperature?
   (temperature
-   ; nonnegative-integer? (between 0 and 100)
    quality)
   #:transparent)
 
-(provide (struct-out environment))
+(provide
+  (contract-out
+   [struct environment ((temperature temperature?)
+                        (quality (integer-in 0 100)))]))
 
 (module+ test
   (test-case "can create environment"
@@ -32,22 +39,18 @@
     (define quality 85)
     (define val (environment temp quality))
     (check-eq? (environment-temperature val) temp)
-    (check-eq? (environment-quality val) quality))
+    (check-eq? (environment-quality val) quality)))
 
-)
+(struct game-object-template (id) #:transparent)
 
-(struct game-object-template
-  ; symbol?
-  (id)
-  #:transparent)
-
-(provide (struct-out game-object-template))
+(provide
+  (contract-out
+   [struct game-object-template ((id symbol?))]))
 
 (struct tnktyp game-object-template
   (min-dimensions
    max-dimensions
    volume-per-tile
-   ; boolean?
    rounded?)
   #:transparent)
 
@@ -59,23 +62,27 @@
           #:max max-dim
           #:density density
           #:rounded? rounded?)
-  (local-require (only-in racket raise-argument-error symbol? positive-integer?))
-
-  (define (err contract pos)
-    (raise-argument-error 'make-tnktyp contract pos id min-dim max-dim density rounded?))
-  (define (int-pair? v) (and (pair? v) (positive-integer? (car v)) (positive-integer? (cdr v))))
-
-  (unless (symbol? id) (err "symbol?" 0))
-  (unless (int-pair? min-dim) (err "(pairof positive-integer? positive-integer?)" 1))
-  (unless (int-pair? max-dim) (err "(pairof positive-integer? positive-integer?)" 2))
-  (unless (positive? density) (err "positive?" 3))
-  (unless (boolean? rounded?) (err "boolean?" 4))
-
   (tnktyp id min-dim max-dim density rounded?))
 
-(provide (struct-out tnktyp)
-         tnktyp-id
-         make-tnktyp)
+(define (calculate-tank-size kind x-dim y-dim)
+  (local-require (only-in racket exact-ceiling))
+  (exact-ceiling (* x-dim y-dim (tnktyp-volume-per-tile kind))))
+
+(define dim-pair/c (cons/c exact-positive-integer? exact-positive-integer?))
+
+(provide
+  (contract-out
+   [struct tnktyp ((id symbol?)
+                   (min-dimensions dim-pair/c)
+                   (max-dimensions dim-pair/c)
+                   (volume-per-tile positive?)
+                   (rounded? boolean?))]
+   [calculate-tank-size (-> tnktyp?
+                            exact-positive-integer?
+                            exact-positive-integer?
+                            exact-positive-integer?)])
+  tnktyp-id
+  make-tnktyp)
 
 (module+ test
   (let ()
@@ -120,23 +127,13 @@
 ; A fully specified tank.
 
 (struct tank
-   ; integer?
   (id
-   ; string?: The name used in game
    name
-   ; tnktyp?
    type
-   ; positive-integer?
    size
-   ; environment?
    environment
-   ; nonnegative-integer?
    lighting)
   #:transparent)
-
-(define (calculate-tank-size kind x-dim y-dim)
-  (local-require (only-in racket exact-ceiling))
-  (exact-ceiling (* x-dim y-dim (tnktyp-volume-per-tile kind))))
 
 (define (make-tank
           #:id id
@@ -146,28 +143,19 @@
           #:size [size #f]
           #:environment env
           #:lighting light)
-  (local-require
-    (only-in racket raise-argument-error symbol? positive-integer? nonnegative-integer? string? error))
-
-  (define (err contract pos)
-    (raise-argument-error 'make-tank contract pos id name kind dim size env light))
-  (define (int-pair? v) (and (pair? v) (positive-integer? (car v)) (positive-integer? (cdr v))))
-
-  (unless (nonnegative-integer? id) (err "nonnegative-integer?" 0))
-  (unless (string? name) (err "string?" 1))
-  (unless (tnktyp? kind) (err "tnktyp?" 2))
   (unless (or dim size) (error "need to define either size or dimensions"))
-  (unless (or (not dim) (int-pair? dim)) (err "(pairof positive-integer? positive-integer?" 3))
-  (unless (or (not size) (positive-integer? size)) (err "positive-integer?" 4))
-  (unless (environment? env) (err "environment?" 5))
-  (unless (nonnegative-integer? light) (err "nonnegative-integer?" 6))
-
   (define sz (or size (calculate-tank-size kind (car dim) (cdr dim))))
   (tank id name kind sz env light))
 
-(provide (struct-out tank)
-         calculate-tank-size
-         make-tank)
+(provide
+  (contract-out
+   [struct tank ((id integer?)
+                 (name string?)
+                 (type tnktyp?)
+                 (size exact-positive-integer?)
+                 (environment environment?)
+                 (lighting exact-nonnegative-integer?))])
+  make-tank)
 
 (module+ test
   (let ()
