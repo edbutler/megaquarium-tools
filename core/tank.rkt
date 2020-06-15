@@ -2,6 +2,7 @@
 
 (module+ test
   (provide make-test-tnktyp)
+  (require (submod "..")) ; necessary to test contracts
   (require rackunit "../test.rkt"))
 
 (define (temperature? t) (or (equal? t warm-water) (equal? t cold-water)))
@@ -73,8 +74,13 @@
    [calculate-tank-size (-> tnktyp?
                             exact-positive-integer?
                             exact-positive-integer?
-                            exact-positive-integer?)])
-  make-tnktyp)
+                            exact-positive-integer?)]
+   [make-tnktyp (-> #:id symbol?
+                    #:min dim-pair/c
+                    #:max dim-pair/c
+                    #:density positive?
+                    #:rounded? boolean?
+                    tnktyp?)]))
 
 (module+ test
   (let ()
@@ -92,6 +98,9 @@
       (check-eq? (tnktyp-volume-per-tile val) density)
       (check-eq? (tnktyp-rounded? val) rounded?))
 
+    (test-case "bad tnktyp arg violates contract"
+      (check-exn exn:fail:contract? (thunk (tnktyp id min-dim max-dim "badarg" rounded?))))
+
     (test-case "can use make-tnktyp"
       (define val
         (make-tnktyp
@@ -101,7 +110,18 @@
           #:density density
           #:rounded? rounded?))
       (define expected (tnktyp id min-dim max-dim density rounded?))
-      (check-equal? val expected)))
+      (check-equal? val expected))
+
+    (test-case "bad make-tnktyp arg violates contract"
+      (check-exn
+        exn:fail:contract?
+        (thunk
+          (make-tnktyp
+            #:id id
+            #:min min-dim
+            #:max max-dim
+            #:density "badarg"
+            #:rounded? rounded?)))))
 
   (define (make-test-tnktyp
             #:id [id #f]
