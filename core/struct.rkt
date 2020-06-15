@@ -1,6 +1,11 @@
 #lang racket
 
-(require (for-syntax syntax/parse racket/syntax))
+(require
+  racket/provide-syntax
+  (for-syntax
+    racket/syntax
+    racket/provide-syntax
+    syntax/parse))
 
 (begin-for-syntax
   (define symbol->keyword (compose1 string->keyword symbol->string))
@@ -24,12 +29,23 @@
    [(_ id:id (field:field ...) struct-option ...)
     (with-syntax ([ctor (format-id #'id "make-~a" #'id)])
       #`(begin
-        (struct id (field.id ...) struct-option ...)
+        (struct id (field.id ...) #:transparent struct-option ...)
         (define (ctor #,@(flatten-syntax #'(field.kw-arg ...)))
           (id field.id ...))
       ))]))
   
+(define-provide-syntax struct/kw-contract-out
+  (syntax-parser
+   [(_ id:id)
+    (with-syntax ([ctor (format-id #'id "make-~a" #'id)])
+      #'(combine-out
+        (struct-out id)
+        ctor))]))
+
 (provide struct/kw)
 
 (module+ main
-  (expand-once #'(struct/kw foo (bar [baz 25]))))
+  (expand-once #'(struct/kw foo (bar [baz 25])))
+  (struct/kw foo (bar [baz 25]))
+  (provide (struct/kw-contract-out foo))
+)
