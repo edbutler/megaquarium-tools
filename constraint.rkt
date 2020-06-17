@@ -248,7 +248,7 @@
             #:temp [temp warm-water]
             #:quality [qlty 100])
     (define env (environment temp qlty))
-    (make-tank #:id 1 #:name "T" #:kind typ #:size sz #:environment env #:lighting lght))
+    (make-tank #:id 1 #:name "T" #:type typ #:size sz #:environment env #:lighting lght))
 
   (test-case "Empty tank is okay"
     (for ([sz '(1 10 50)])

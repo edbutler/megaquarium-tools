@@ -127,36 +127,22 @@
 
 ; A fully specified tank.
 
-(struct tank
+(struct/kw tank
   (id
    name
    type
    size
    environment
-   lighting)
-  #:transparent)
-
-(define (make-tank
-          #:id id
-          #:name name
-          #:kind kind
-          #:dimensions [dim #f]
-          #:size [size #f]
-          #:environment env
-          #:lighting light)
-  (unless (or dim size) (error "need to define either size or dimensions"))
-  (define sz (or size (calculate-tank-size kind (car dim) (cdr dim))))
-  (tank id name kind sz env light))
+   lighting))
 
 (provide
-  (contract-out
-   [struct tank ((id integer?)
-                 (name string?)
-                 (type tnktyp?)
-                 (size exact-positive-integer?)
-                 (environment environment?)
-                 (lighting exact-nonnegative-integer?))])
-  make-tank)
+  (struct/kw-contract-out
+    tank ((id exact-positive-integer?)
+          (name string?)
+          (type tnktyp?)
+          (size exact-positive-integer?)
+          (environment environment?)
+          (lighting exact-nonnegative-integer?))))
 
 (module+ test
   (let ()
@@ -177,24 +163,12 @@
       (check-eq? (tank-environment val) env)
       (check-eq? (tank-lighting val) lighting))
 
-    (test-case "can use make-tank with dimensions"
+    (test-case "can use make-tank"
       (define val
         (make-tank
           #:id id
           #:name name
-          #:kind kind
-          #:dimensions dim
-          #:environment env
-          #:lighting lighting))
-      (define expected (tank id name kind size env lighting))
-      (check-equal? val expected))
-
-    (test-case "can use make-tank with size"
-      (define val
-        (make-tank
-          #:id id
-          #:name name
-          #:kind kind
+          #:type kind
           #:size size
           #:environment env
           #:lighting lighting))

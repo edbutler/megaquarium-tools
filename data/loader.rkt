@@ -221,11 +221,12 @@ JSON
             (map string->number
                  (string-split (substring id-str (add1 (string-length (car id/kind)))) "_")))
 
+          (define kind (cdr id/kind))
           (make-tank
             #:id (hash-ref jobj 'uid)
             #:name (hash-ref jobj 'name)
-            #:kind (cdr id/kind)
-            #:dimensions (cons x y)
+            #:type kind
+            #:size (calculate-tank-size kind x y)
             #:environment (environment warm-water 0)
             #:lighting 0)] ; TODO need to actually load all of these
          [else #f]))
