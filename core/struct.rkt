@@ -58,7 +58,7 @@
                [ctor (-> #,@(flatten-syntax #'((field.kw contract) ...)) predicate)])
             modes))]))))
 
-(provide struct/kw)
+(provide struct/kw struct/kw-contract-out)
 
 (module+ main
   (expand-once #'(struct/kw foo (bar [baz 25])))

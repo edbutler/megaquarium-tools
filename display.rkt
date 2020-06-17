@@ -109,7 +109,7 @@
   (add 'id (tweak-id/string (tnktyp-id tnk)))
   (match-define (cons min-x min-y) (tnktyp-min-dimensions tnk))
   (match-define (cons max-x max-y) (tnktyp-max-dimensions tnk))
-  (define density (tnktyp-volume-per-tile tnk))
+  (define density (tnktyp-density tnk))
   (define min-size (calculate-tank-size tnk min-x min-y))
   (define max-size (calculate-tank-size tnk max-x max-y))
   (add 'size

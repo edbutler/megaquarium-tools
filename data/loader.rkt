@@ -85,8 +85,8 @@ JSON
 
   (make-tnktyp
     #:id id
-    #:min min-dim
-    #:max max-dim
+    #:min-dimensions min-dim
+    #:max-dimensions max-dim
     #:density density
     #:rounded? rounded?))
 

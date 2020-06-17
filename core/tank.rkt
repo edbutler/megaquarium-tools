@@ -1,5 +1,7 @@
 #lang racket
 
+(require "struct.rkt")
+
 (module+ test
   (provide make-test-tnktyp)
   (require (submod "..")) ; necessary to test contracts
@@ -42,45 +44,32 @@
     (check-eq? (environment-temperature val) temp)
     (check-eq? (environment-quality val) quality)))
 
-(struct tnktyp
+(struct/kw tnktyp
   (id
    min-dimensions
    max-dimensions
-   volume-per-tile
-   rounded?)
-  #:transparent)
-
-(define (make-tnktyp
-          #:id id
-          #:min min-dim
-          #:max max-dim
-          #:density density
-          #:rounded? rounded?)
-  (tnktyp id min-dim max-dim density rounded?))
+   ; units of volume per tile
+   density
+   rounded?))
 
 (define (calculate-tank-size kind x-dim y-dim)
   (local-require (only-in racket exact-ceiling))
-  (exact-ceiling (* x-dim y-dim (tnktyp-volume-per-tile kind))))
+  (exact-ceiling (* x-dim y-dim (tnktyp-density kind))))
 
 (define dim-pair/c (cons/c exact-positive-integer? exact-positive-integer?))
 
 (provide
+  (struct/kw-contract-out
+    tnktyp ((id symbol?)
+            (min-dimensions dim-pair/c)
+            (max-dimensions dim-pair/c)
+            (density positive?)
+            (rounded? boolean?)))
   (contract-out
-   [struct tnktyp ((id symbol?)
-                   (min-dimensions dim-pair/c)
-                   (max-dimensions dim-pair/c)
-                   (volume-per-tile positive?)
-                   (rounded? boolean?))]
    [calculate-tank-size (-> tnktyp?
                             exact-positive-integer?
                             exact-positive-integer?
-                            exact-positive-integer?)]
-   [make-tnktyp (-> #:id symbol?
-                    #:min dim-pair/c
-                    #:max dim-pair/c
-                    #:density positive?
-                    #:rounded? boolean?
-                    tnktyp?)]))
+                            exact-positive-integer?)]))
 
 (module+ test
   (let ()
@@ -95,7 +84,7 @@
       (check-eq? (tnktyp-id val) id)
       (check-eq? (tnktyp-min-dimensions val) min-dim)
       (check-eq? (tnktyp-max-dimensions val) max-dim)
-      (check-eq? (tnktyp-volume-per-tile val) density)
+      (check-eq? (tnktyp-density val) density)
       (check-eq? (tnktyp-rounded? val) rounded?))
 
     (test-case "bad tnktyp arg violates contract"
@@ -105,8 +94,8 @@
       (define val
         (make-tnktyp
           #:id id
-          #:min min-dim
-          #:max max-dim
+          #:min-dimensions min-dim
+          #:max-dimensions max-dim
           #:density density
           #:rounded? rounded?))
       (define expected (tnktyp id min-dim max-dim density rounded?))
@@ -118,21 +107,21 @@
         (thunk
           (make-tnktyp
             #:id id
-            #:min min-dim
-            #:max max-dim
+            #:min-dimensions min-dim
+            #:max-dimensions max-dim
             #:density "badarg"
             #:rounded? rounded?)))))
 
   (define (make-test-tnktyp
             #:id [id #f]
-            #:min [min-dim (cons 2 2)]
-            #:max [max-dim (cons 4 4)]
+            #:min-dimensions [min-dim (cons 2 2)]
+            #:max-dimensions [max-dim (cons 4 4)]
             #:density [density 3]
             #:rounded? [rounded? #f])
     (make-tnktyp
       #:id (or id (fresh-symbol))
-      #:min min-dim
-      #:max max-dim
+      #:min-dimensions min-dim
+      #:max-dimensions max-dim
       #:density density
       #:rounded? rounded?)))
 
