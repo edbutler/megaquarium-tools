@@ -27,10 +27,13 @@
 (struct scavenger diet () #:transparent)
 (struct does-not-eat diet () #:transparent)
 
-(provide (struct-out diet)
-         (struct-out food)
-         (struct-out scavenger)
-         (struct-out does-not-eat))
+(provide
+  (struct-out diet)
+  (contract-out
+   [struct food ((type symbol?)
+                 (period exact-positive-integer?))])
+  (struct-out scavenger)
+  (struct-out does-not-eat))
 
 (struct property () #:transparent)
 (struct bully property () #:transparent)
@@ -39,31 +42,36 @@
          (struct-out bully))
 
 (struct restriction () #:transparent)
-(struct shoaler restriction (count) #:transparent)
-(struct active-swimmer restriction (multiplier) #:transparent)
-; size=#f means means any size
-(struct predator restriction (type size) #:transparent)
+(struct wimp restriction () #:transparent)
 (struct dislikes-conspecifics restriction () #:transparent)
 (struct dislikes-congeners restriction () #:transparent)
 (struct only-congeners restriction () #:transparent)
 (struct rounded-tank restriction () #:transparent)
+(struct active-swimmer restriction () #:transparent)
 (struct dislikes-food-competitors restriction () #:transparent)
 (struct dislikes-light restriction () #:transparent)
 (struct requires-light restriction (amount) #:transparent)
-(struct wimp restriction () #:transparent)
+(struct shoaler restriction (count) #:transparent)
+; size=#f means means any size
+(struct predator restriction (type size) #:transparent)
 
-(provide (struct-out restriction)
-         (struct-out shoaler)
-         (struct-out active-swimmer)
-         (struct-out predator)
-         (struct-out dislikes-conspecifics)
-         (struct-out dislikes-congeners)
-         (struct-out only-congeners)
-         (struct-out rounded-tank)
-         (struct-out dislikes-food-competitors)
-         (struct-out dislikes-light)
-         (struct-out requires-light)
-         (struct-out wimp))
+(define active-swimmer-multiplier 6)
+
+(provide
+  (struct-out restriction)
+  (struct-out wimp)
+  (struct-out dislikes-conspecifics)
+  (struct-out dislikes-congeners)
+  (struct-out only-congeners)
+  (struct-out rounded-tank)
+  (struct-out active-swimmer)
+  (struct-out dislikes-food-competitors)
+  (struct-out dislikes-light)
+  (contract-out
+   [struct requires-light ((amount exact-positive-integer?))]
+   [struct shoaler ((count exact-positive-integer?))]
+   [struct predator ((type symbol?) (size (or/c #f exact-positive-integer?)))]
+   [active-swimmer-multiplier exact-positive-integer?]))
 
 (struct species
    ; symbol?

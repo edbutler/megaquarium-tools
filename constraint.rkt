@@ -162,14 +162,13 @@
       (λ (other) (not (can-eat? restr other)))
       dom
       self)]
-   [(active-swimmer multiplier)
+   [(active-swimmer)
     (for-tank-of
       (λ (tnk)
         (>= (tank-size tnk)
             ; in the interest of better integer arithmetic, have to use addition
             (let ([s (animal-final-size self)])
-              ;(assert (= 6 multiplier))
-              (unless (= 6 multiplier) (error "active swimmer multiplier must be 6"))
+              ;multiplier is always 6
               (+ s s s s s s))))
       dom
       self)]

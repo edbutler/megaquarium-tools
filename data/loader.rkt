@@ -162,7 +162,7 @@ JSON
           (maybe-list j
             (map (curry make-predator final-size) (hash-keys j))))
         ; likes/dislikes
-        (when-has-stat 'activeSwimmer (active-swimmer 6))
+        (when-has-stat 'activeSwimmer (active-swimmer))
         (when-has-stat 'needsRounded (rounded-tank))
         (when-has-stat 'dislikesConspecifics (dislikes-conspecifics))
         (when-has-stat 'dislikesCongeners (dislikes-congeners))

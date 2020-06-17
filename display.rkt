@@ -40,9 +40,9 @@
     (if (and size (> size 0))
       (format "Preys on ~a of size ~a" (localize l10n type) size)
       (format "Preys on ~a" (localize l10n type)))]
-   [(active-swimmer multiplier)
+   [(active-swimmer)
     (format "Active swimmer, needs size ~a"
-            (* multiplier (species-final-size spc)))]
+            (* active-swimmer-multiplier (species-final-size spc)))]
    [(dislikes-conspecifics) "Dislikes conspecifics (same species)"]
    [(dislikes-congeners) "Dislikes congeners (same type)"]
    [(only-congeners) "Congeners only (same type)"]

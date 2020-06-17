@@ -27,7 +27,7 @@
     #:name (or name "tank")
     #:type (make-tnktyp #f #f #f (ormap (λ (a) (ormap rounded-tank? (animal-restrictions a))) animals))
     #:size (max (sum animal-final-size animals)
-                (max-by (λ (a) (or (ormap (λ (r) (and (active-swimmer? r) (* (active-swimmer-multiplier r) (animal-final-size a))))
+                (max-by (λ (a) (or (ormap (λ (r) (and (active-swimmer? r) (* active-swimmer-multiplier (animal-final-size a))))
                                           (animal-restrictions a))
                                    0))
                         animals))
