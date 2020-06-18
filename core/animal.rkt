@@ -1,6 +1,7 @@
 #lang racket
 
 (require
+  "struct.rkt"
   "tank.rkt")
 
 (module+ test
@@ -73,29 +74,39 @@
    [struct predator ((type symbol?) (size (or/c #f exact-positive-integer?)))]
    [active-swimmer-multiplier exact-positive-integer?]))
 
-(struct species
+(struct/kw species
    ; symbol?
    ; symbol? ('fish, 'coral', ...)
   (id
    class
-   ; symbol? ('stony_coral, 'grouper, ...)
    type
-   ; size?
    size
-   ; environment?: the min environment required (desired temp, min quality)
    environment
-   ; diet?: what this species eats
    diet
-   ; (listof property?): properties of this fish that impact others
    properties
-   ; (listof restriction?): restrictions for this fishes placement.
-   ; all must hold for fish to be happy.
    restrictions
-   ; unlockable?: when this fish can be researched
-   unlockable)
-  #:transparent)
+   unlockable))
 
-(provide (struct-out species) species-id)
+(provide
+  (struct/kw-contract-out
+    species ((id symbol?)
+             (class species-class?)
+             (type symbol?)
+             (size size?)
+             (environment environment?)
+             (diet diet?)
+             (properties (listof property?))
+             (restrictions (listof restriction?))
+             (unlockable unlockable?))))
+
+(define (species-class? c) (or (equal? c fish-class) (equal? c coral-class)))
+(define fish-class 'fish)
+(define coral-class 'coral)
+
+(provide
+  (contract-out [species-class? predicate/c]
+                [fish-class species-class?]
+                [coral-class species-class?]))
 
 ; TODO why is this here?
 (struct unlockable (rank) #:transparent)
@@ -108,7 +119,10 @@
    species)
   #:transparent)
 
-(provide (struct-out animal))
+(provide
+  (contract-out
+   [struct animal ((id exact-positive-integer?)
+                   (species species?))]))
 
 ; access helpers
 

@@ -34,7 +34,7 @@
     (apply make-fish `(,id ,typ ,@args ,@extra-args)))
     
     (define (make-animal spc)
-      (animal (fresh-string) spc)))
+      (animal (fresh-integer) spc)))
 
 (struct domain
   (in-tank?
@@ -86,9 +86,9 @@
     (define s1 (make-simple-species))
     (define s2 (make-simple-species))
     (test-true "same-species? #t for same"
-      (same-species? (animal 'a s1) (animal 'b s1)))
+      (same-species? (animal 1 s1) (animal 2 s1)))
     (test-false "same-species? #f for different"
-      (same-species? (animal 'a s1) (animal 'b s2)))))
+      (same-species? (animal 1 s1) (animal 2 s2)))))
 
 (define (same-type? x y)
   (equal? (animal-type x) (animal-type y)))
@@ -99,11 +99,11 @@
     (define s2 (make-simple-species 'typ1))
     (define s3 (make-simple-species 'typ2))
     (test-true "same-type? #t for same species"
-      (same-type? (animal 'a s1) (animal 'b s1)))
+      (same-type? (animal 1 s1) (animal 2 s1)))
     (test-true "same-type? #t for same type diff species"
-      (same-type? (animal 'a s1) (animal 'b s2)))
+      (same-type? (animal 1 s1) (animal 2 s2)))
     (test-false "same-type? #f for different types"
-      (same-type? (animal 'a s1) (animal 'b s3)))))
+      (same-type? (animal 1 s1) (animal 2 s3)))))
 
 (define (count-in-same-tank f dom animl)
   (count

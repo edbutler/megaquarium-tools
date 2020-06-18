@@ -1,15 +1,18 @@
 ; test utilities
 #lang racket
 
-(provide fresh-string fresh-symbol check-contract)
+(provide fresh-integer fresh-string fresh-symbol check-contract)
 
 (require rackunit)
 
 (define counter 0)
 
-(define (fresh-string)
+(define (fresh-integer)
   (set! counter (add1 counter))
-  (format "s~a" counter))
+  counter)
+
+(define (fresh-string)
+  (format "s~a" (fresh-integer)))
 
 (define (fresh-symbol)
   (string->symbol (fresh-string)))

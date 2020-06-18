@@ -102,9 +102,6 @@ JSON
   ; drop the "Eater" from the key
   (define type (string->symbol (string-trim (symbol->string jkey) "Eater")))
 
-  (displayln final-size)
-  (displayln jkey)
-
   ; certain types have no size constraint
   (define size
     (match type
@@ -136,7 +133,6 @@ JSON
      ; TODO seems that, for the purposes of predation, corals use their diet as their size
      ['coral 4]))
 
-  (displayln (hash-ref jval 'id))
   (species
     (string->symbol (hash-ref jval 'id))
     class_
@@ -278,7 +274,6 @@ JSON
           (cond
            [obj
             (define cond1 (jsexpr-ref obj 'conditions 0))
-            ;(displayln cond1)
             (define val (jsexpr-ref cond1 'tank 'hostsMany 0))
             (define num (hash-ref val 'quantity))
             ; not sure if this is necessary seems to be true on all relevant conditions
