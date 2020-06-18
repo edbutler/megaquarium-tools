@@ -100,7 +100,8 @@
 ; TODO why is this here?
 (struct unlockable (rank) #:transparent)
 
-(provide (struct-out unlockable))
+(provide
+  (contract-out [struct unlockable ((rank exact-nonnegative-integer?))]))
 
 (struct animal
   (id
@@ -127,7 +128,10 @@
 (define animal-diet (compose1 species-diet animal-species))
 
 (provide
-  species-final-size
+  (contract-out
+   [species-final-size (-> species? exact-positive-integer?)]
+  )
+  ; TODO do we really need these?
   animal-species-id
   animal-class
   animal-type
