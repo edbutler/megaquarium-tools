@@ -102,6 +102,9 @@ JSON
   ; drop the "Eater" from the key
   (define type (string->symbol (string-trim (symbol->string jkey) "Eater")))
 
+  (displayln final-size)
+  (displayln jkey)
+
   ; certain types have no size constraint
   (define size
     (match type
@@ -126,7 +129,14 @@ JSON
         (species-stage (hash-ref j 'size 0)
                        (hash-ref j 'growthTime #f)))
       (hash-ref janimal 'stages)))
-  (define final-size (species-stage-size (last stages)))
+
+  (define predation-final-size
+    (match class_
+     ['fish (species-stage-size (last stages))]
+     ; TODO seems that, for the purposes of predation, corals use their diet as their size
+     ['coral 4]))
+
+  (displayln (hash-ref jval 'id))
   (species
     (string->symbol (hash-ref jval 'id))
     class_
@@ -160,7 +170,7 @@ JSON
         ; predation
         (let ([j (hash-ref jstats 'eater #f)])
           (maybe-list j
-            (map (curry make-predator final-size) (hash-keys j))))
+            (map (curry make-predator predation-final-size) (hash-keys j))))
         ; likes/dislikes
         (when-has-stat 'activeSwimmer (active-swimmer))
         (when-has-stat 'needsRounded (rounded-tank))
