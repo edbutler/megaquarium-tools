@@ -201,7 +201,7 @@ JSON
          [(and (hash-has-key? jobj 'animal) (hash-ref jobj 'inGameWorld #f))
           (define spec
             (let ([spec-id (string->symbol (hash-ref jobj 'specId))])
-              spec-id))
+              (species-ref gdata spec-id)))
           (cons
             (animal (hash-ref jobj 'uid)
                     spec)

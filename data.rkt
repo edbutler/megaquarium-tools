@@ -1,4 +1,4 @@
-#lang racket
+#lang errortrace racket
 
 (provide
   fuzzy-match-species
@@ -13,11 +13,6 @@
   "data/paths.rkt"
   "data/loader.rkt"
   "data/serialization.rkt")
-
-(define (species-ref data id)
-  (findf
-    (λ (a) (equal? id (species-id a)))
-    (game-data-species data)))
 
 (define (read-localization data-dir)
   (let* ([map-filename (λ (f) (build-path data-dir (format localization-path-format language f)))]
