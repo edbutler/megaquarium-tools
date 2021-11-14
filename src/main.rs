@@ -1,3 +1,8 @@
+mod animal;
+mod tank;
+mod data;
+mod paths;
+
 use clap::{Parser};
 
 fn main() {
@@ -5,6 +10,7 @@ fn main() {
 
     match opts.command {
         SubCommand::Lookup(l) => {
+            let data = data::read_game_data().unwrap();
             println!("Lookup {:?}!", l);
         }
     }
