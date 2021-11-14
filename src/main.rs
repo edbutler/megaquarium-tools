@@ -11,11 +11,14 @@ fn main() {
     match opts.command {
         SubCommand::Lookup(l) => {
             let data = data::read_game_data().unwrap();
-            println!("Lookup {:?}!", l);
+
+            for s in data.species {
+                if s.id.contains(&l.search_term) {
+                    println!("{:?}", s);
+                }
+            }
         }
     }
-
-    println!("Hello, world!");
 }
 
 #[derive(Parser)]
