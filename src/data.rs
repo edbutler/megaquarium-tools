@@ -5,9 +5,10 @@ use crate::paths::*;
 use std::fmt;
 use std::error::{Error};
 use std::path::{Path};
-use std::io::BufReader;
-use std::fs::File;
-use serde_json::{Value, from_reader};
+use std::fs;
+use serde_json::{Value, from_str};
+use lazy_static::lazy_static;
+use regex::Regex;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -42,14 +43,27 @@ impl Error for BadJson {}
 
 fn read_species(directory: &Path) -> Result<Vec<Species>> {
     let json = read_json(directory, ANIMAL_PATH)?;
-    let objects = &json["Objects"].as_array().ok_or(BadJson)?;
+    let objects = &json["objects"].as_array().ok_or(BadJson)?;
 
     Ok(Vec::new())
 }
 
 fn read_json(directory: &Path, file: &str) -> Result<Value> {
-    let file = File::open(directory.join(file))?;
-    let reader = BufReader::new(file);
-    let result = from_reader(reader)?;
+    let file = fs::read_to_string(directory.join(file))?;
+
+    lazy_static! {
+        static ref RE1: Regex = Regex::new("//.*?\n").unwrap();
+        static ref RE2: Regex = Regex::new(",([\r\n \t]*\\})").unwrap();
+        static ref RE3: Regex = Regex::new(",([\r\n \t]*\\])").unwrap();
+    }
+
+    let file = RE1.replace_all(&file, "\n");
+    let file = RE2.replace_all(&file, "$1");
+    let file = RE3.replace_all(&file, "$1");
+
+    println!("{}", &file[..11500]);
+
+    let result = from_str(&file)?;
+
     Ok(result)
 }
