@@ -143,26 +143,18 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
             };
 
             let diet = {
-                match &stats.get("eats") {
-                    Some(Value::Object(e)) => {
-                        let food = e["item"].as_str().ok_or(UBJ)?.to_string();
-                        let period = match e.get("daysBetweenFeed") {
-                            Some(v) => v.as_u64().ok_or(UBJ)? + 1,
-                            None => 1,
-                        };
+                if let Some(e) = &stats.get("eats") {
+                    let food = e["item"].as_str().ok_or(UBJ)?.to_string();
+                    let period = uint_or_default(&e["daysBetweenFeed"], 0)? + 1;
 
-                        Diet::Food {
-                            food: food,
-                            period: period.try_into()?,
-                        }
+                    Diet::Food {
+                        food: food,
+                        period: period,
                     }
-                    _ => {
-                        if stats.contains_key("scavenger") {
-                            Diet::Scavenger
-                        } else {
-                            Diet::DoesNotEat
-                        }
-                    }
+                } else if stats.contains_key("scavenger") {
+                    Diet::Scavenger
+                } else {
+                    Diet::DoesNotEat
                 }
             };
 
