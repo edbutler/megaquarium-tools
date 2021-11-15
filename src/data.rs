@@ -4,7 +4,7 @@ use crate::tank::*;
 
 use lazy_static::lazy_static;
 use regex::Regex;
-use serde_json::{from_str, Value};
+use serde_json::{from_str, Map, Value};
 use std::error::Error;
 use std::fmt;
 use std::fs;
@@ -94,6 +94,33 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
             let animal = o["animal"].as_object().ok_or("no animal")?;
             let stats = animal["stats"].as_object().ok_or("no stats")?;
 
+            fn has_stat(stats: &Map<String, Value>, stat: &str) -> bool {
+                stats.contains_key(stat)
+            }
+
+            fn stat_number(stats: &Map<String, Value>, stat: &str, key: &str) -> Result<Option<u8>> {
+                match stats.get(stat) {
+                    None => Ok(None),
+                    Some(v) => Ok(Some(v[key].as_u64().ok_or(UBJ)?.try_into()?)),
+                }
+            };
+
+            fn one_of<T: Copy>(stats: &Map<String, Value>, potential: &[(&str, T)]) -> Result<Option<T>> {
+                let mut result = None;
+
+                for (stat, prop) in potential {
+                    if has_stat(stats, stat) {
+                        if result.is_some() {
+                            return Err(Box::new(bad_json("Species has mutually exclusive properties")));
+                        }
+
+                        result = Some(*prop);
+                    }
+                }
+
+                Ok(result)
+            }
+
             let size = {
                 let raw_stages = animal["stages"].as_array().ok_or(UBJ)?;
                 let stages = raw_stages
@@ -105,25 +132,31 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
                     })
                     .collect::<Result<Vec<(u8, Option<u8>)>>>()?;
 
+                let mut last_duration = 0;
+
                 Size {
                     final_size: stages.last().ok_or(UBJ)?.0,
+                    armored: has_stat(stats, "armored"),
                     stages: stages
                         .iter()
                         .take(stages.len() - 1)
                         .map(|(sz, d)| {
-                            Ok(Stage {
+                            let duration = d.ok_or(UBJ)?;
+                            let result = Stage {
                                 size: *sz,
-                                duration: d.ok_or(UBJ)?,
-                            })
+                                duration: duration - last_duration,
+                            };
+                            last_duration = duration;
+                            Ok(result)
                         })
                         .collect::<Result<Vec<Stage>>>()?,
                 }
             };
 
             let environment = {
-                let temperature = if stats.contains_key("isTropical") {
+                let temperature = if has_stat(stats, "isTropical") {
                     Ok(Temperature::Warm)
-                } else if stats.contains_key("isColdwater") {
+                } else if has_stat(stats, "isColdwater") {
                     Ok(Temperature::Cold)
                 } else {
                     Err(bad_json("Unknown temperature"))
@@ -131,14 +164,12 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
 
                 let salinity = Salinity::Fresh;
 
-                let quality = stats["waterQuality"]["value"]
-                    .as_u64()
-                    .ok_or(bad_json("Unknown water quality"));
+                let quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"));
 
                 Environment {
                     temperature: temperature?,
                     salinity: salinity,
-                    quality: quality?.try_into()?,
+                    quality: quality?,
                 }
             };
 
@@ -164,6 +195,23 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
                 size: size,
                 environment: environment,
                 diet: diet,
+                shoaling: stat_number(stats, "shoaler", "req")?,
+                fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
+                lighting: None,
+                cohabitation: one_of(
+                    stats,
+                    &[
+                        ("dislikesConspecifics", Cohabitation::NoConspecifics),
+                        ("dislikesConsgeners", Cohabitation::NoCongeners),
+                        ("congenersOnly", Cohabitation::OnlyCongeners),
+                        ("dislikesFoodCompetitors", Cohabitation::NoFoodCompetitors),
+                    ],
+                )?,
+                tank: TankNeeds {
+                    active_swimmer: has_stat(stats, "activeSwimmer"),
+                    rounded_tank: has_stat(stats, "needsRounded"),
+                },
+                predation: Vec::new(),
             })
         })
         .collect();
