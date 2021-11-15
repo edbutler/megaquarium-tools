@@ -1,14 +1,14 @@
 use crate::animal::*;
-use crate::tank::*;
 use crate::paths::*;
+use crate::tank::*;
 
-use std::fmt;
-use std::error::{Error};
-use std::path::{Path};
-use std::fs;
-use serde_json::{Value, from_str};
 use lazy_static::lazy_static;
 use regex::Regex;
+use serde_json::{from_str, Value};
+use std::error::Error;
+use std::fmt;
+use std::fs;
+use std::path::Path;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -38,9 +38,7 @@ struct BadJson {
 const UBJ: BadJson = BadJson { message: None };
 
 fn bad_json(msg: &'static str) -> BadJson {
-    BadJson {
-        message: Some(msg)
-    }
+    BadJson { message: Some(msg) }
 }
 
 impl fmt::Display for BadJson {
@@ -54,10 +52,13 @@ impl Error for BadJson {}
 
 fn as_string_array(json: &Value) -> Result<Vec<&str>> {
     let jarr = json.as_array().ok_or(UBJ)?;
-    let sarr: Result<Vec<&str>> = jarr.iter().map(|t| {
-        let s = t.as_str().ok_or(UBJ)?;
-        Ok(s)
-    }).collect();
+    let sarr: Result<Vec<&str>> = jarr
+        .iter()
+        .map(|t| {
+            let s = t.as_str().ok_or(UBJ)?;
+            Ok(s)
+        })
+        .collect();
     sarr
 }
 
@@ -65,16 +66,16 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
     let json = read_json(directory, ANIMAL_PATH)?;
     let objects = json["objects"].as_array().ok_or("no species objects")?;
 
+    let species: Result<Vec<Species>> = objects
+        .iter()
+        .map(|o| {
+            let id = o["id"].as_str().ok_or("no id")?;
+            let tags = as_string_array(&o["tags"])?;
+            let animal = o["animal"].as_object().ok_or("no animal")?;
+            let stats = animal["stats"].as_object().ok_or("no stats")?;
 
-    let species: Result<Vec<Species>> = objects.iter().map(|o| {
-        let id = o["id"].as_str().ok_or("no id")?;
-        let tags = as_string_array(&o["tags"])?;
-        let animal = o["animal"].as_object().ok_or("no animal")?;
-        let stats = animal["stats"].as_object().ok_or("no stats")?;
-
-        let environment = {
-            let temperature =
-                if stats.contains_key("isTropical") {
+            let environment = {
+                let temperature = if stats.contains_key("isTropical") {
                     Ok(Temperature::Warm)
                 } else if stats.contains_key("isColdwater") {
                     Ok(Temperature::Cold)
@@ -82,23 +83,26 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
                     Err(bad_json("Unknown temperature"))
                 };
 
-            let salinity = Salinity::Fresh;
+                let salinity = Salinity::Fresh;
 
-            let quality = stats["waterQuality"]["value"].as_u64().ok_or(bad_json("Unknown water quality"));
+                let quality = stats["waterQuality"]["value"]
+                    .as_u64()
+                    .ok_or(bad_json("Unknown water quality"));
 
-            Environment {
-                temperature: temperature?,
-                salinity: salinity,
-                quality: quality?.try_into()?,
-            }
-        };
+                Environment {
+                    temperature: temperature?,
+                    salinity: salinity,
+                    quality: quality?.try_into()?,
+                }
+            };
 
-        Ok(Species {
-            id: id.to_string(),
-            kind: tags[1].to_string(),
-            environment: environment,
+            Ok(Species {
+                id: id.to_string(),
+                kind: tags[1].to_string(),
+                environment: environment,
+            })
         })
-    }).collect();
+        .collect();
 
     Ok(species?)
 }

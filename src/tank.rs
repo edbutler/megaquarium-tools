@@ -1,8 +1,5 @@
-
 #[derive(Debug)]
-pub struct Tank {
-
-}
+pub struct Tank {}
 
 #[derive(Debug)]
 pub enum Temperature {
@@ -13,7 +10,7 @@ pub enum Temperature {
 #[derive(Debug)]
 pub enum Salinity {
     Fresh,
-    Salty
+    Salty,
 }
 
 #[derive(Debug)]

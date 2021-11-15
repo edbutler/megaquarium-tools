@@ -1,9 +1,6 @@
 use std::path::{Path, PathBuf};
 
-static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &[
-    "C:/Program Files (x86)/Steam",
-    "D:/steam/",
-];
+static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &["C:/Program Files (x86)/Steam", "D:/steam/"];
 
 const LOCAL_DATA_PATH: &str = "steamapps/common/Megaquarium/Megaquarium_Data/GameData/";
 

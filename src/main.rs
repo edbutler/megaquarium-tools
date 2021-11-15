@@ -1,9 +1,9 @@
 mod animal;
-mod tank;
 mod data;
 mod paths;
+mod tank;
 
-use clap::{Parser};
+use clap::Parser;
 
 fn main() {
     let opts = Opts::parse();
@@ -22,7 +22,7 @@ fn main() {
 }
 
 #[derive(Parser)]
-#[clap(version = "0.0", author="Eric")]
+#[clap(version = "0.0", author = "Eric")]
 struct Opts {
     #[clap(subcommand)]
     command: SubCommand,
@@ -33,8 +33,7 @@ enum SubCommand {
     Lookup(Lookup),
 }
 
-#[derive(Debug)]
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 struct Lookup {
     search_term: String,
 }
