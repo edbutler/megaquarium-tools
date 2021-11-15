@@ -51,6 +51,10 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
     let mut animals: HashMap<u64, Vec<Animal<'a>>> = HashMap::new();
     let mut tanks: Vec<Tank> = Vec::new();
 
+    // sort the tank models by length of id so we always choose the longest prefix
+    let mut models: Vec<&'a TankModel> = data.tanks.iter().map(|t| t).collect();
+    models.sort_unstable_by_key(|t| -(t.id.len() as i32));
+
     for o in objects {
         let obj = o.as_object().ok_or("object is not json object")?;
 
@@ -86,12 +90,33 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
         if obj.contains_key("tank") {
             let id = o["uid"].as_u64().ok_or("no specId")?;
             // this string contains both the model and the size in one munged string
-            let spec_id = o["specId"].as_str().ok_or("no specId")?;
+            // they look like "<tank-type-id>_<x-dim>-<y-dim>" (e.g., lagoon_tank_3_4)
+            let spec_id = o["specId"].as_str().ok_or(bad_json("no specId"))?;
+
+            let model = *models
+                .iter()
+                .find(|t| spec_id.starts_with(&t.id))
+                .ok_or(bad_json("No tank model"))?;
+            let size = {
+                // strip off the prefix and then split on '_' to get the dimensions
+                let string = &spec_id[model.id.len() + 1..];
+                let parts: Vec<&str> = string.split('_').collect();
+                println!("{:?}", spec_id);
+                println!("{:?}", model.id);
+                println!("{:?}", parts);
+                if parts.len() == 2 {
+                    let x: u16 = parts[0].parse()?;
+                    let y: u16 = parts[1].parse()?;
+                    (x, y)
+                } else {
+                    return Err(Box::new(bad_json("cannot extract dimensions")));
+                }
+            };
 
             let tank = Tank {
                 id: id,
-                model: &data.tanks[0], // TODO
-                size: (0, 0),          // TODO
+                model: model,
+                size: size,
             };
 
             tanks.push(tank);

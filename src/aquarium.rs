@@ -40,6 +40,7 @@ impl Aquarium<'_> {
                 ExhibitSpec {
                     tank: TankSpec {
                         model: e.tank.model.id.clone(),
+                        size: e.tank.size,
                     },
                     animals: animals
                         .into_iter()

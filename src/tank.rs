@@ -24,6 +24,7 @@ pub struct TankModel {
 #[derive(Debug)]
 pub struct TankSpec {
     pub model: String,
+    pub size: (u16, u16),
 }
 
 #[derive(Debug)]
