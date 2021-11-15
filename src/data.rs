@@ -89,12 +89,6 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
 
             let tank = Tank {
                 id: id,
-                environment: Environment {
-                    temperature: Temperature::Warm,
-                    quality: 0,
-                    salinity: Salinity::Fresh,
-                }, // TODO
-                lighting: 0, // TODO
             };
 
             tanks.push(tank);

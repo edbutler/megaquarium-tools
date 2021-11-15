@@ -1,8 +1,6 @@
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone)]
 pub struct Tank {
     pub id: u64,
-    pub environment: Environment,
-    pub lighting: u8,
 }
 
 pub struct TankModel {}

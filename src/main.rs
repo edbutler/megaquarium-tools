@@ -23,7 +23,7 @@ fn main() {
         SubCommand::Extract(e) => {
             let save = read_save(&data, &e.save_name).unwrap();
 
-            println!("{}", save.exhibits.len());
+            println!("{:#?}", save.to_spec());
         }
     }
 }

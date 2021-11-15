@@ -8,6 +8,12 @@ pub struct Animal<'a> {
 }
 
 #[derive(Debug)]
+pub struct AnimalSpec {
+    pub species: String,
+    pub count: u64,
+}
+
+#[derive(Debug)]
 pub struct Species {
     pub id: String,
     pub kind: String,
