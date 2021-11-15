@@ -197,7 +197,14 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
                 diet: diet,
                 shoaling: stat_number(stats, "shoaler", "req")?,
                 fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
-                lighting: None,
+                lighting:
+                    if has_stat(stats, "dislikesLights") {
+                        Some(Lighting::Disallows)
+                    } else if let Some(v) = stat_number(stats, "light", "value")? {
+                        Some(Lighting::Requires(v))
+                    } else {
+                        None
+                    }, 
                 cohabitation: one_of(
                     stats,
                     &[
