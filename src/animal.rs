@@ -1,6 +1,12 @@
 use crate::tank::Environment;
 
 #[derive(Debug)]
+pub struct Animal<'a> {
+    pub species: &'a Species,
+    pub age: u32,
+}
+
+#[derive(Debug)]
 pub struct Species {
     pub id: String,
     pub kind: String,

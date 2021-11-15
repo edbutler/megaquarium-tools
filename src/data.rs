@@ -1,6 +1,7 @@
 use crate::animal::*;
 use crate::paths::*;
 use crate::tank::*;
+use crate::aquarium::*;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -17,6 +18,18 @@ pub struct GameData {
     pub tanks: Vec<Tank>,
 }
 
+impl GameData {
+    pub fn species_ref(&self, id:&str) -> Option<&Species> {
+        for s in &self.species {
+            if s.id.eq(id) {
+                return Some(s)
+            }
+        }
+
+        None
+    }
+}
+
 pub fn read_game_data() -> Result<GameData> {
     let directory = find_data_dir();
 
@@ -28,6 +41,59 @@ pub fn read_game_data() -> Result<GameData> {
     };
 
     Ok(result)
+}
+
+pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>> {
+    let directory = find_save_dir();
+    let json = read_json(&directory, &(save_name.to_string() + ".sav"))?;
+
+    let objects = json["objects"].as_array().ok_or(UBJ)?;
+
+    let mut animals: Vec<(Animal<'a>, &str)> = Vec::new();
+    let mut tanks: Vec<Tank> = Vec::new();
+
+    for o in objects {
+        let obj = o.as_object().ok_or(UBJ)?;
+
+        let is_in_game_world =
+            match obj.get("inGameWorld") {
+                Some(Value::Bool(true)) => true,
+                _ => false
+            };
+
+        if !is_in_game_world {
+            continue;
+        }
+
+        if let Some(a) = obj.get("animal") {
+            let species_id = o["specId"].as_str().ok_or(UBJ)?;
+            let species = data.species_ref(species_id).ok_or(bad_json("Unknown species"))?;
+
+            let animal = Animal {
+                species: species,
+                age: uint_or_default(&a["growth"], 0)?.try_into()?, // TODO check this
+            };
+            let tank = o.pointer("hosting/host").ok_or(UBJ)?.as_str().ok_or(UBJ)?;
+
+            animals.push((animal, tank));
+        }
+
+        if let Some(t) = obj.get("tank") {
+            let id = o["specId"].as_str().ok_or(UBJ)?;
+
+            let tank = Tank {
+                id: id.to_string(),
+                environment: Environment { temperature:Temperature::Warm, quality:0, salinity:Salinity::Fresh}, // TODO
+                lighting: 0, // TODO
+            };
+
+            tanks.push(tank);
+        }
+    }
+
+    Ok(Aquarium {
+        exhibits: Vec::new(),
+    })
 }
 
 #[derive(Debug, Clone)]

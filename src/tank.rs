@@ -1,7 +1,12 @@
 #[derive(Debug)]
 pub struct Tank {
+    pub id: String,
     pub environment: Environment,
     pub lighting: u8,
+}
+
+pub struct TankModel {
+
 }
 
 #[derive(Debug)]

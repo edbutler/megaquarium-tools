@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use directories::UserDirs;
 
 static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &["C:/Program Files (x86)/Steam", "D:/steam/"];
 
@@ -15,4 +16,10 @@ pub fn find_data_dir() -> PathBuf {
     }
 
     panic!("Cannot find data directory");
+}
+
+pub fn find_save_dir() -> PathBuf {
+    let dirs = UserDirs::new().unwrap();
+    let docs = dirs.document_dir().unwrap();
+    docs.join("My Games/Megaquarium/Saves")
 }
