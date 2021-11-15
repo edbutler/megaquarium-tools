@@ -62,6 +62,26 @@ fn as_string_array(json: &Value) -> Result<Vec<&str>> {
     sarr
 }
 
+fn uint_or_default<T: TryFrom<u64>>(json: &Value, default: T) -> Result<T>
+where
+    <T as TryFrom<u64>>::Error: 'static + std::error::Error,
+{
+    match json {
+        Value::Null => Ok(default),
+        _ => Ok(json.as_u64().ok_or(bad_json("expected number"))?.try_into()?),
+    }
+}
+
+fn uint_or_none<T: TryFrom<u64>>(json: &Value) -> Result<Option<T>>
+where
+    <T as TryFrom<u64>>::Error: 'static + std::error::Error,
+{
+    match json {
+        Value::Null => Ok(None),
+        _ => Ok(Some(json.as_u64().ok_or(bad_json("expected number"))?.try_into()?)),
+    }
+}
+
 fn read_species(directory: &Path) -> Result<Vec<Species>> {
     let json = read_json(directory, ANIMAL_PATH)?;
     let objects = json["objects"].as_array().ok_or("no species objects")?;
@@ -73,6 +93,32 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
             let tags = as_string_array(&o["tags"])?;
             let animal = o["animal"].as_object().ok_or("no animal")?;
             let stats = animal["stats"].as_object().ok_or("no stats")?;
+
+            let size = {
+                let raw_stages = animal["stages"].as_array().ok_or(UBJ)?;
+                let stages = raw_stages
+                    .iter()
+                    .map(|s| {
+                        let size = uint_or_default(&s["size"], 0)?;
+                        let time = uint_or_none(&s["growthTime"])?;
+                        Ok((size, time))
+                    })
+                    .collect::<Result<Vec<(u8, Option<u8>)>>>()?;
+
+                Size {
+                    final_size: stages.last().ok_or(UBJ)?.0,
+                    stages: stages
+                        .iter()
+                        .take(stages.len() - 1)
+                        .map(|(sz, d)| {
+                            Ok(Stage {
+                                size: *sz,
+                                duration: d.ok_or(UBJ)?,
+                            })
+                        })
+                        .collect::<Result<Vec<Stage>>>()?,
+                }
+            };
 
             let environment = {
                 let temperature = if stats.contains_key("isTropical") {
@@ -96,10 +142,36 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
                 }
             };
 
+            let diet = {
+                match &stats.get("eats") {
+                    Some(Value::Object(e)) => {
+                        let food = e["item"].as_str().ok_or(UBJ)?.to_string();
+                        let period = match e.get("daysBetweenFeed") {
+                            Some(v) => v.as_u64().ok_or(UBJ)? + 1,
+                            None => 1,
+                        };
+
+                        Diet::Food {
+                            food: food,
+                            period: period.try_into()?,
+                        }
+                    }
+                    _ => {
+                        if stats.contains_key("scavenger") {
+                            Diet::Scavenger
+                        } else {
+                            Diet::DoesNotEat
+                        }
+                    }
+                }
+            };
+
             Ok(Species {
                 id: id.to_string(),
                 kind: tags[1].to_string(),
+                size: size,
                 environment: environment,
+                diet: diet,
             })
         })
         .collect();

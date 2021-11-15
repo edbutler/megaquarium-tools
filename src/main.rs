@@ -14,7 +14,7 @@ fn main() {
 
             for s in data.species {
                 if s.id.contains(&l.search_term) {
-                    println!("{:?}", s);
+                    println!("{:#?}", s);
                 }
             }
         }
