@@ -1,14 +1,15 @@
 mod animal;
+mod aquarium;
 mod data;
 mod paths;
 mod tank;
-mod aquarium;
 
 use clap::Parser;
+use data::*;
 
 fn main() {
     let opts = Opts::parse();
-    let data = data::read_game_data().unwrap();
+    let data = read_game_data().unwrap();
 
     match opts.command {
         SubCommand::Lookup(l) => {
@@ -17,10 +18,12 @@ fn main() {
                     println!("{:#?}", s);
                 }
             }
-        },
+        }
 
         SubCommand::Extract(e) => {
+            let save = read_save(&data, &e.save_name).unwrap();
 
+            println!("{}", save.exhibits.len());
         }
     }
 }

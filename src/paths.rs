@@ -1,11 +1,12 @@
-use std::path::{Path, PathBuf};
 use directories::UserDirs;
+use std::path::{Path, PathBuf};
 
 static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &["C:/Program Files (x86)/Steam", "D:/steam/"];
 
 const LOCAL_DATA_PATH: &str = "steamapps/common/Megaquarium/Megaquarium_Data/GameData/";
 
-pub const ANIMAL_PATH: &str = "Data/animals.data";
+pub const FISHES_PATH: &str = "Data/animals.data";
+pub const CORALS_PATH: &str = "Data/corals.data";
 
 pub fn find_data_dir() -> PathBuf {
     for d in POSSIBLE_DATA_DIRECTORIES {
