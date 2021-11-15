@@ -5,6 +5,7 @@ static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &["C:/Program Files (x86)/St
 
 const LOCAL_DATA_PATH: &str = "steamapps/common/Megaquarium/Megaquarium_Data/GameData/";
 
+pub const TANKS_PATH: &str = "Data/tanks.data";
 pub const FISHES_PATH: &str = "Data/animals.data";
 pub const CORALS_PATH: &str = "Data/corals.data";
 

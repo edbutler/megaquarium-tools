@@ -18,6 +18,11 @@ fn main() {
                     println!("{:#?}", s);
                 }
             }
+            for t in data.tanks {
+                if t.id.contains(&l.search_term) {
+                    println!("{:#?}", t);
+                }
+            }
         }
 
         SubCommand::Extract(e) => {

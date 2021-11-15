@@ -16,7 +16,7 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub struct GameData {
     pub species: Vec<Species>,
-    pub tanks: Vec<Tank>,
+    pub tanks: Vec<TankModel>,
 }
 
 impl GameData {
@@ -36,7 +36,7 @@ pub fn read_game_data() -> Result<GameData> {
 
     let result = GameData {
         species: read_species(&directory)?,
-        tanks: Vec::new(),
+        tanks: read_tank_models(&directory)?,
     };
 
     Ok(result)
@@ -84,11 +84,14 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
         }
 
         if obj.contains_key("tank") {
-            let blueprint_id = o["specId"].as_str().ok_or("no specId")?;
             let id = o["uid"].as_u64().ok_or("no specId")?;
+            // this string contains both the model and the size in one munged string
+            let spec_id = o["specId"].as_str().ok_or("no specId")?;
 
             let tank = Tank {
                 id: id,
+                model: &data.tanks[0], // TODO
+                size: (0, 0),          // TODO
             };
 
             tanks.push(tank);
@@ -147,6 +150,13 @@ fn as_string_array(json: &Value) -> Result<Vec<&str>> {
     sarr
 }
 
+fn bool_or_default(json: &Value, default: bool) -> bool {
+    match json {
+        Value::Bool(b) => *b,
+        _ => default,
+    }
+}
+
 fn uint_or_default<T: TryFrom<u64>>(json: &Value, default: T) -> Result<T>
 where
     <T as TryFrom<u64>>::Error: 'static + std::error::Error,
@@ -195,7 +205,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             None => Ok(None),
             Some(v) => Ok(Some(v[key].as_u64().ok_or(UBJ)?.try_into()?)),
         }
-    };
+    }
 
     fn one_of<T: Copy>(stats: &Map<String, Value>, potential: &[(&str, T)]) -> Result<Option<T>> {
         let mut result = None;
@@ -222,7 +232,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
                 let time = uint_or_none(&s["growthTime"])?;
                 Ok((size, time))
             })
-            .collect::<Result<Vec<(u8, Option<u8>)>>>()?;
+            .collect::<Result<Vec<(u16, Option<u16>)>>>()?;
 
         let mut last_duration = 0;
 
@@ -313,20 +323,62 @@ fn read_single_species(o: &Value) -> Result<Species> {
     })
 }
 
+fn read_tank_models(directory: &Path) -> Result<Vec<TankModel>> {
+    let json = read_json(directory, TANKS_PATH)?;
+    let objects = json["objects"].as_array().ok_or("no species objects")?;
+    let tanks: Result<Vec<TankModel>> = objects.iter().map(|o| read_single_tank_model(o)).collect();
+    Ok(tanks?)
+}
+
+fn read_single_tank_model(o: &Value) -> Result<TankModel> {
+    let id = o["id"].as_str().ok_or("no id")?;
+    let tank = &o["tank"];
+
+    fn as_u16(value: &Value) -> Result<u16> {
+        Ok(value.as_u64().ok_or(bad_json("expected number"))?.try_into()?)
+    }
+
+    let read_size = |key: &str| -> Result<(u16, u16)> {
+        let json = &o["multisize"][key];
+        let w = as_u16(&json["m"])?;
+        let h = as_u16(&json["n"])?;
+        Ok((w, h))
+    };
+
+    let density = tank["volumePerTile"].as_f64().ok_or(UBJ)?;
+
+    Ok(TankModel {
+        id: id.to_string(),
+        min_size: read_size("minSize")?,
+        max_size: read_size("baseSize")?,
+        double_density: (2.0 * density).round() as u16,
+        rounded: bool_or_default(&tank["isRounded"], false),
+    })
+}
+
 fn read_json(directory: &Path, file: &str) -> Result<Value> {
     // serde's parser is strict (the maintainers have "never seen json with comments" (lol)),
     // so we do some gross regex stuff to purge trailing commas and comments, since that's
     // easier than writing an entire parser or using some unmaintained library.
     lazy_static! {
-        static ref RE1: Regex = Regex::new("//.*?\n").unwrap();
-        static ref RE2: Regex = Regex::new(",([\r\n \t]*\\})").unwrap();
-        static ref RE3: Regex = Regex::new(",([\r\n \t]*\\])").unwrap();
+        static ref REGEXES: [(Regex,&'static str); 5] = [
+            // comments
+            (Regex::new("//.*?\n").unwrap(), "\n"),
+            (Regex::new("(?s)/\\*.*?\\*/").unwrap(), ""),
+            // trailing commas (needs to be after comments)
+            (Regex::new(",([\r\n \t]*\\})").unwrap(), "$1"),
+            (Regex::new(",([\r\n \t]*\\])").unwrap(), "$1"),
+            // multiline strings in tanks.data
+            (Regex::new("(?s)\"map\":\".*?\"").unwrap(), "\"map\":\"\""),
+        ];
+
     }
 
-    let file = fs::read_to_string(directory.join(file))?;
-    let file = RE1.replace_all(&file, "\n");
-    let file = RE2.replace_all(&file, "$1");
-    let file = RE3.replace_all(&file, "$1");
+    let mut file = fs::read_to_string(directory.join(file))?;
+    for (regex, replacement) in REGEXES.iter() {
+        file = regex.replace_all(&file, *replacement).to_string();
+    }
+
     let result = from_str(&file)?;
 
     Ok(result)

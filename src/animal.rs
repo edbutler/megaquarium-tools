@@ -38,14 +38,14 @@ pub enum Diet {
 #[derive(Debug)]
 pub struct Size {
     pub stages: Vec<Stage>,
-    pub final_size: u8,
+    pub final_size: u16,
     pub armored: bool,
 }
 
 #[derive(Debug)]
 pub struct Stage {
-    pub size: u8,
-    pub duration: u8,
+    pub size: u16,
+    pub duration: u16,
 }
 
 #[derive(Debug, Copy, Clone)]
