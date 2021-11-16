@@ -5,9 +5,9 @@ mod paths;
 mod rules;
 mod tank;
 
+use animal::*;
 use clap::Parser;
 use data::*;
-use animal::*;
 
 fn main() {
     let opts = Opts::parse();
@@ -23,7 +23,7 @@ fn main() {
                         let a = Animal {
                             id: 0,
                             species: &s,
-                            age: 0
+                            age: 0,
                         };
                         println!("{}", a.description());
                     }

@@ -80,7 +80,7 @@ impl Animal<'_> {
         for p in &spec.predation {
             // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
             let size = (0.4 * (self.size() as f64)).floor() as u16;
-            result.push(Constraint::Predator{kind:p.clone(), size});
+            result.push(Constraint::Predator { kind: p.clone(), size });
         }
 
         result

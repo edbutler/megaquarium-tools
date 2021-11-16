@@ -305,10 +305,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             let food = e["item"].as_str().ok_or(UBJ)?.to_string();
             let period = uint_or_default(&e["daysBetweenFeed"], 0)? + 1;
 
-            Diet::Food {
-                food: food,
-                period: period,
-            }
+            Diet::Food { food, period }
         } else if stats.contains_key("scavenger") {
             Diet::Scavenger
         } else {
@@ -316,12 +313,25 @@ fn read_single_species(o: &Value) -> Result<Species> {
         }
     };
 
+    let predation: Vec<String> = if let Some(Value::Object(eater)) = &stats.get("eater") {
+        let result: Result<Vec<String>> = eater
+            .keys()
+            .map(|k| {
+                // need to remove the "Eater" on the end of every string
+                Ok(k.strip_suffix("Eater").ok_or(bad_json("no Eater suffix"))?.to_string())
+            })
+            .collect();
+        result?
+    } else {
+        Vec::new()
+    };
+
     Ok(Species {
         id: id.to_string(),
         kind: tags[1].to_string(),
-        size: size,
-        environment: environment,
-        diet: diet,
+        size,
+        environment,
+        diet,
         shoaling: stat_number(stats, "shoaler", "req")?,
         fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
         lighting: if has_stat(stats, "dislikesLights") {
@@ -344,7 +354,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             active_swimmer: has_stat(stats, "activeSwimmer"),
             rounded_tank: has_stat(stats, "needsRounded"),
         },
-        predation: Vec::new(),
+        predation,
     })
 }
 
