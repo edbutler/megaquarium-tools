@@ -34,7 +34,7 @@ fn main() {
                     if l.debug {
                         println!("{:#?}", t);
                     } else {
-                        println!("unimplemented!");
+                        println!("{}", t);
                     }
                 }
             }
