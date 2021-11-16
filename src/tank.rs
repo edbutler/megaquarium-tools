@@ -7,6 +7,7 @@ pub struct Tank<'a> {
 
 impl Tank<'_> {
     pub fn volume(&self) -> u16 {
+        // TODO should be ceiling, not floor
         self.size.0 * self.size.1 * self.model.double_density / 2
     }
 }
@@ -34,13 +35,22 @@ pub struct Environment {
     pub quality: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Temperature {
     Warm,
     Cold,
 }
 
-#[derive(Debug)]
+impl std::fmt::Display for Temperature {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Temperature::Warm => write!(f, "warm"),
+            Temperature::Cold => write!(f, "cold"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
 pub enum Salinity {
     Fresh,
     Salty,

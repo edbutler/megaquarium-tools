@@ -2,10 +2,12 @@ mod animal;
 mod aquarium;
 mod data;
 mod paths;
+mod rules;
 mod tank;
 
 use clap::Parser;
 use data::*;
+use animal::*;
 
 fn main() {
     let opts = Opts::parse();
@@ -15,12 +17,25 @@ fn main() {
         SubCommand::Lookup(l) => {
             for s in data.species {
                 if s.id.contains(&l.search_term) {
-                    println!("{:#?}", s);
+                    if l.debug {
+                        println!("{:#?}", s);
+                    } else {
+                        let a = Animal {
+                            id: 0,
+                            species: &s,
+                            age: 0
+                        };
+                        println!("{}", a.description());
+                    }
                 }
             }
             for t in data.tanks {
                 if t.id.contains(&l.search_term) {
-                    println!("{:#?}", t);
+                    if l.debug {
+                        println!("{:#?}", t);
+                    } else {
+                        println!("unimplemented!");
+                    }
                 }
             }
         }
@@ -49,6 +64,9 @@ enum SubCommand {
 #[derive(Debug, Parser)]
 struct Lookup {
     search_term: String,
+    /// Show debug-printed structs instead of pretty output
+    #[clap(short)]
+    debug: bool,
 }
 
 #[derive(Debug, Parser)]
