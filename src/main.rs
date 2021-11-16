@@ -43,7 +43,11 @@ fn main() {
         SubCommand::Extract(e) => {
             let save = read_save(&data, &e.save_name).unwrap();
 
-            println!("{:#?}", save.to_spec());
+            if e.debug {
+                println!("{:#?}", save.to_spec());
+            } else {
+                println!("{}", save.to_spec());
+            }
         }
     }
 }
@@ -72,4 +76,7 @@ struct Lookup {
 #[derive(Debug, Parser)]
 struct Extract {
     save_name: String,
+    /// Show debug-printed structs instead of pretty output
+    #[clap(short)]
+    debug: bool,
 }

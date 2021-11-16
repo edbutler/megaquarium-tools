@@ -56,3 +56,18 @@ impl Aquarium<'_> {
         AquariumSpec { exhibits: exhibits }
     }
 }
+
+impl std::fmt::Display for AquariumSpec {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "(aquarium (")?;
+        for e in &self.exhibits {
+            write!(f, "\n  (exhibit\n    #tank {}\n    #:animals (", e.tank)?;
+            for a in &e.animals {
+                write!(f, "\n      {}", a)?;
+            }
+            write!(f, "))")?;
+        }
+        write!(f, ")")?;
+        Ok(())
+    }
+}

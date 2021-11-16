@@ -93,6 +93,12 @@ pub struct AnimalSpec {
     pub count: u64,
 }
 
+impl std::fmt::Display for AnimalSpec {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({}, {})", self.count, self.species)
+    }
+}
+
 pub struct AnimalDesc {
     pub species: String,
     pub size: u16,
