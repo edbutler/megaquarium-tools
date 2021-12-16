@@ -4,6 +4,7 @@ mod data;
 mod paths;
 mod rules;
 mod tank;
+mod sexp;
 
 use animal::*;
 use clap::Parser;
