@@ -101,9 +101,6 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
                 // strip off the prefix and then split on '_' to get the dimensions
                 let string = &spec_id[model.id.len() + 1..];
                 let parts: Vec<&str> = string.split('_').collect();
-                println!("{:?}", spec_id);
-                println!("{:?}", model.id);
-                println!("{:?}", parts);
                 if parts.len() == 2 {
                     let x: u16 = parts[0].parse()?;
                     let y: u16 = parts[1].parse()?;
