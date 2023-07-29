@@ -119,7 +119,7 @@ impl std::fmt::Display for AnimalDesc {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Species {
     pub id: String,
     pub kind: String,
@@ -134,39 +134,39 @@ pub struct Species {
     pub predation: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Diet {
     Food { food: String, period: u16 },
     Scavenger,
     DoesNotEat,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Size {
     pub stages: Vec<Stage>,
     pub final_size: u16,
     pub armored: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Stage {
     pub size: u16,
     pub duration: u16,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Fighting {
     Wimp,
     Bully,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Lighting {
     Requires(u8),
     Disallows,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Cohabitation {
     NoConspecifics,
     NoCongeners,
@@ -174,8 +174,30 @@ pub enum Cohabitation {
     NoFoodCompetitors,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TankNeeds {
     pub rounded_tank: bool,
     pub active_swimmer: bool,
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+    use crate::tank::*;
+
+    pub fn test_species<S : Into<String>>(id: S) -> Species {
+        Species {
+            id: id.into(),
+            kind: "fish".to_string(),
+            size: Size { armored: false, stages: Vec::new(), final_size: 5 },
+            environment: Environment { temperature: Temperature::Warm, salinity: Salinity::Salty, quality: 55 },
+            diet: Diet::DoesNotEat,
+            shoaling: None,
+            fighting: None,
+            lighting: None,
+            cohabitation: None,
+            tank: TankNeeds { rounded_tank: false, active_swimmer: false },
+            predation: Vec::new(),
+        }
+    }
 }

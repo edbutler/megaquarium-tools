@@ -4,11 +4,11 @@ mod data;
 mod paths;
 mod rules;
 mod tank;
-mod sexp;
 
 use animal::*;
 use clap::Parser;
 use data::*;
+use std::error::Error;
 
 fn main() {
     let opts = Opts::parse();
@@ -50,6 +50,10 @@ fn main() {
                 println!("{}", save.to_spec());
             }
         }
+
+        SubCommand::Check(c) => {
+
+        }
     }
 }
 
@@ -64,6 +68,7 @@ struct Opts {
 enum SubCommand {
     Lookup(Lookup),
     Extract(Extract),
+    Check(Check),
 }
 
 #[derive(Debug, Parser)]
@@ -80,4 +85,26 @@ struct Extract {
     /// Show debug-printed structs instead of pretty output
     #[clap(short)]
     debug: bool,
+}
+
+#[derive(Debug, Parser)]
+struct Check {
+    #[clap(value_parser = parse_key_val::<String,u16>)]
+    species: Vec<(String,u16)>,
+    /// Show debug-printed structs instead of pretty output
+    #[clap(short)]
+    debug: bool,
+}
+
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
+where
+    T: std::str::FromStr,
+    T::Err: Error + Send + Sync + 'static,
+    U: std::str::FromStr,
+    U::Err: Error + Send + Sync + 'static,
+{
+    let pos = s
+        .find('=')
+        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{s}`"))?;
+    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
 }

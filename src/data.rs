@@ -415,3 +415,32 @@ fn read_json(directory: &Path, file: &str) -> Result<Value> {
 
     Ok(result)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::animal::test::*;
+
+    fn test_data(species: Vec<Species>) -> GameData {
+        GameData {
+            species,
+            tanks: vec!(),
+        }
+    }
+
+    #[test]
+    fn species_ref() {
+        let data = test_data(
+            vec![
+                test_species("foo"),
+                test_species("bar")]);
+        let foo = &data.species[0];
+        let bar = &data.species[1];
+
+        assert_eq!(data.species_ref("foo"), Some(foo));
+        assert_eq!(data.species_ref("fo"), None);
+        assert_eq!(data.species_ref("bar"), Some(bar));
+        assert_eq!(data.species_ref("baz"), None);
+    }
+
+}

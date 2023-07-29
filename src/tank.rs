@@ -55,14 +55,14 @@ impl std::fmt::Display for TankSpec {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Environment {
     pub temperature: Temperature,
     pub salinity: Salinity,
     pub quality: u8,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Temperature {
     Warm,
     Cold,
@@ -77,7 +77,7 @@ impl std::fmt::Display for Temperature {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Salinity {
     Fresh,
     Salty,
