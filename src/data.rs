@@ -2,6 +2,7 @@ use crate::animal::*;
 use crate::aquarium::*;
 use crate::paths::*;
 use crate::tank::*;
+use crate::util::Result;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -11,8 +12,6 @@ use std::error::Error;
 use std::fmt;
 use std::fs;
 use std::path::Path;
-
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub struct GameData {
     pub species: Vec<Species>,
@@ -29,6 +28,23 @@ impl GameData {
 
         None
     }
+
+    pub fn species_search(&self, search_string: &str) -> Vec<&Species> {
+        fuzzy_match_string(|s: &Species| &s.id, search_string, self.species.as_slice())
+    }
+}
+
+fn fuzzy_match_string<'a, T, F>(f: F, search_string: &str, list: &'a [T]) -> Vec<&'a T> where F: Fn(&T) -> &str {
+    let mut result = Vec::new();
+
+    for x in list {
+        let name = f(x);
+        if name.contains(search_string) {
+            result.push(x);
+        }
+    }
+
+    result
 }
 
 pub fn read_game_data() -> Result<GameData> {
@@ -429,7 +445,7 @@ mod test {
     }
 
     #[test]
-    fn species_ref() {
+    fn test_species_ref() {
         let data = test_data(
             vec![
                 test_species("foo"),
@@ -441,6 +457,33 @@ mod test {
         assert_eq!(data.species_ref("fo"), None);
         assert_eq!(data.species_ref("bar"), Some(bar));
         assert_eq!(data.species_ref("baz"), None);
+    }
+
+    #[test]
+    fn test_species_search() {
+        let data = test_data(
+            vec![
+                test_species("2_crescent_earthen"),
+                test_species("4_pancake_scuppernong"),
+                test_species("7_violet_crescent"),
+            ]);
+        let two = &data.species[0];
+        let four = &data.species[1];
+        let seven = &data.species[2];
+
+        assert_eq!(data.species_search("foo"), Vec::<&Species>::new());
+        assert_eq!(data.species_search("pancake"), vec![four]);
+        assert_eq!(data.species_search("olet"), vec![seven]);
+        assert_eq!(data.species_search("then"), vec![two]);
+        assert_eq!(data.species_search("cresc"), vec![two, seven]);
+        assert_eq!(data.species_search("e"), vec![two, four, seven]);
+    }
+
+    #[test]
+    fn test_read_game_data() {
+        let data = read_game_data().unwrap();
+        let species = data.species_ref("11_yellow_tang").unwrap();
+        assert_eq!(species.size.final_size, 5);
     }
 
 }

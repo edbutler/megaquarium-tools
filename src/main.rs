@@ -1,11 +1,14 @@
 mod animal;
 mod aquarium;
+mod check;
 mod data;
 mod paths;
 mod rules;
 mod tank;
+mod util;
 
 use animal::*;
+use check::*;
 use clap::Parser;
 use data::*;
 use std::error::Error;
@@ -52,7 +55,17 @@ fn main() {
         }
 
         SubCommand::Check(c) => {
-
+            let args = CheckArgs {
+                species: c.species,
+                debug: c.debug,
+            };
+            match check_for_viable_tank(&data, args) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("{}", error);
+                    std::process::exit(2);
+                }
+            }
         }
     }
 }
@@ -89,8 +102,8 @@ struct Extract {
 
 #[derive(Debug, Parser)]
 struct Check {
-    #[clap(value_parser = parse_key_val::<String,u16>)]
-    species: Vec<(String,u16)>,
+    #[clap(value_parser = parse_key_val::<String,u64>)]
+    species: Vec<(String, u64)>,
     /// Show debug-printed structs instead of pretty output
     #[clap(short)]
     debug: bool,
