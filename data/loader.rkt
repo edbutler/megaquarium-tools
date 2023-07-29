@@ -223,6 +223,11 @@ JSON
 
           ; id-strs look like "<tank-type-id>_<x-dim>-<y-dim>" (e.g., lagoon_tank_3_4)
           (define id/kind (findf (λ (pr) (string-prefix? id-str (car pr))) str-ids/tnktyps))
+
+          (displayln id/kind)
+
+          (displayln (string-split (substring id-str (add1 (string-length (car id/kind)))) "_"))
+
           (match-define (list x y)
             (map string->number
                  (string-split (substring id-str (add1 (string-length (car id/kind)))) "_")))
