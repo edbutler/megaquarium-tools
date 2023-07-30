@@ -22,3 +22,14 @@ impl fmt::Display for BasicError {
 }
 
 impl Error for BasicError {}
+
+macro_rules! as_str_display {
+    ($t:ident) => {
+        impl std::fmt::Display for $t {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{}", self.as_str())
+            }
+        }
+    }
+}
+pub(crate) use as_str_display;

@@ -8,6 +8,10 @@ pub fn symbol_of_str(s:&str) -> Value {
     Value::symbol(s)
 }
 
+pub fn invoke_symbol(s:&str) -> Value {
+    sexp!((,(symbol_of_str(s))))
+}
+
 pub trait ToSexp {
     fn to_sexp(&self) -> lexpr::Value;
 }
@@ -66,7 +70,7 @@ fn format(f: &mut std::fmt::Formatter, expr:&Value, indent:u32) -> std::fmt::Res
             Ok(())
         }
 
-        Value::Cons(_) if expr.is_list() && indent < 2 => {
+        Value::Cons(cons) if expr.is_list() && !cons.car().is_symbol() && indent < 2 => {
             write!(f, "(")?;
             for x in expr.list_iter().unwrap() {
                 write_indent(f, indent + 1)?;

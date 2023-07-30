@@ -1,5 +1,6 @@
 use crate::rules::Constraint;
 use crate::tank::Environment;
+use crate::util::as_str_display;
 
 #[derive(Debug)]
 pub struct Animal<'a> {
@@ -61,7 +62,11 @@ impl Species {
             0
         } else {
             let size = self.size.final_size;
-            if self.tank.active_swimmer { 6 * size } else { size }
+            if self.tank.active_swimmer {
+                6 * size
+            } else {
+                size
+            }
         }
     }
 
@@ -108,8 +113,7 @@ impl Species {
 
         match self.fighting {
             Some(Fighting::Wimp) => result.push(Constraint::NoBully),
-            Some(Fighting::Bully) => result.push(Constraint::IsBully),
-            None => (),
+            _ => (),
         }
 
         match self.lighting {
@@ -172,6 +176,17 @@ pub enum Fighting {
     Bully,
 }
 
+impl Fighting {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Fighting::Wimp => "wimp",
+            Fighting::Bully => "bully",
+        }
+    }
+}
+
+as_str_display!(Fighting);
+
 #[derive(Debug, PartialEq)]
 pub enum Lighting {
     Requires(u8),
@@ -197,19 +212,30 @@ pub mod test {
     use super::*;
     use crate::tank::*;
 
-    pub fn test_species<S : Into<String>>(id: S) -> Species {
+    pub fn test_species<S: Into<String>>(id: S) -> Species {
         Species {
             id: id.into(),
             kind: "fish".to_string(),
             immobile: false,
-            size: Size { armored: false, stages: Vec::new(), final_size: 5 },
-            environment: Environment { temperature: Temperature::Warm, salinity: Salinity::Salty, quality: 55 },
+            size: Size {
+                armored: false,
+                stages: Vec::new(),
+                final_size: 5,
+            },
+            environment: Environment {
+                temperature: Temperature::Warm,
+                salinity: Salinity::Salty,
+                quality: 55,
+            },
             diet: Diet::DoesNotEat,
             shoaling: None,
             fighting: None,
             lighting: None,
             cohabitation: None,
-            tank: TankNeeds { rounded_tank: false, active_swimmer: false },
+            tank: TankNeeds {
+                rounded_tank: false,
+                active_swimmer: false,
+            },
             predation: Vec::new(),
         }
     }

@@ -70,12 +70,18 @@ impl Temperature {
     }
 }
 
+impl Temperature {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Temperature::Warm => "warm",
+            Temperature::Cold => "cold",
+        }
+    }
+}
+
 impl std::fmt::Display for Temperature {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Temperature::Warm => write!(f, "warm"),
-            Temperature::Cold => write!(f, "cold"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
