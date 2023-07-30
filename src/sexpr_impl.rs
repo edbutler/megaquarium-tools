@@ -13,9 +13,10 @@ impl ToSexp for Species {
         let mut builder = StructBuilder::new("species");
 
         builder.add("id", symbol_of_string(&self.id));
-
-        builder.add("size", sexp!(,(self.size.final_size)));
-
+        builder.add("size", self.size.final_size.into());
+        if self.size.armored {
+            builder.add("armored?", Value::Bool(true));
+        }
         let constraints = lexpr::Value::list(self.constraints().iter().map(|c| c.to_sexp()));
         builder.add("constraints", constraints);
 
@@ -52,5 +53,48 @@ impl ToSexp for Constraint {
             Constraint::Predator { kind, size } =>
                 sexp!((predator ,(symbol_of_string(kind)) ,(*size))),
         }
+    }
+}
+
+impl ToSexp for TankModel {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        let mut builder = StructBuilder::new("tank-model");
+
+        builder.add("id", symbol_of_string(&self.id));
+        builder.add("min-size", Value::cons(self.min_size.0, self.min_size.1));
+        builder.add("max-size", Value::cons(self.max_size.0, self.max_size.1));
+        builder.add("density", self.density().into());
+        if self.rounded {
+            builder.add("rounded", Value::Bool(true));
+        }
+
+        builder.to_value()
+    }
+}
+
+impl ToSexp for TankStatus {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        let mut builder = StructBuilder::new("tank-status");
+
+        builder.add("size", self.size.into());
+        let temp = match self.environment.temperature {
+            Temperature::Cold => "cold",
+            Temperature::Warm => "warm"
+        };
+        builder.add("temperature", symbol_of_str(temp));
+        let salinity = match self.environment.salinity {
+            Salinity::Fresh => "fresh",
+            Salinity::Salty => "salty"
+        };
+        builder.add("salinity", symbol_of_str(salinity));
+        builder.add("quality", self.environment.quality.into());
+        builder.add("lighting", self.lighting.into());
+        if self.rounded {
+            builder.add("rounded", Value::Bool(true));
+        }
+
+        builder.to_value()
     }
 }

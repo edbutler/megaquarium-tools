@@ -21,7 +21,7 @@ pub struct AquariumSpec {
 #[derive(Debug)]
 pub struct ExhibitSpec {
     pub tank: TankSpec,
-    pub animals: Vec<AnimalSpec>,
+    //pub animals: Vec<AnimalSpec>,
 }
 
 impl Aquarium<'_> {
@@ -42,13 +42,13 @@ impl Aquarium<'_> {
                         model: e.tank.model.id.clone(),
                         size: e.tank.size,
                     },
-                    animals: animals
-                        .into_iter()
-                        .map(|(k, v)| AnimalSpec {
-                            species: k.to_string(),
-                            count: v,
-                        })
-                        .collect(),
+                    //animals: animals
+                    //    .into_iter()
+                    //    .map(|(k, v)| AnimalSpec {
+                    //        species: k.to_string(),
+                    //        count: v,
+                    //    })
+                    //    .collect(),
                 }
             })
             .collect();
@@ -62,9 +62,9 @@ impl std::fmt::Display for AquariumSpec {
         write!(f, "(aquarium (")?;
         for e in &self.exhibits {
             write!(f, "\n  (exhibit\n    #tank {}\n    #:animals (", e.tank)?;
-            for a in &e.animals {
-                write!(f, "\n      {:#?}", a)?;
-            }
+            //for a in &e.animals {
+            //    write!(f, "\n      {:#?}", a)?;
+            //}
             write!(f, "))")?;
         }
         write!(f, ")")?;

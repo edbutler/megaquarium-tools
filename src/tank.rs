@@ -12,7 +12,7 @@ impl Tank<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TankModel {
     pub id: String,
     pub min_size: (u16, u16),
@@ -28,19 +28,11 @@ impl TankModel {
     }
 }
 
-impl std::fmt::Display for TankModel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "(tank-model")?;
-        write!(f, "\n  #:id {}", self.id)?;
-        write!(f, "\n  #:min-size ({} {})", self.min_size.0, self.min_size.1)?;
-        write!(f, "\n  #:max-size ({} {})", self.max_size.0, self.max_size.1)?;
-        write!(f, "\n  #:density {}", self.density())?;
-        if self.rounded {
-            write!(f, "\n  #:rounded #t")?;
-        }
-        write!(f, "))\n")?;
-        Ok(())
-    }
+pub struct TankStatus {
+    pub size: u16,
+    pub environment: Environment,
+    pub lighting: u8,
+    pub rounded: bool,
 }
 
 #[derive(Debug)]
@@ -55,7 +47,7 @@ impl std::fmt::Display for TankSpec {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Environment {
     pub temperature: Temperature,
     pub salinity: Salinity,

@@ -4,19 +4,17 @@ mod check;
 mod data;
 mod paths;
 mod rules;
-mod sexpr_impl;
 mod sexpr_format;
+mod sexpr_impl;
 mod tank;
 mod util;
 
-use animal::*;
 use check::*;
 use clap::Parser;
 use data::*;
-use std::error::Error;
+use sexpr_format::PrettyPrinted;
 use sexpr_format::*;
-
-use crate::sexpr_format::PrettyPrinted;
+use std::error::Error;
 
 fn main() {
     let opts = Opts::parse();
@@ -29,11 +27,6 @@ fn main() {
                     if l.debug {
                         println!("{:#?}", s);
                     } else {
-                        let a = Animal {
-                            id: 0,
-                            species: &s,
-                            age: 0,
-                        };
                         println!("{}", PrettyPrinted { expr: s.to_sexp() });
                     }
                 }
@@ -43,7 +36,7 @@ fn main() {
                     if l.debug {
                         println!("{:#?}", t);
                     } else {
-                        println!("{}", t);
+                        println!("{}", PrettyPrinted { expr: t.to_sexp() });
                     }
                 }
             }
@@ -53,9 +46,9 @@ fn main() {
             let save = read_save(&data, &e.save_name).unwrap();
 
             if e.debug {
-                println!("{:#?}", save.to_spec());
+                //println!("{:#?}", save.to_spec());
             } else {
-                println!("{}", save.to_spec());
+                //println!("{}", save.to_spec());
             }
         }
 
@@ -107,8 +100,8 @@ struct Extract {
 
 #[derive(Debug, Parser)]
 struct Check {
-    #[clap(value_parser = parse_key_val::<String,u64>)]
-    species: Vec<(String, u64)>,
+    #[clap(value_parser = parse_key_val::<String,u16>)]
+    species: Vec<(String, u16)>,
     /// Show debug-printed structs instead of pretty output
     #[clap(short)]
     debug: bool,

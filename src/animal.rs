@@ -24,9 +24,9 @@ impl Animal<'_> {
 }
 
 #[derive(Debug)]
-pub struct AnimalSpec {
-    pub species: String,
-    pub count: u64,
+pub struct AnimalSpec<'a> {
+    pub species: &'a Species,
+    pub count: u16,
 }
 
 pub struct AnimalDesc {
@@ -51,6 +51,15 @@ pub struct Species {
 }
 
 impl Species {
+    pub fn is_bully(&self) -> bool {
+        self.fighting == Some(Fighting::Bully)
+    }
+
+    pub fn minimum_needed_size(&self) -> u16 {
+        let size = self.size.final_size;
+        if self.tank.active_swimmer { 6 * size } else { size }
+    }
+
     pub fn constraints(&self) -> Vec<Constraint> {
         let size = self.size.final_size;
 
@@ -100,7 +109,7 @@ impl Species {
         }
 
         if self.tank.active_swimmer {
-            result.push(Constraint::TankSize(6 * size));
+            result.push(Constraint::TankSize(self.minimum_needed_size()));
         }
 
         if self.tank.rounded_tank {
