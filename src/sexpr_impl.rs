@@ -10,14 +10,16 @@ use lexpr::*;
 impl ToSexp for Species {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
-        let contraints = lexpr::Value::list(self.constraints().iter().map(|c| c.to_sexp()));
-        sexp!(
-            (species
-                #:id ,(symbol_of_string(&self.id))
-                #:size ,(self.size.final_size)
-                #:constraints ,contraints
-            )
-        )
+        let mut builder = StructBuilder::new("species");
+
+        builder.add("id", symbol_of_string(&self.id));
+
+        builder.add("size", sexp!(,(self.size.final_size)));
+
+        let constraints = lexpr::Value::list(self.constraints().iter().map(|c| c.to_sexp()));
+        builder.add("constraints", constraints);
+
+        builder.to_value()
     }
 }
 

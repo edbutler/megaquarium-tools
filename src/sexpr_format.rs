@@ -16,6 +16,26 @@ pub struct PrettyPrinted {
     pub expr: Value,
 }
 
+pub struct StructBuilder {
+    list: Vec<Value>,
+}
+
+impl StructBuilder {
+    pub fn new(id: &str) -> StructBuilder {
+        let list = vec![Value::symbol(id)];
+        StructBuilder { list }
+    }
+
+    pub fn add(&mut self, kw: &str, value: Value) {
+        self.list.push(Value::keyword(kw));
+        self.list.push(value);
+    }
+
+    pub fn to_value(&self) -> Value {
+        Value::list(self.list.clone())
+    }
+}
+
 fn write_indent(f: &mut std::fmt::Formatter, level: u32) -> std::fmt::Result {
     write!(f, "\n")?;
     for _ in 0..level {
