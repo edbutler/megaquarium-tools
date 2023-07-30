@@ -51,16 +51,15 @@ pub struct Violation {
 impl std::fmt::Display for Violation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let s = &self.species;
-        let o = self.conflicting_species.as_ref();
 
-        match &self.constraint {
-            Temperature(t) =>
-                write!(f, "{} requires {} tank but {} requires {}", s, t, o.unwrap(), t.other()),
-            Quality(q) => write!(f, "{} requires at least quality {}", s, q),
-            Shoaler(c) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
-            NoBully => write!(f, "{} will bully {}", o.unwrap(), s),
-            NoLight => todo!("nolight"),
-            NeedsLight(l) => todo!("needslight"),
+        match (&self.constraint, &self.conflicting_species) {
+            (Temperature(t), None) => write!(f, "{} requires {} tank", s, t),
+            (Temperature(t), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s, t, o, t.other()),
+            (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
+            (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
+            (NoBully, Some(o)) => write!(f, "{} will bully {}", o, s),
+            (NoLight, Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
+            (NeedsLight(l), _) => write!(f, "{} requires at least {} light", s, l),
             _ => todo!(),
         }
     }
@@ -93,7 +92,7 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         }
     };
 
-    let maybe_conflict = |other: Option<&SpeciesSpec>| match other {
+    let if_conflict = |other: Option<&SpeciesSpec>| match other {
         None => None,
         Some(o) => Some(Violation {
             species: s.species.id.clone(),
@@ -102,26 +101,31 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         }),
     };
 
-    let conflict_or_fail = |other: Option<&SpeciesSpec>| {
-        let conflicting_species = other.map(|s| s.species.id.clone());
-        Some(Violation {
-            species: s.species.id.clone(),
-            constraint: constraint.clone(),
-            conflicting_species,
-        })
+    let with_conflict = |is_okay: bool, conflict: Option<&SpeciesSpec>| {
+        if is_okay {
+            None
+        } else {
+            let conflicting_species = conflict.map(|s| s.species.id.clone());
+            Some(Violation {
+                species: s.species.id.clone(),
+                constraint: constraint.clone(),
+                conflicting_species,
+            })
+        }
     };
 
     match constraint {
-        Temperature(t) =>
-            if *t == exhibit.tank.environment.temperature {
-                None
-            } else {
-                conflict_or_fail(exhibit.animals.iter().find(|a| a.species.environment.temperature != *t))
-            },
+        Temperature(t) => with_conflict(
+            *t == exhibit.tank.environment.temperature,
+            exhibit.animals.iter().find(|a| a.species.environment.temperature != *t),
+        ),
         Quality(q) => simple(*q <= exhibit.tank.environment.quality),
         Shoaler(c) => simple(s.count >= (*c as u16)),
-        NoBully => maybe_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
-        NoLight => simple(exhibit.tank.lighting == 0),
+        NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
+        NoLight => with_conflict(
+            exhibit.tank.lighting == 0,
+            exhibit.animals.iter().find(|a| a.species.needs_light())
+        ),
         NeedsLight(l) => simple(exhibit.tank.lighting >= *l),
         //OnlyGenus(String),
         //NoGenus(String),

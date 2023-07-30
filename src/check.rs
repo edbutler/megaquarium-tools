@@ -30,13 +30,18 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
 
     let violations = find_violations(&exhibit);
 
+    println!("For contents:");
+    for a in &animals {
+        println!("- {}x {}", a.count, a.species.id);
+    }
+
     if violations.len() > 0 {
-        println!("Valid tank not possible:");
+        println!("\nA valid tank is not possible:");
         for v in violations {
             println!("- {}", v);
         }
     } else {
-        println!("Minimum viable tank:");
+        println!("\nThe minimum viable tank is:");
         if args.debug {
             println!("{:#?}", exhibit.tank);
         } else {
@@ -56,7 +61,7 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
     }
 
     let constrained_size = species.iter().map(|s| s.species.minimum_needed_size()).max().unwrap();
-    let summed_size: u16 = species.iter().map(|s| s.count * s.species.size.final_size).sum();
+    let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_used_tank_capacity()).sum();
     let lighting = species.iter().map(|s| {
         match s.species.lighting {
             Some(Lighting::Requires(x)) => x,

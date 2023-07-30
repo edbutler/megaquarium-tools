@@ -39,6 +39,7 @@ pub struct AnimalDesc {
 pub struct Species {
     pub id: String,
     pub kind: String,
+    pub immobile: bool,
     pub size: Size,
     pub environment: Environment,
     pub diet: Diet,
@@ -56,8 +57,27 @@ impl Species {
     }
 
     pub fn minimum_needed_size(&self) -> u16 {
-        let size = self.size.final_size;
-        if self.tank.active_swimmer { 6 * size } else { size }
+        if self.immobile {
+            0
+        } else {
+            let size = self.size.final_size;
+            if self.tank.active_swimmer { 6 * size } else { size }
+        }
+    }
+
+    pub fn maximum_used_tank_capacity(&self) -> u16 {
+        if self.immobile {
+            0
+        } else {
+            self.size.final_size
+        }
+    }
+
+    pub fn needs_light(&self) -> bool {
+        match self.lighting {
+            Some(Lighting::Requires(_)) => true,
+            _ => false,
+        }
     }
 
     pub fn constraints(&self) -> Vec<Constraint> {
@@ -181,6 +201,7 @@ pub mod test {
         Species {
             id: id.into(),
             kind: "fish".to_string(),
+            immobile: false,
             size: Size { armored: false, stages: Vec::new(), final_size: 5 },
             environment: Environment { temperature: Temperature::Warm, salinity: Salinity::Salty, quality: 55 },
             diet: Diet::DoesNotEat,

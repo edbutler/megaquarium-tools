@@ -21,8 +21,11 @@ fn main() {
 
     match opts.command {
         SubCommand::Lookup(l) => {
+            let mut did_write = false;
+
             for s in data.species {
                 if s.id.contains(&l.search_term) {
+                    did_write = true;
                     if l.debug {
                         println!("{:#?}", s);
                     } else {
@@ -30,14 +33,20 @@ fn main() {
                     }
                 }
             }
+
             for t in data.tanks {
                 if t.id.contains(&l.search_term) {
+                    did_write = true;
                     if l.debug {
                         println!("{:#?}", t);
                     } else {
                         println!("{}", PrettyPrinted { expr: t.to_sexp() });
                     }
                 }
+            }
+
+            if !did_write {
+                println!("No entries found for search {}", l.search_term);
             }
         }
 

@@ -13,6 +13,9 @@ impl ToSexp for Species {
         let mut builder = StructBuilder::new("species");
 
         builder.add("id", symbol_of_string(&self.id));
+        if self.immobile {
+            builder.add("immobile?", Value::Bool(true));
+        }
         builder.add("size", self.size.final_size.into());
         if self.size.armored {
             builder.add("armored?", Value::Bool(true));

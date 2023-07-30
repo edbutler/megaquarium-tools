@@ -263,6 +263,8 @@ fn read_single_species(o: &Value) -> Result<Species> {
         Ok(result)
     }
 
+    let immobile = o.as_object().unwrap().contains_key("immobile");
+
     let size = {
         let raw_stages = animal["stages"].as_array().ok_or(UBJ)?;
         let stages = raw_stages
@@ -344,6 +346,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
     Ok(Species {
         id: id.to_string(),
         kind: tags[1].to_string(),
+        immobile,
         size,
         environment,
         diet,
