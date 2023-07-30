@@ -61,6 +61,15 @@ pub enum Temperature {
     Cold,
 }
 
+impl Temperature {
+    pub fn other(&self) -> Temperature {
+        match self {
+            Temperature::Cold => Temperature::Warm,
+            Temperature::Warm => Temperature::Cold,
+        }
+    }
+}
+
 impl std::fmt::Display for Temperature {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {

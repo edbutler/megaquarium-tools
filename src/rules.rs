@@ -54,7 +54,8 @@ impl std::fmt::Display for Violation {
         let o = self.conflicting_species.as_ref();
 
         match &self.constraint {
-            Temperature(t) => write!(f, "{} requires {} tank", s, t),
+            Temperature(t) =>
+                write!(f, "{} requires {} tank but {} requires {}", s, t, o.unwrap(), t.other()),
             Quality(q) => write!(f, "{} requires at least quality {}", s, q),
             Shoaler(c) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
             NoBully => write!(f, "{} will bully {}", o.unwrap(), s),
@@ -92,7 +93,7 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         }
     };
 
-    let conflict = |other: Option<&SpeciesSpec>| match other {
+    let maybe_conflict = |other: Option<&SpeciesSpec>| match other {
         None => None,
         Some(o) => Some(Violation {
             species: s.species.id.clone(),
@@ -101,11 +102,25 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         }),
     };
 
+    let conflict_or_fail = |other: Option<&SpeciesSpec>| {
+        let conflicting_species = other.map(|s| s.species.id.clone());
+        Some(Violation {
+            species: s.species.id.clone(),
+            constraint: constraint.clone(),
+            conflicting_species,
+        })
+    };
+
     match constraint {
-        Temperature(t) => simple(*t == exhibit.tank.environment.temperature),
+        Temperature(t) =>
+            if *t == exhibit.tank.environment.temperature {
+                None
+            } else {
+                conflict_or_fail(exhibit.animals.iter().find(|a| a.species.environment.temperature != *t))
+            },
         Quality(q) => simple(*q <= exhibit.tank.environment.quality),
         Shoaler(c) => simple(s.count >= (*c as u16)),
-        NoBully => conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
+        NoBully => maybe_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         NoLight => simple(exhibit.tank.lighting == 0),
         NeedsLight(l) => simple(exhibit.tank.lighting >= *l),
         //OnlyGenus(String),
