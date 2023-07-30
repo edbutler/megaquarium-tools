@@ -86,6 +86,12 @@ impl ToSexp for TankModel {
     }
 }
 
+fn add_if_positive(builder: &mut StructBuilder, key: &str, x:u16) {
+    if x > 0 {
+        builder.add(key, x.into())
+    }
+}
+
 impl ToSexp for TankStatus {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
@@ -103,7 +109,12 @@ impl ToSexp for TankStatus {
         };
         builder.add("salinity", symbol_of_str(salinity));
         builder.add("quality", self.environment.quality.into());
-        builder.add("lighting", self.lighting.into());
+        if let Some(l) = self.lighting {
+            builder.add("lighting", l.into());
+        }
+        add_if_positive(&mut builder, "plants", self.environment.plants);
+        add_if_positive(&mut builder, "rocks", self.environment.rocks);
+        add_if_positive(&mut builder, "shelter", self.environment.shelter);
         if self.rounded {
             builder.add("rounded", Value::Bool(true));
         }

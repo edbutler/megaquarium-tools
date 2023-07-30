@@ -62,12 +62,13 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
 
     let constrained_size = species.iter().map(|s| s.species.minimum_needed_size()).max().unwrap();
     let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_used_tank_capacity()).sum();
-    let lighting = species.iter().map(|s| {
+    let lighting = species.iter().filter_map(|s| {
         match s.species.lighting {
-            Some(Lighting::Requires(x)) => x,
-            _ => 0,
+            Some(Lighting::Requires(x)) => Some(x),
+            Some(Lighting::Disallows) => Some(0),
+            None => None,
         }
-    }).max().unwrap();
+    }).max();
 
     TankStatus {
         size: std::cmp::max(constrained_size, summed_size),
@@ -75,6 +76,9 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
             temperature: species[0].species.environment.temperature,
             salinity: species[0].species.environment.salinity,
             quality: species.iter().map(|s| s.species.environment.quality).max().unwrap(),
+            plants: species.iter().map(|s| s.species.environment.plants).sum(),
+            rocks: species.iter().map(|s| s.species.environment.rocks).sum(),
+            shelter: species.iter().map(|s| s.species.environment.shelter).sum(),
         },
         lighting,
         rounded: species.iter().any(|s| s.species.tank.rounded_tank),

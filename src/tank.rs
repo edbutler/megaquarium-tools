@@ -32,7 +32,9 @@ impl TankModel {
 pub struct TankStatus {
     pub size: u16,
     pub environment: Environment,
-    pub lighting: u8,
+    // lighting it stored separately from environment due to animal constraints being more complex than a simple comparison
+    // None means uncontrained, Some means it has to be that value
+    pub lighting: Option<u8>,
     pub rounded: bool,
 }
 
@@ -53,6 +55,9 @@ pub struct Environment {
     pub temperature: Temperature,
     pub salinity: Salinity,
     pub quality: u8,
+    pub plants: u16,
+    pub rocks: u16,
+    pub shelter: u16,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

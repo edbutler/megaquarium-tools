@@ -9,31 +9,10 @@ pub struct Animal<'a> {
     pub age: u32,
 }
 
-impl Animal<'_> {
-    pub fn description(&self) -> AnimalDesc {
-        AnimalDesc {
-            species: self.species.id.clone(),
-            size: self.size(),
-            constraints: self.species.constraints(),
-        }
-    }
-
-    pub fn size(&self) -> u16 {
-        // TODO ignoring age for now
-        self.species.size.final_size
-    }
-}
-
 #[derive(Debug)]
 pub struct AnimalSpec<'a> {
     pub species: &'a Species,
     pub count: u16,
-}
-
-pub struct AnimalDesc {
-    pub species: String,
-    pub size: u16,
-    pub constraints: Vec<Constraint>,
 }
 
 #[derive(Debug, PartialEq)]

@@ -1,4 +1,5 @@
-use crate::{animal, tank};
+use crate::{animal, tank::{self, Environment}};
+use std::cmp::max;
 use Constraint::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,17 +19,6 @@ pub enum Constraint {
     RoundedTank,
     TankSize(u16),
     Predator { kind: String, size: u16 },
-}
-
-impl Constraint {
-    pub fn subsumes(&self, other: &Constraint) -> bool {
-        match (self, other) {
-            (Quality(x), Quality(y)) => x > y,
-            (NeedsLight(x), NeedsLight(y)) => x > y,
-            (TankSize(x), TankSize(y)) => x > y,
-            _ => false,
-        }
-    }
 }
 
 pub struct SpeciesSpec<'a> {
@@ -123,10 +113,10 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         Shoaler(c) => simple(s.count >= (*c as u16)),
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         NoLight => with_conflict(
-            exhibit.tank.lighting == 0,
+            exhibit.tank.lighting == Some(0),
             exhibit.animals.iter().find(|a| a.species.needs_light())
         ),
-        NeedsLight(l) => simple(exhibit.tank.lighting >= *l),
+        NeedsLight(l) => simple(if let Some(x) = exhibit.tank.lighting { x >= *l } else { false }),
         //OnlyGenus(String),
         //NoGenus(String),
         //NoSpecies(String),

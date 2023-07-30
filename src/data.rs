@@ -314,6 +314,9 @@ fn read_single_species(o: &Value) -> Result<Species> {
             temperature: temperature?,
             salinity: salinity,
             quality: quality?,
+            plants: 0,
+            rocks: 0,
+            shelter: 0,
         }
     };
 
