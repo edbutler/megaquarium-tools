@@ -1,4 +1,7 @@
+use crate::sexpr::*;
 use crate::tank;
+use lexpr;
+use lexpr::sexp;
 use Constraint::*;
 
 pub enum Constraint {
@@ -27,6 +30,34 @@ impl Constraint {
             (NeedsLight(x), NeedsLight(y)) => x > y,
             (TankSize(x), TankSize(y)) => x > y,
             _ => false,
+        }
+    }
+
+    #[allow(unused_parens)]
+    pub fn to_sexp(&self) -> lexpr::Value {
+        match self {
+            Temperature(t) => {
+                let e = symbol_of_str(match t {
+                    tank::Temperature::Cold => "cold",
+                    tank::Temperature::Warm => "warm",
+                });
+                sexp!((temperature, e))
+            }
+            Quality(q) => sexp!((quality, (*q))),
+            NeedsFood { kind, daily_amount } => sexp!((eats, (symbol_of_string(kind)), (*daily_amount))),
+            Scavenger => sexp!((scavenger)),
+            Shoaler(s) => sexp!((shoaler, (*s))),
+            IsBully => sexp!((bully)),
+            NoBully => sexp!((wimp)),
+            NoLight => sexp!((#"no-light")),
+            NeedsLight(l) => sexp!((light, (*l))),
+            OnlyGenus(g) => sexp!((#"only-genus" ,(symbol_of_string(g)))),
+            NoGenus(g) => sexp!((#"no-genus" ,(symbol_of_string(g)))),
+            NoSpecies(s) => sexp!((#"no-species" ,(symbol_of_string(s)))),
+            NoFoodEaters(e) => sexp!((#"no-food-eaters" ,(symbol_of_string(e)))),
+            RoundedTank => sexp!((#"rounded-tank")),
+            TankSize(s) => sexp!((#"tank-size" ,(*s))),
+            Predator { kind, size } => sexp!((predator, (symbol_of_string(kind)), (*size))),
         }
     }
 }

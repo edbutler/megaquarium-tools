@@ -37,9 +37,11 @@ impl GameData {
 fn fuzzy_match_string<'a, T, F>(f: F, search_string: &str, list: &'a [T]) -> Vec<&'a T> where F: Fn(&T) -> &str {
     let mut result = Vec::new();
 
+    let parts: Vec<&str> = search_string.split(" ").collect();
+
     for x in list {
         let name = f(x);
-        if name.contains(search_string) {
+        if parts.iter().all(|p| name.contains(p)) {
             result.push(x);
         }
     }
@@ -473,8 +475,10 @@ mod test {
 
         assert_eq!(data.species_search("foo"), Vec::<&Species>::new());
         assert_eq!(data.species_search("pancake"), vec![four]);
+        assert_eq!(data.species_search("pan scupp"), vec![four]);
         assert_eq!(data.species_search("olet"), vec![seven]);
         assert_eq!(data.species_search("then"), vec![two]);
+        assert_eq!(data.species_search("cresc then"), vec![two]);
         assert_eq!(data.species_search("cresc"), vec![two, seven]);
         assert_eq!(data.species_search("e"), vec![two, four, seven]);
     }

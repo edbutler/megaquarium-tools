@@ -4,6 +4,7 @@ mod check;
 mod data;
 mod paths;
 mod rules;
+mod sexpr;
 mod tank;
 mod util;
 
@@ -12,6 +13,9 @@ use check::*;
 use clap::Parser;
 use data::*;
 use std::error::Error;
+use lexpr;
+
+use crate::sexpr::PrettyPrinted;
 
 fn main() {
     let opts = Opts::parse();
@@ -30,6 +34,7 @@ fn main() {
                             age: 0,
                         };
                         println!("{}", a.description());
+                        println!("{}", PrettyPrinted { expr: s.to_sexp() });
                     }
                 }
             }

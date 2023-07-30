@@ -1,5 +1,8 @@
 use crate::rules::Constraint;
+use crate::sexpr::*;
 use crate::tank::Environment;
+use lexpr;
+use lexpr::sexp;
 
 #[derive(Debug)]
 pub struct Animal<'a> {
@@ -13,77 +16,13 @@ impl Animal<'_> {
         AnimalDesc {
             species: self.species.id.clone(),
             size: self.size(),
-            constraints: self.constraints(),
+            constraints: self.species.constraints(),
         }
     }
 
     pub fn size(&self) -> u16 {
         // TODO ignoring age for now
         self.species.size.final_size
-    }
-
-    pub fn constraints(&self) -> Vec<Constraint> {
-        let spec = self.species;
-        let mut result = Vec::new();
-
-        result.push(Constraint::Temperature(spec.environment.temperature));
-        result.push(Constraint::Quality(spec.environment.quality));
-
-        let mut food_kind: Option<String> = None;
-
-        match &spec.diet {
-            Diet::DoesNotEat => (),
-            Diet::Scavenger => result.push(Constraint::Scavenger),
-            Diet::Food { food, period } => {
-                food_kind = Some(food.clone());
-                result.push(Constraint::NeedsFood {
-                    kind: food.clone(),
-                    daily_amount: self.size() / period,
-                });
-            }
-        }
-
-        if let Some(s) = spec.shoaling {
-            result.push(Constraint::Shoaler(s));
-        }
-
-        match spec.fighting {
-            Some(Fighting::Wimp) => result.push(Constraint::NoBully),
-            Some(Fighting::Bully) => result.push(Constraint::IsBully),
-            None => (),
-        }
-
-        match spec.lighting {
-            Some(Lighting::Disallows) => result.push(Constraint::NoLight),
-            Some(Lighting::Requires(x)) => result.push(Constraint::NeedsLight(x)),
-            None => (),
-        }
-
-        if let Some(c) = spec.cohabitation {
-            let constraint = match c {
-                Cohabitation::NoConspecifics => Constraint::NoSpecies(spec.id.clone()),
-                Cohabitation::NoCongeners => Constraint::NoGenus(spec.kind.clone()),
-                Cohabitation::OnlyCongeners => Constraint::OnlyGenus(spec.kind.clone()),
-                Cohabitation::NoFoodCompetitors => Constraint::NoFoodEaters(food_kind.unwrap()),
-            };
-            result.push(constraint);
-        }
-
-        if spec.tank.active_swimmer {
-            result.push(Constraint::TankSize(6 * self.size()));
-        }
-
-        if spec.tank.rounded_tank {
-            result.push(Constraint::RoundedTank);
-        }
-
-        for p in &spec.predation {
-            // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
-            let size = (0.4 * (self.size() as f64)).floor() as u16;
-            result.push(Constraint::Predator { kind: p.clone(), size });
-        }
-
-        result
     }
 }
 
@@ -132,6 +71,85 @@ pub struct Species {
     pub cohabitation: Option<Cohabitation>,
     pub tank: TankNeeds,
     pub predation: Vec<String>,
+}
+
+impl Species {
+    #[allow(unused_parens)]
+    pub fn to_sexp(&self) -> lexpr::Value {
+        let contraints = lexpr::Value::list(self.constraints().iter().map(|c| c.to_sexp()));
+        sexp!(
+            (species
+                #:id ,(symbol_of_string(&self.id))
+                #:size ,(self.size.final_size)
+                #:constraints ,contraints
+            )
+        )
+    }
+
+    pub fn constraints(&self) -> Vec<Constraint> {
+        let size = self.size.final_size;
+
+        let mut result = Vec::new();
+
+        result.push(Constraint::Temperature(self.environment.temperature));
+        result.push(Constraint::Quality(self.environment.quality));
+
+        let mut food_kind: Option<String> = None;
+
+        match &self.diet {
+            Diet::DoesNotEat => (),
+            Diet::Scavenger => result.push(Constraint::Scavenger),
+            Diet::Food { food, period } => {
+                food_kind = Some(food.clone());
+                result.push(Constraint::NeedsFood {
+                    kind: food.clone(),
+                    daily_amount: size / period,
+                });
+            }
+        }
+
+        if let Some(s) = self.shoaling {
+            result.push(Constraint::Shoaler(s));
+        }
+
+        match self.fighting {
+            Some(Fighting::Wimp) => result.push(Constraint::NoBully),
+            Some(Fighting::Bully) => result.push(Constraint::IsBully),
+            None => (),
+        }
+
+        match self.lighting {
+            Some(Lighting::Disallows) => result.push(Constraint::NoLight),
+            Some(Lighting::Requires(x)) => result.push(Constraint::NeedsLight(x)),
+            None => (),
+        }
+
+        if let Some(c) = self.cohabitation {
+            let constraint = match c {
+                Cohabitation::NoConspecifics => Constraint::NoSpecies(self.id.clone()),
+                Cohabitation::NoCongeners => Constraint::NoGenus(self.kind.clone()),
+                Cohabitation::OnlyCongeners => Constraint::OnlyGenus(self.kind.clone()),
+                Cohabitation::NoFoodCompetitors => Constraint::NoFoodEaters(food_kind.unwrap()),
+            };
+            result.push(constraint);
+        }
+
+        if self.tank.active_swimmer {
+            result.push(Constraint::TankSize(6 * size));
+        }
+
+        if self.tank.rounded_tank {
+            result.push(Constraint::RoundedTank);
+        }
+
+        for p in &self.predation {
+            // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
+            let size = (0.4 * (size as f64)).floor() as u16;
+            result.push(Constraint::Predator { kind: p.clone(), size });
+        }
+
+        result
+    }
 }
 
 #[derive(Debug, PartialEq)]
