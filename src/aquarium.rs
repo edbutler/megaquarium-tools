@@ -63,7 +63,7 @@ impl std::fmt::Display for AquariumSpec {
         for e in &self.exhibits {
             write!(f, "\n  (exhibit\n    #tank {}\n    #:animals (", e.tank)?;
             for a in &e.animals {
-                write!(f, "\n      {}", a)?;
+                write!(f, "\n      {:#?}", a)?;
             }
             write!(f, "))")?;
         }

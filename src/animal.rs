@@ -1,8 +1,5 @@
 use crate::rules::Constraint;
-use crate::sexpr::*;
 use crate::tank::Environment;
-use lexpr;
-use lexpr::sexp;
 
 #[derive(Debug)]
 pub struct Animal<'a> {
@@ -32,30 +29,10 @@ pub struct AnimalSpec {
     pub count: u64,
 }
 
-impl std::fmt::Display for AnimalSpec {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "({}, {})", self.count, self.species)
-    }
-}
-
 pub struct AnimalDesc {
     pub species: String,
     pub size: u16,
     pub constraints: Vec<Constraint>,
-}
-
-impl std::fmt::Display for AnimalDesc {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "(animal\n")?;
-        write!(f, "  #:species {}\n", self.species)?;
-        write!(f, "  #:size {}\n", self.size)?;
-        write!(f, "  #:constraints (")?;
-        for c in &self.constraints {
-            write!(f, "\n    {}", c)?;
-        }
-        write!(f, "))\n")?;
-        Ok(())
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -74,18 +51,6 @@ pub struct Species {
 }
 
 impl Species {
-    #[allow(unused_parens)]
-    pub fn to_sexp(&self) -> lexpr::Value {
-        let contraints = lexpr::Value::list(self.constraints().iter().map(|c| c.to_sexp()));
-        sexp!(
-            (species
-                #:id ,(symbol_of_string(&self.id))
-                #:size ,(self.size.final_size)
-                #:constraints ,contraints
-            )
-        )
-    }
-
     pub fn constraints(&self) -> Vec<Constraint> {
         let size = self.size.final_size;
 
