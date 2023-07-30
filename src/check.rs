@@ -3,6 +3,7 @@ use crate::data;
 use crate::tank::*;
 use crate::util::*;
 use crate::rules::*;
+use crate::sexpr_format::*;
 
 pub struct CheckArgs {
     pub species: Vec<(String, u16)>,
@@ -10,38 +11,68 @@ pub struct CheckArgs {
 }
 
 pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<()> {
-    let mut listing = Vec::new();
+    let mut animals = Vec::new();
 
     for (s, count) in args.species {
         let species = lookup(&data, &s)?;
-        listing.push(AnimalSpec {
+        animals.push(SpeciesSpec {
             species,
             count,
         });
     }
 
+    let tank = minimum_viable_tank(&animals);
+
+    let exhibit = ExhibitSpec {
+        animals: &animals,
+        tank
+    };
+
+    let violations = find_violations(&exhibit);
+
+    if violations.len() > 0 {
+        println!("Valid tank not possible:");
+        for v in violations {
+            println!("- {}", v);
+        }
+    } else {
+        println!("Minimum viable tank:");
+        if args.debug {
+            println!("{:#?}", exhibit.tank);
+        } else {
+            println!("{}", PrettyPrinted { expr: exhibit.tank.to_sexp() });
+        }
+    }
+
+
     Ok(())
 }
 
-fn minimum_viable_tank(spec: &ExhibitSpec<'_>) -> TankStatus {
-    if spec.animals.len() == 0 {
+// Guess at the minimum viable tank for the given species.
+// Still requires checking for constraint violations.
+fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
+    if species.len() == 0 {
         panic!("need to specify at least some animals");
     }
 
-    let animals = spec.animals;
-
-    let constrained_size = animals.iter().map(|s| s.species.minimum_needed_size()).max().unwrap();
-    let summed_size: u16 = animals.iter().map(|s| s.species.size.final_size).sum();
+    let constrained_size = species.iter().map(|s| s.species.minimum_needed_size()).max().unwrap();
+    let summed_size: u16 = species.iter().map(|s| s.count * s.species.size.final_size).sum();
+    let lighting = species.iter().map(|s| {
+        match s.species.lighting {
+            Some(Lighting::Requires(x)) => x,
+            _ => 0,
+        }
+    }).max().unwrap();
 
     TankStatus {
         size: std::cmp::max(constrained_size, summed_size),
         environment: Environment {
-            temperature: Temperature::Warm,
-            salinity: Salinity::Salty,
-            quality: 0,
+            temperature: species[0].species.environment.temperature,
+            salinity: species[0].species.environment.salinity,
+            quality: species.iter().map(|s| s.species.environment.quality).max().unwrap(),
         },
-        lighting: 0,
-        rounded: false,
+        lighting,
+        rounded: species.iter().any(|s| s.species.tank.rounded_tank),
     }
 }
 

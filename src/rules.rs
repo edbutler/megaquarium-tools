@@ -48,7 +48,24 @@ pub struct Violation {
     pub conflicting_species: Option<String>,
 }
 
-pub fn find_violations(exhibit: &ExhibitSpec<'_>) -> Vec<Violation> {
+impl std::fmt::Display for Violation {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let s = &self.species;
+        let o = self.conflicting_species.as_ref();
+
+        match &self.constraint {
+            Temperature(t) => write!(f, "{} requires {} tank", s, t),
+            Quality(q) => write!(f, "{} requires at least quality {}", s, q),
+            Shoaler(c) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
+            NoBully => write!(f, "{} will bully {}", o.unwrap(), s),
+            NoLight => todo!("nolight"),
+            NeedsLight(l) => todo!("needslight"),
+            _ => todo!(),
+        }
+    }
+}
+
+pub fn find_violations(exhibit: &ExhibitSpec) -> Vec<Violation> {
     let mut result = Vec::new();
 
     for s in exhibit.animals {
@@ -75,11 +92,20 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         }
     };
 
+    let conflict = |other: Option<&SpeciesSpec>| match other {
+        None => None,
+        Some(o) => Some(Violation {
+            species: s.species.id.clone(),
+            constraint: constraint.clone(),
+            conflicting_species: Some(o.species.id.clone()),
+        }),
+    };
+
     match constraint {
         Temperature(t) => simple(*t == exhibit.tank.environment.temperature),
         Quality(q) => simple(*q <= exhibit.tank.environment.quality),
         Shoaler(c) => simple(s.count >= (*c as u16)),
-        NoBully => simple(exhibit.animals.iter().all(|a| !a.species.is_bully())),
+        NoBully => conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         NoLight => simple(exhibit.tank.lighting == 0),
         NeedsLight(l) => simple(exhibit.tank.lighting >= *l),
         //OnlyGenus(String),

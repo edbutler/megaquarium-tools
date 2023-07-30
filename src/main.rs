@@ -12,7 +12,6 @@ mod util;
 use check::*;
 use clap::Parser;
 use data::*;
-use sexpr_format::PrettyPrinted;
 use sexpr_format::*;
 use std::error::Error;
 

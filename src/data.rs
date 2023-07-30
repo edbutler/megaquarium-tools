@@ -304,7 +304,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             Err(bad_json("Unknown temperature"))
         };
 
-        let salinity = Salinity::Fresh;
+        let salinity = Salinity::Salty;
 
         let quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"));
 

@@ -28,6 +28,7 @@ impl TankModel {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TankStatus {
     pub size: u16,
     pub environment: Environment,
