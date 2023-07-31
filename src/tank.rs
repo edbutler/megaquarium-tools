@@ -57,7 +57,7 @@ pub struct Environment {
     pub quality: u8,
     pub plants: u16,
     pub rocks: u16,
-    pub shelter: u16,
+    pub caves: u16,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

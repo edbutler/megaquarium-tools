@@ -304,19 +304,23 @@ fn read_single_species(o: &Value) -> Result<Species> {
             Ok(Temperature::Cold)
         } else {
             Err(bad_json("Unknown temperature"))
-        };
+        }?;
 
         let salinity = Salinity::Salty;
 
-        let quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"));
+        let quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"))?;
+
+        let plants = stat_number(stats, "likesPlants", "value")?.unwrap_or(0) as u16;
+        let rocks = stat_number(stats, "likesRocks", "value")?.unwrap_or(0) as u16;
+        let caves = stat_number(stats, "likesCaves", "value")?.unwrap_or(0) as u16;
 
         Environment {
-            temperature: temperature?,
-            salinity: salinity,
-            quality: quality?,
-            plants: 0,
-            rocks: 0,
-            shelter: 0,
+            temperature,
+            salinity,
+            quality,
+            plants,
+            rocks,
+            caves,
         }
     };
 

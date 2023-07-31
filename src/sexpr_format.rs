@@ -48,9 +48,17 @@ fn write_indent(f: &mut std::fmt::Formatter, level: u32) -> std::fmt::Result {
     Ok(())
 }
 
+fn is_call(cons: &Cons) -> bool {
+    cons.car().is_symbol() && cons.cdr().is_list()
+}
+
+fn should_show_call_on_multiple_lines(cons: &Cons, indent:u32) -> bool {
+    indent < 3 || cons.cdr().as_slice().unwrap().len() > 4
+}
+
 fn format(f: &mut std::fmt::Formatter, expr:&Value, indent:u32) -> std::fmt::Result {
     match expr {
-        Value::Cons(cons) if indent == 0 && cons.car().is_symbol() && cons.cdr().is_list() => {
+        Value::Cons(cons) if is_call(cons) && should_show_call_on_multiple_lines(cons, indent) => {
             write!(f, "({}", cons.car().as_symbol().unwrap())?;
 
             let mut was_kw = false;
