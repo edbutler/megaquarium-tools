@@ -4,6 +4,10 @@ use crate::{
 };
 use Constraint::*;
 
+pub struct RuleOptions {
+    pub assume_all_fish_fully_grown: bool,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Constraint {
     Temperature(tank::Temperature),
@@ -23,6 +27,7 @@ pub struct SpeciesSpec<'a> {
 }
 
 pub struct ExhibitSpec<'a> {
+    pub options: RuleOptions,
     pub animals: &'a [SpeciesSpec<'a>],
     pub tank: tank::TankStatus,
 }
@@ -46,17 +51,24 @@ impl std::fmt::Display for Violation {
             (Lighting(Lighting::Disallows), None) => write!(f, "{} requires no light", s),
             (Lighting(Lighting::Disallows), Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
             (Lighting(Lighting::Requires(l)), _) => write!(f, "{} requires at least {} light", s, l),
-            (Cohabitation(Cohabitation::OnlyCongeners), Some(o)) => write!(f, "{} requires congeners but there is {}", s, o),
+            (Cohabitation(Cohabitation::OnlyCongeners), Some(o)) => {
+                write!(f, "{} requires congeners but there is {}", s, o)
+            }
             (Cohabitation(Cohabitation::NoCongeners), Some(o)) => {
                 if s == o {
                     write!(f, "{} cannot be with congeners but there are multiple {}", s, o)
                 } else {
                     write!(f, "{} cannot be with congeners but there is {}", s, o)
                 }
-            },
-            (Cohabitation(Cohabitation::NoConspecifics), _) => write!(f, "{} cannot be with its own species but there are multiple", s),
-            (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => write!(f, "{} will compete for food with {}", s, o),
+            }
+            (Cohabitation(Cohabitation::NoConspecifics), _) => {
+                write!(f, "{} cannot be with its own species but there are multiple", s)
+            }
+            (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => {
+                write!(f, "{} will compete for food with {}", s, o)
+            }
             (RoundedTank, _) => write!(f, "{} requies a rounded tank", s),
+            (Predator { genus: _, size: _ }, Some(o)) => write!(f, "{} will eat {}", s, o),
             _ => todo!(),
         }
     }
@@ -154,7 +166,19 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         },
         RoundedTank => simple(exhibit.tank.rounded),
         TankSize(s) => simple(exhibit.tank.size >= *s),
-        //Predator { genus: String, size: u16 },
-        _ => None,
+        Predator { genus, size } => if_conflict(
+            exhibit
+                .animals
+                .iter()
+                .find(|a| a.species.genus == *genus && size_for_predation(&exhibit.options, a) <= *size),
+        ),
+    }
+}
+
+fn size_for_predation(options: &RuleOptions, spec: &SpeciesSpec) -> u16 {
+    if options.assume_all_fish_fully_grown {
+        spec.species.maximum_size()
+    } else {
+        spec.species.minimum_size()
     }
 }

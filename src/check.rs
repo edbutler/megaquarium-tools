@@ -8,6 +8,7 @@ use crate::sexpr_format::*;
 pub struct CheckArgs {
     pub species: Vec<(String, u16)>,
     pub debug: bool,
+    pub assume_all_fish_fully_grown: bool,
 }
 
 pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<()> {
@@ -23,7 +24,12 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
 
     let tank = minimum_viable_tank(&animals);
 
+    let options = RuleOptions {
+        assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
+    };
+
     let exhibit = ExhibitSpec {
+        options,
         animals: &animals,
         tank
     };
@@ -60,8 +66,8 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
         panic!("need to specify at least some animals");
     }
 
-    let constrained_size = species.iter().map(|s| s.species.minimum_needed_size()).max().unwrap();
-    let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_used_tank_capacity()).sum();
+    let constrained_size = species.iter().map(|s| s.species.minimum_needed_tank_size()).max().unwrap();
+    let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_size()).sum();
     let lighting = species.iter().filter_map(|s| {
         match s.species.lighting {
             Some(Lighting::Requires(x)) => Some(x),

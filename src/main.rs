@@ -64,6 +64,7 @@ fn main() {
             let args = CheckArgs {
                 species: c.species,
                 debug: c.debug,
+                assume_all_fish_fully_grown: c.assume_fully_grown,
             };
             match check_for_viable_tank(&data, args) {
                 Ok(_) => (),
@@ -113,6 +114,9 @@ struct Check {
     /// Show debug-printed structs instead of pretty output
     #[clap(short)]
     debug: bool,
+    /// Consider all fish fully grown for the purposes of predation
+    #[clap(long)]
+    assume_fully_grown: bool,
 }
 
 fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>

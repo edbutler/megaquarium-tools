@@ -36,7 +36,7 @@ impl Species {
         self.fighting == Some(Fighting::Bully)
     }
 
-    pub fn minimum_needed_size(&self) -> u16 {
+    pub fn minimum_needed_tank_size(&self) -> u16 {
         if self.immobile {
             0
         } else {
@@ -49,7 +49,16 @@ impl Species {
         }
     }
 
-    pub fn maximum_used_tank_capacity(&self) -> u16 {
+    pub fn minimum_size(&self) -> u16 {
+        // make sure immobile always is 0 so predation calculations work (corals can always been eaten)
+        if self.immobile {
+            0
+        } else {
+            self.size.stages.iter().map(|s| s.size).min().unwrap_or(self.size.final_size)
+        }
+    }
+
+    pub fn maximum_size(&self) -> u16 {
         if self.immobile {
             0
         } else {
@@ -93,7 +102,7 @@ impl Species {
         }
 
         if self.tank.active_swimmer {
-            result.push(Constraint::TankSize(self.minimum_needed_size()));
+            result.push(Constraint::TankSize(self.minimum_needed_tank_size()));
         }
 
         if self.tank.rounded_tank {

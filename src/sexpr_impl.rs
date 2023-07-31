@@ -18,7 +18,7 @@ impl ToSexp for Species {
         let size = if self.immobile {
             Value::symbol("immobile")
         } else {
-            Value::Number(self.maximum_used_tank_capacity().into())
+            Value::Number(self.maximum_size().into())
         };
         builder.add("size", size);
 
