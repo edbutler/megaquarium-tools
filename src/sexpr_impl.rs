@@ -64,6 +64,14 @@ impl ToSexp for Species {
             builder.add("active-swimmer?", true.into());
         }
 
+        if self.predation.len() > 0 {
+            let mut b = StructBuilder::new("predation");
+            b.add("size", self.predation_size().into());
+            let targets = self.predation.iter().map(|p| symbol_of_string(p));
+            b.add("targets", Value::list(targets));
+            builder.add("predaction", b.to_value());
+        }
+
         builder.to_value()
     }
 }

@@ -1,4 +1,7 @@
-use crate::{animal::{self, Lighting, Cohabitation}, tank};
+use crate::{
+    animal::{self, Cohabitation, Diet, Lighting},
+    tank,
+};
 use Constraint::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,6 +46,17 @@ impl std::fmt::Display for Violation {
             (Lighting(Lighting::Disallows), None) => write!(f, "{} requires no light", s),
             (Lighting(Lighting::Disallows), Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
             (Lighting(Lighting::Requires(l)), _) => write!(f, "{} requires at least {} light", s, l),
+            (Cohabitation(Cohabitation::OnlyCongeners), Some(o)) => write!(f, "{} requires congeners but there is {}", s, o),
+            (Cohabitation(Cohabitation::NoCongeners), Some(o)) => {
+                if s == o {
+                    write!(f, "{} cannot be with congeners but there are multiple {}", s, o)
+                } else {
+                    write!(f, "{} cannot be with congeners but there is {}", s, o)
+                }
+            },
+            (Cohabitation(Cohabitation::NoConspecifics), _) => write!(f, "{} cannot be with its own species but there are multiple", s),
+            (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => write!(f, "{} will compete for food with {}", s, o),
+            (RoundedTank, _) => write!(f, "{} requies a rounded tank", s),
             _ => todo!(),
         }
     }
@@ -107,13 +121,37 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         Lighting(Lighting::Disallows) => with_conflict(
             exhibit.tank.lighting == Some(0),
-            exhibit.animals.iter().find(|a| a.species.needs_light())
+            exhibit.animals.iter().find(|a| a.species.needs_light()),
         ),
-        Lighting(Lighting::Requires(l)) => simple(if let Some(x) = exhibit.tank.lighting { x >= *l } else { false }),
-        //OnlyGenus(String),
-        //NoGenus(String),
-        //NoSpecies(String),
-        //NoFoodEaters(String),
+        Lighting(Lighting::Requires(l)) => simple(if let Some(x) = exhibit.tank.lighting {
+            x >= *l
+        } else {
+            false
+        }),
+        Cohabitation(Cohabitation::OnlyCongeners) => {
+            if_conflict(exhibit.animals.iter().find(|a| s.species.genus != a.species.genus))
+        }
+        Cohabitation(Cohabitation::NoCongeners) => if_conflict(exhibit.animals.iter().find(|a| {
+            if std::ptr::eq(s, *a) {
+                s.count > 1
+            } else {
+                s.species.genus == a.species.genus
+            }
+        })),
+        Cohabitation(Cohabitation::NoConspecifics) => simple(s.count == 1),
+        Cohabitation(Cohabitation::NoFoodCompetitors) => match &s.species.diet {
+            Diet::Food {
+                food: myfood,
+                period: _,
+            } => if_conflict(exhibit.animals.iter().find(|a| {
+                !std::ptr::eq(s, *a)
+                    && match &a.species.diet {
+                        Diet::Food { food, period: _ } => myfood == food,
+                        _ => false,
+                    }
+            })),
+            _ => None,
+        },
         RoundedTank => simple(exhibit.tank.rounded),
         TankSize(s) => simple(exhibit.tank.size >= *s),
         //Predator { genus: String, size: u16 },

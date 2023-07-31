@@ -64,15 +64,17 @@ impl Species {
         }
     }
 
-    pub fn constraints(&self) -> Vec<Constraint> {
+    pub fn predation_size(&self) -> u16 {
         let size = self.size.final_size;
+        // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
+        (0.4 * (size as f64)).floor() as u16
+    }
 
+    pub fn constraints(&self) -> Vec<Constraint> {
         let mut result = Vec::new();
 
         result.push(Constraint::Temperature(self.environment.temperature));
         result.push(Constraint::Quality(self.environment.quality));
-
-        let mut food_kind: Option<String> = None;
 
         if let Some(s) = self.shoaling {
             result.push(Constraint::Shoaler(s));
@@ -99,9 +101,7 @@ impl Species {
         }
 
         for p in &self.predation {
-            // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
-            let eats = (0.4 * (size as f64)).floor() as u16;
-            result.push(Constraint::Predator { genus: p.clone(), size: eats });
+            result.push(Constraint::Predator { genus: p.clone(), size: self.predation_size() });
         }
 
         result
@@ -153,18 +153,18 @@ pub enum Lighting {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Cohabitation {
+    OnlyCongeners,
     NoConspecifics,
     NoCongeners,
-    OnlyCongeners,
     NoFoodCompetitors,
 }
 
 impl Cohabitation {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Cohabitation::OnlyCongeners => "only-congeners",
             Cohabitation::NoConspecifics => "no-conspecifics",
             Cohabitation::NoCongeners => "no-congeners",
-            Cohabitation::OnlyCongeners => "only-congeners",
             Cohabitation::NoFoodCompetitors => "no-food-competitors",
         }
     }

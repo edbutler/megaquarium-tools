@@ -312,7 +312,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
 
         let plants = stat_number(stats, "likesPlants", "value")?.unwrap_or(0) as u16;
         let rocks = stat_number(stats, "likesRocks", "value")?.unwrap_or(0) as u16;
-        let caves = stat_number(stats, "likesCaves", "value")?.unwrap_or(0) as u16;
+        let caves = stat_number(stats, "likesCave", "value")?.unwrap_or(0) as u16;
 
         Environment {
             temperature,
