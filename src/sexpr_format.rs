@@ -53,7 +53,7 @@ fn is_call(cons: &Cons) -> bool {
 }
 
 fn should_show_call_on_multiple_lines(cons: &Cons, indent:u32) -> bool {
-    indent < 3 || cons.cdr().as_slice().unwrap().len() > 4
+    indent < 3 && cons.cdr().list_iter().unwrap().count() > 2
 }
 
 fn format(f: &mut std::fmt::Formatter, expr:&Value, indent:u32) -> std::fmt::Result {

@@ -1,24 +1,17 @@
-use crate::{animal, tank::{self, Environment}};
-use std::cmp::max;
+use crate::{animal::{self, Lighting, Cohabitation}, tank};
 use Constraint::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Constraint {
     Temperature(tank::Temperature),
     Quality(u8),
-    NeedsFood { kind: String, daily_amount: u16 },
-    Scavenger,
     Shoaler(u8),
     NoBully,
-    NoLight,
-    NeedsLight(u8),
-    OnlyGenus(String),
-    NoGenus(String),
-    NoSpecies(String),
-    NoFoodEaters(String),
+    Lighting(Lighting),
+    Cohabitation(Cohabitation),
     RoundedTank,
     TankSize(u16),
-    Predator { kind: String, size: u16 },
+    Predator { genus: String, size: u16 },
 }
 
 pub struct SpeciesSpec<'a> {
@@ -47,9 +40,9 @@ impl std::fmt::Display for Violation {
             (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
             (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
             (NoBully, Some(o)) => write!(f, "{} will bully {}", o, s),
-            (NoLight, None) => write!(f, "{} requires no light", s),
-            (NoLight, Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
-            (NeedsLight(l), _) => write!(f, "{} requires at least {} light", s, l),
+            (Lighting(Lighting::Disallows), None) => write!(f, "{} requires no light", s),
+            (Lighting(Lighting::Disallows), Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
+            (Lighting(Lighting::Requires(l)), _) => write!(f, "{} requires at least {} light", s, l),
             _ => todo!(),
         }
     }
@@ -112,18 +105,18 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         Quality(q) => simple(*q <= exhibit.tank.environment.quality),
         Shoaler(c) => simple(s.count >= (*c as u16)),
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
-        NoLight => with_conflict(
+        Lighting(Lighting::Disallows) => with_conflict(
             exhibit.tank.lighting == Some(0),
             exhibit.animals.iter().find(|a| a.species.needs_light())
         ),
-        NeedsLight(l) => simple(if let Some(x) = exhibit.tank.lighting { x >= *l } else { false }),
+        Lighting(Lighting::Requires(l)) => simple(if let Some(x) = exhibit.tank.lighting { x >= *l } else { false }),
         //OnlyGenus(String),
         //NoGenus(String),
         //NoSpecies(String),
         //NoFoodEaters(String),
         RoundedTank => simple(exhibit.tank.rounded),
         TankSize(s) => simple(exhibit.tank.size >= *s),
-        //Predator { kind: String, size: u16 },
+        //Predator { genus: String, size: u16 },
         _ => None,
     }
 }

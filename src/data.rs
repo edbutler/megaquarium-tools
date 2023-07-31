@@ -352,7 +352,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
 
     Ok(Species {
         id: id.to_string(),
-        kind: tags[1].to_string(),
+        genus: tags[1].to_string(),
         immobile,
         size,
         environment,
@@ -370,7 +370,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             stats,
             &[
                 ("dislikesConspecifics", Cohabitation::NoConspecifics),
-                ("dislikesConsgeners", Cohabitation::NoCongeners),
+                ("dislikesCongeners", Cohabitation::NoCongeners),
                 ("congenersOnly", Cohabitation::OnlyCongeners),
                 ("dislikesFoodCompetitors", Cohabitation::NoFoodCompetitors),
             ],

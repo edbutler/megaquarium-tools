@@ -18,7 +18,7 @@ pub struct AnimalSpec<'a> {
 #[derive(Debug, PartialEq)]
 pub struct Species {
     pub id: String,
-    pub kind: String,
+    pub genus: String,
     pub immobile: bool,
     pub size: Size,
     pub environment: Environment,
@@ -74,41 +74,20 @@ impl Species {
 
         let mut food_kind: Option<String> = None;
 
-        match &self.diet {
-            Diet::DoesNotEat => (),
-            Diet::Scavenger => result.push(Constraint::Scavenger),
-            Diet::Food { food, period } => {
-                food_kind = Some(food.clone());
-                result.push(Constraint::NeedsFood {
-                    kind: food.clone(),
-                    daily_amount: size / period,
-                });
-            }
-        }
-
         if let Some(s) = self.shoaling {
             result.push(Constraint::Shoaler(s));
         }
 
-        match self.fighting {
-            Some(Fighting::Wimp) => result.push(Constraint::NoBully),
-            _ => (),
+        if let Some(Fighting::Wimp) = self.fighting {
+            result.push(Constraint::NoBully);
         }
 
-        match self.lighting {
-            Some(Lighting::Disallows) => result.push(Constraint::NoLight),
-            Some(Lighting::Requires(x)) => result.push(Constraint::NeedsLight(x)),
-            None => (),
+        if let Some(l) = self.lighting {
+            result.push(Constraint::Lighting(l));
         }
 
         if let Some(c) = self.cohabitation {
-            let constraint = match c {
-                Cohabitation::NoConspecifics => Constraint::NoSpecies(self.id.clone()),
-                Cohabitation::NoCongeners => Constraint::NoGenus(self.kind.clone()),
-                Cohabitation::OnlyCongeners => Constraint::OnlyGenus(self.kind.clone()),
-                Cohabitation::NoFoodCompetitors => Constraint::NoFoodEaters(food_kind.unwrap()),
-            };
-            result.push(constraint);
+            result.push(Constraint::Cohabitation(c));
         }
 
         if self.tank.active_swimmer {
@@ -121,8 +100,8 @@ impl Species {
 
         for p in &self.predation {
             // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
-            let size = (0.4 * (size as f64)).floor() as u16;
-            result.push(Constraint::Predator { kind: p.clone(), size });
+            let eats = (0.4 * (size as f64)).floor() as u16;
+            result.push(Constraint::Predator { genus: p.clone(), size: eats });
         }
 
         result
@@ -166,7 +145,7 @@ impl Fighting {
 
 as_str_display!(Fighting);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Lighting {
     Requires(u8),
     Disallows,
@@ -179,6 +158,19 @@ pub enum Cohabitation {
     OnlyCongeners,
     NoFoodCompetitors,
 }
+
+impl Cohabitation {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Cohabitation::NoConspecifics => "no-conspecifics",
+            Cohabitation::NoCongeners => "no-congeners",
+            Cohabitation::OnlyCongeners => "only-congeners",
+            Cohabitation::NoFoodCompetitors => "no-food-competitors",
+        }
+    }
+}
+
+as_str_display!(Cohabitation);
 
 #[derive(Debug, PartialEq)]
 pub struct TankNeeds {
@@ -194,7 +186,7 @@ pub mod test {
     pub fn test_species<S: Into<String>>(id: S) -> Species {
         Species {
             id: id.into(),
-            kind: "fish".to_string(),
+            genus: "fish".to_string(),
             immobile: false,
             size: Size {
                 armored: false,

@@ -13,7 +13,7 @@ impl ToSexp for Species {
         let mut builder = StructBuilder::new("species");
 
         builder.add("id", symbol_of_string(&self.id));
-        builder.add("kind", symbol_of_string(&self.kind));
+        builder.add("genus", symbol_of_string(&self.genus));
 
         let size = if self.immobile {
             Value::symbol("immobile")
@@ -22,52 +22,49 @@ impl ToSexp for Species {
         };
         builder.add("size", size);
 
-        builder.add("environment", self.environment.to_sexp());
-
         if self.size.armored {
             builder.add("armored?", Value::Bool(true));
+        }
+
+        builder.add("environment", self.environment.to_sexp());
+
+        let diet =
+            match &self.diet {
+                Diet::Food { food, period } => sexp!((food ,(symbol_of_string(food)) ,(*period))),
+                Diet::Scavenger => sexp!((scavenger)),
+                Diet::DoesNotEat => sexp!((#"no-food")),
+            };
+        builder.add("diet", diet);
+
+        if let Some(s) = &self.shoaling {
+            builder.add("shoaler", (*s).into());
         }
 
         if let Some(f) = &self.fighting {
             builder.add("fighting", invoke_symbol(f.as_str()));
         }
 
-        //constraints.extend(self.constraints().iter().map(|c| c.to_sexp()));
+        if let Some(l) = &self.lighting {
+            let value = match l {
+                Lighting::Disallows => sexp!((#"no-light")),
+                Lighting::Requires(r) => sexp!((light ,(*r)))
+            };
+            builder.add("light", value);
+        }
 
-        //builder.add("constraints", lexpr::Value::list(constraints));
+        if let Some(c) = &self.cohabitation {
+            builder.add("cohabitation", invoke_symbol(c.as_str()));
+        }
+
+        if self.tank.rounded_tank {
+            builder.add("rounded-tank?", true.into());
+        }
+
+        if self.tank.active_swimmer {
+            builder.add("active-swimmer?", true.into());
+        }
 
         builder.to_value()
-    }
-}
-
-impl ToSexp for Constraint {
-    #[allow(unused_parens)]
-    fn to_sexp(&self) -> lexpr::Value {
-        match self {
-            Constraint::Temperature(t) => {
-                let e = symbol_of_str(match t {
-                    Temperature::Cold => "cold",
-                    Temperature::Warm => "warm"
-                });
-                sexp!((temperature ,e))
-            }
-            Constraint::Quality(q) => sexp!((quality ,(*q))),
-            Constraint::NeedsFood {kind, daily_amount} =>
-                sexp!((eats ,(symbol_of_string(kind)) ,(*daily_amount))),
-            Constraint::Scavenger => sexp!((scavenger)),
-            Constraint::Shoaler(s) => sexp!((shoaler ,(*s))),
-            Constraint::NoBully => sexp!((wimp)),
-            Constraint::NoLight => sexp!((#"no-light")),
-            Constraint::NeedsLight(l) => sexp!((light ,(*l))),
-            Constraint::OnlyGenus(g) => sexp!((#"only-genus" ,(symbol_of_string(g)))),
-            Constraint::NoGenus(g) => sexp!((#"no-genus" ,(symbol_of_string(g)))),
-            Constraint::NoSpecies(s) => sexp!((#"no-species" ,(symbol_of_string(s)))),
-            Constraint::NoFoodEaters(e) => sexp!((#"no-food-eaters" ,(symbol_of_string(e)))),
-            Constraint::RoundedTank => sexp!((#"rounded-tank")),
-            Constraint::TankSize(s) => sexp!((#"tank-size" ,(*s))),
-            Constraint::Predator { kind, size } =>
-                sexp!((predator ,(symbol_of_string(kind)) ,(*size))),
-        }
     }
 }
 
