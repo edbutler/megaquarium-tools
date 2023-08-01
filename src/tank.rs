@@ -1,3 +1,5 @@
+use crate::util::as_str_display;
+
 #[derive(Debug, Copy, Clone)]
 pub struct Tank<'a> {
     pub id: u64,
@@ -72,11 +74,7 @@ impl Temperature {
     }
 }
 
-impl std::fmt::Display for Temperature {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
-}
+as_str_display!(Temperature);
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Salinity {

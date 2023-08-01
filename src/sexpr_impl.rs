@@ -15,6 +15,8 @@ impl ToSexp for Species {
         builder.add("id", symbol_of_string(&self.id));
         builder.add("genus", symbol_of_string(&self.genus));
 
+        builder.add("prey-type", symbol_of_str(self.prey_type.as_str()));
+
         let size = if self.immobile {
             Value::symbol("immobile")
         } else {
@@ -67,7 +69,7 @@ impl ToSexp for Species {
         if self.predation.len() > 0 {
             let mut b = StructBuilder::new("predation");
             b.add("size", self.predation_size().into());
-            let targets = self.predation.iter().map(|p| symbol_of_string(p));
+            let targets = self.predation.iter().map(|p| symbol_of_str(p.as_str()));
             b.add("targets", Value::list(targets));
             builder.add("predaction", b.to_value());
         }

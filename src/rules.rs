@@ -1,5 +1,5 @@
 use crate::{
-    animal::{self, Cohabitation, Diet, Lighting},
+    animal::{self, Cohabitation, Diet, Lighting, PreyType},
     tank,
 };
 use Constraint::*;
@@ -18,7 +18,7 @@ pub enum Constraint {
     Cohabitation(Cohabitation),
     RoundedTank,
     TankSize(u16),
-    Predator { genus: String, size: u16 },
+    Predator { prey: PreyType, size: u16 },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -69,7 +69,7 @@ impl std::fmt::Display for Violation {
                 write!(f, "{} will compete for food with {}", s, o)
             }
             (RoundedTank, _) => write!(f, "{} requies a rounded tank", s),
-            (Predator { genus: _, size: _ }, Some(o)) => write!(f, "{} will eat {}", s, o),
+            (Predator { prey: _, size: _ }, Some(o)) => write!(f, "{} will eat {}", s, o),
             _ => todo!(),
         }
     }
@@ -167,11 +167,11 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         },
         RoundedTank => simple(exhibit.tank.rounded),
         TankSize(s) => simple(exhibit.tank.size >= *s),
-        Predator { genus, size } => if_conflict(
+        Predator { prey, size } => if_conflict(
             exhibit
                 .animals
                 .iter()
-                .find(|a| a.species.genus == *genus && size_for_predation(&exhibit.options, a) <= *size),
+                .find(|a| a.species.prey_type == *prey && size_for_predation(&exhibit.options, a) <= *size),
         ),
     }
 }

@@ -19,6 +19,7 @@ pub struct AnimalSpec<'a> {
 pub struct Species {
     pub id: String,
     pub genus: String,
+    pub prey_type: PreyType,
     pub immobile: bool,
     pub size: Size,
     pub environment: Environment,
@@ -28,7 +29,7 @@ pub struct Species {
     pub lighting: Option<Lighting>,
     pub cohabitation: Option<Cohabitation>,
     pub tank: TankNeeds,
-    pub predation: Vec<String>,
+    pub predation: Vec<PreyType>,
 }
 
 impl Species {
@@ -110,14 +111,57 @@ impl Species {
         }
 
         for p in &self.predation {
-            result.push(Constraint::Predator { genus: p.clone(), size: self.predation_size() });
+            result.push(Constraint::Predator { prey: p.clone(), size: self.predation_size() });
         }
 
         result
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum PreyType {
+    Fish,
+    Starfish,
+    Crustacean,
+    StonyCoral,
+    SoftCoral,
+    Clam,
+    Gorgonian,
+    Anemone,
+}
+
+impl PreyType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            PreyType::Fish => "fish",
+            PreyType::Starfish => "starfish",
+            PreyType::Crustacean => "crustacean",
+            PreyType::StonyCoral => "stonyCoral",
+            PreyType::SoftCoral => "softCoral",
+            PreyType::Clam => "clam",
+            PreyType::Gorgonian => "gorgonian",
+            PreyType::Anemone => "anemone",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<PreyType> {
+        match s {
+            "fish" => Some(PreyType::Fish),
+            "starfish" => Some(PreyType::Starfish),
+            "crustacean" => Some(PreyType::Crustacean),
+            "stonyCoral" => Some(PreyType::StonyCoral),
+            "softCoral" => Some(PreyType::SoftCoral),
+            "clam" => Some(PreyType::Clam),
+            "gorgonian" => Some(PreyType::Gorgonian),
+            "anemone" => Some(PreyType::Anemone),
+            _ => None
+        }
+    }
+}
+
+as_str_display!(PreyType);
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Diet {
     Food { food: String, period: u16 },
     Scavenger,
@@ -196,6 +240,7 @@ pub mod test {
         Species {
             id: id.into(),
             genus: "fish".to_string(),
+            prey_type: PreyType::Fish,
             immobile: false,
             size: Size {
                 armored: false,

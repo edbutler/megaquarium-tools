@@ -337,12 +337,13 @@ fn read_single_species(o: &Value) -> Result<Species> {
         }
     };
 
-    let predation: Vec<String> = if let Some(Value::Object(eater)) = &stats.get("eater") {
-        let result: Result<Vec<String>> = eater
+    let predation: Vec<PreyType> = if let Some(Value::Object(eater)) = &stats.get("eater") {
+        let result: Result<Vec<PreyType>> = eater
             .keys()
             .map(|k| {
-                // need to remove the "Eater" on the end of every string
-                Ok(k.strip_suffix("Eater").ok_or(bad_json("no Eater suffix"))?.to_string())
+                let str = k.strip_suffix("Eater").ok_or(bad_json("no Eater suffix"))?;
+                let typ = PreyType::from_str(str).ok_or(bad_json("unknown prey type"))?;
+                Ok(typ)
             })
             .collect();
         result?
@@ -350,9 +351,32 @@ fn read_single_species(o: &Value) -> Result<Species> {
         Vec::new()
     };
 
+    let prey_type = {
+        if has_stat(stats, "isFish") {
+            Ok(PreyType::Fish)
+        } else if has_stat(stats, "isStarfish") {
+            Ok(PreyType::Starfish)
+        } else if has_stat(stats, "isCrustacean") {
+            Ok(PreyType::Crustacean)
+        } else if has_stat(stats, "isStonyCoral") {
+            Ok(PreyType::StonyCoral)
+        } else if has_stat(stats, "isSoftCoral") {
+            Ok(PreyType::SoftCoral)
+        } else if has_stat(stats, "isClam") {
+            Ok(PreyType::Clam)
+        } else if has_stat(stats, "isGorgonian") {
+            Ok(PreyType::Gorgonian)
+        } else if has_stat(stats, "isAnemone") {
+            Ok(PreyType::Anemone)
+        } else {
+            Err(bad_json("unknown prey type"))
+        }
+    }?;
+
     Ok(Species {
         id: id.to_string(),
         genus: tags[1].to_string(),
+        prey_type,
         immobile,
         size,
         environment,
