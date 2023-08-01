@@ -38,18 +38,6 @@ pub struct TankStatus {
     pub rounded: bool,
 }
 
-#[derive(Debug)]
-pub struct TankSpec {
-    pub model: String,
-    pub size: (u16, u16),
-}
-
-impl std::fmt::Display for TankSpec {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "(tank #:size ({}, {}) #:model {})", self.size.0, self.size.1, self.model)
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Environment {
     pub temperature: Temperature,

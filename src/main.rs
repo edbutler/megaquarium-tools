@@ -52,11 +52,12 @@ fn main() {
 
         SubCommand::Extract(e) => {
             let save = read_save(&data, &e.save_name).unwrap();
+            let desc = save.description();
 
             if e.debug {
-                //println!("{:#?}", save.to_spec());
+                println!("{:#?}", desc);
             } else {
-                //println!("{}", save.to_spec());
+                println!("{}", PrettyPrinted { expr: desc.to_sexp() });
             }
         }
 

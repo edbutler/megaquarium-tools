@@ -14,60 +14,57 @@ pub struct Exhibit<'a> {
 }
 
 #[derive(Debug)]
-pub struct AquariumSpec {
-    pub exhibits: Vec<ExhibitSpec>,
+pub struct AquariumDesc {
+    pub exhibits: Vec<ExhibitDesc>,
 }
 
 #[derive(Debug)]
-pub struct ExhibitSpec {
-    pub tank: TankSpec,
-    //pub animals: Vec<AnimalSpec>,
+pub struct ExhibitDesc {
+    pub tank: TankDesc,
+    pub animals: Vec<AnimalDesc>,
+}
+
+#[derive(Debug)]
+pub struct AnimalDesc {
+    pub species: String,
+    pub count: u16,
+}
+
+#[derive(Debug)]
+pub struct TankDesc {
+    pub model: String,
+    pub size: u16,
 }
 
 impl Aquarium<'_> {
-    pub fn to_spec(&self) -> AquariumSpec {
+    pub fn description(&self) -> AquariumDesc {
         let exhibits = self
             .exhibits
             .iter()
             .map(|e| {
-                let mut animals: HashMap<&str, u64> = HashMap::new();
+                let mut animals: HashMap<&str, u16> = HashMap::new();
 
                 for a in &e.animals {
                     let count = animals.entry(&a.species.id).or_insert(0);
                     *count += 1;
                 }
 
-                ExhibitSpec {
-                    tank: TankSpec {
+                ExhibitDesc {
+                    tank: TankDesc {
                         model: e.tank.model.id.clone(),
-                        size: e.tank.size,
+                        size: e.tank.volume(),
                     },
-                    //animals: animals
-                    //    .into_iter()
-                    //    .map(|(k, v)| AnimalSpec {
-                    //        species: k.to_string(),
-                    //        count: v,
-                    //    })
-                    //    .collect(),
+                    animals: animals
+                        .into_iter()
+                        .map(|(k, v)| AnimalDesc {
+                            species: k.to_string(),
+                            count: v,
+                        })
+                        .collect(),
                 }
             })
             .collect();
 
-        AquariumSpec { exhibits: exhibits }
-    }
-}
-
-impl std::fmt::Display for AquariumSpec {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "(aquarium (")?;
-        for e in &self.exhibits {
-            write!(f, "\n  (exhibit\n    #tank {}\n    #:animals (", e.tank)?;
-            //for a in &e.animals {
-            //    write!(f, "\n      {:#?}", a)?;
-            //}
-            write!(f, "))")?;
-        }
-        write!(f, ")")?;
-        Ok(())
+        AquariumDesc { exhibits: exhibits }
     }
 }

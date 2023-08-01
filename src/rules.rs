@@ -21,6 +21,7 @@ pub enum Constraint {
     Predator { genus: String, size: u16 },
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct SpeciesSpec<'a> {
     pub species: &'a animal::Species,
     pub count: u16,

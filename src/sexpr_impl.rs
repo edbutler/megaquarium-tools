@@ -1,9 +1,9 @@
 // we have to stuff this all in here because rust formatting mangles the sexp! macro
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-use crate::rules::*;
 use crate::tank::*;
 use crate::animal::*;
+use crate::aquarium::*;
 use crate::sexpr_format::*;
 use lexpr::*;
 
@@ -143,5 +143,35 @@ impl ToSexp for TankStatus {
         }
 
         builder.to_value()
+    }
+}
+
+impl ToSexp for AquariumDesc {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        let exhibits = self.exhibits.iter().map(|e| e.to_sexp());
+        sexp!((aquarium ,(Value::list(exhibits))))
+    }
+}
+
+impl ToSexp for ExhibitDesc {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        let animals = self.animals.iter().map(|e| e.to_sexp());
+        sexp!((exhibit #:tank ,(self.tank.to_sexp()) #:animals ,(Value::list(animals))))
+    }
+}
+
+impl ToSexp for TankDesc {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        sexp!((tank ,(symbol_of_string(&self.model)) ,(self.size)))
+    }
+}
+
+impl ToSexp for AnimalDesc {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        sexp!((animals ,(symbol_of_string(&self.species)) ,(self.count)))
     }
 }
