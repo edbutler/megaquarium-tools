@@ -1,5 +1,5 @@
 use crate::rules::Constraint;
-use crate::tank::Environment;
+use crate::tank;
 use crate::util::as_str_display;
 
 #[derive(Debug)]
@@ -20,15 +20,13 @@ pub struct Species {
     pub id: String,
     pub genus: String,
     pub prey_type: PreyType,
-    pub immobile: bool,
     pub size: Size,
-    pub environment: Environment,
+    pub habitat: Habitat,
     pub diet: Diet,
+    pub needs: Needs,
     pub shoaling: Option<u8>,
     pub fighting: Option<Fighting>,
-    pub lighting: Option<Lighting>,
     pub cohabitation: Option<Cohabitation>,
-    pub tank: TankNeeds,
     pub predation: Vec<PreyType>,
 }
 
@@ -38,11 +36,11 @@ impl Species {
     }
 
     pub fn minimum_needed_tank_size(&self) -> u16 {
-        if self.immobile {
+        if self.size.immobile {
             0
         } else {
             let size = self.size.final_size;
-            if self.tank.active_swimmer {
+            if self.habitat.active_swimmer {
                 6 * size
             } else {
                 size
@@ -52,7 +50,7 @@ impl Species {
 
     pub fn minimum_size(&self) -> u16 {
         // make sure immobile always is 0 so predation calculations work (corals can always been eaten)
-        if self.immobile {
+        if self.size.immobile {
             0
         } else {
             self.size.stages.iter().map(|s| s.size).min().unwrap_or(self.size.final_size)
@@ -60,7 +58,7 @@ impl Species {
     }
 
     pub fn maximum_size(&self) -> u16 {
-        if self.immobile {
+        if self.size.immobile {
             0
         } else {
             self.size.final_size
@@ -68,8 +66,8 @@ impl Species {
     }
 
     pub fn needs_light(&self) -> bool {
-        match self.lighting {
-            Some(Lighting::Requires(_)) => true,
+        match self.needs.light {
+            Some(Need::Loves(_)) => true,
             _ => false,
         }
     }
@@ -83,8 +81,8 @@ impl Species {
     pub fn constraints(&self) -> Vec<Constraint> {
         let mut result = Vec::new();
 
-        result.push(Constraint::Temperature(self.environment.temperature));
-        result.push(Constraint::Quality(self.environment.quality));
+        result.push(Constraint::Temperature(self.habitat.temperature));
+        result.push(Constraint::Quality(self.habitat.minimum_quality));
 
         if let Some(s) = self.shoaling {
             result.push(Constraint::Shoaler(s));
@@ -94,7 +92,7 @@ impl Species {
             result.push(Constraint::NoBully);
         }
 
-        if let Some(l) = self.lighting {
+        if let Some(l) = self.needs.light {
             result.push(Constraint::Lighting(l));
         }
 
@@ -102,12 +100,12 @@ impl Species {
             result.push(Constraint::Cohabitation(c));
         }
 
-        if self.tank.active_swimmer {
+        if self.habitat.active_swimmer {
             result.push(Constraint::TankSize(self.minimum_needed_tank_size()));
         }
 
-        if self.tank.rounded_tank {
-            result.push(Constraint::RoundedTank);
+        if let Some(t) = self.habitat.tank {
+            result.push(Constraint::TankType(t));
         }
 
         for p in &self.predation {
@@ -173,12 +171,41 @@ pub struct Size {
     pub stages: Vec<Stage>,
     pub final_size: u16,
     pub armored: bool,
+    pub immobile: bool,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Stage {
     pub size: u16,
     pub duration: u16,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Habitat {
+    pub minimum_quality: u8,
+    pub temperature: tank::Temperature,
+    pub tank: Option<TankType>,
+    pub active_swimmer: bool,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum TankType {
+    Rounded,
+    Kreisel,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Needs {
+    pub plants: Option<Need>,
+    pub rocks: Option<Need>,
+    pub caves: Option<u8>,
+    pub light: Option<Need>,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Need {
+    Loves(u8),
+    Dislikes,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -197,12 +224,6 @@ impl Fighting {
 }
 
 as_str_display!(Fighting);
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Lighting {
-    Requires(u8),
-    Disallows,
-}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Cohabitation {
@@ -225,12 +246,6 @@ impl Cohabitation {
 
 as_str_display!(Cohabitation);
 
-#[derive(Debug, PartialEq)]
-pub struct TankNeeds {
-    pub rounded_tank: bool,
-    pub active_swimmer: bool,
-}
-
 #[cfg(test)]
 pub mod test {
     use super::*;
@@ -241,29 +256,28 @@ pub mod test {
             id: id.into(),
             genus: "fish".to_string(),
             prey_type: PreyType::Fish,
-            immobile: false,
             size: Size {
-                armored: false,
                 stages: Vec::new(),
                 final_size: 5,
+                immobile: false,
+                armored: false,
             },
-            environment: Environment {
+            habitat: Habitat {
                 temperature: Temperature::Warm,
-                salinity: Salinity::Salty,
-                quality: 55,
-                plants: 0,
-                rocks: 0,
-                caves: 0,
+                minimum_quality: 55,
+                active_swimmer: false,
+                tank: None,
+            },
+            needs: Needs {
+                plants: None,
+                rocks: None,
+                caves: None,
+                light: None,
             },
             diet: Diet::DoesNotEat,
             shoaling: None,
             fighting: None,
-            lighting: None,
             cohabitation: None,
-            tank: TankNeeds {
-                rounded_tank: false,
-                active_swimmer: false,
-            },
             predation: Vec::new(),
         }
     }

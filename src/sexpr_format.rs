@@ -23,17 +23,19 @@ pub struct PrettyPrinted {
 
 pub struct StructBuilder {
     list: Vec<Value>,
+    pub added: u32,
 }
 
 impl StructBuilder {
     pub fn new(id: &str) -> StructBuilder {
         let list = vec![Value::symbol(id)];
-        StructBuilder { list }
+        StructBuilder { list, added: 0 }
     }
 
     pub fn add(&mut self, kw: &str, value: Value) {
         self.list.push(Value::keyword(kw));
         self.list.push(value);
+        self.added += 1;
     }
 
     pub fn to_value(&self) -> Value {

@@ -263,8 +263,6 @@ fn read_single_species(o: &Value) -> Result<Species> {
         Ok(result)
     }
 
-    let immobile = o.as_object().unwrap().contains_key("immobile");
-
     let size = {
         let raw_stages = animal["stages"].as_array().ok_or(UBJ)?;
         let stages = raw_stages
@@ -281,6 +279,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
         Size {
             final_size: stages.last().ok_or(UBJ)?.0,
             armored: has_stat(stats, "armored"),
+            immobile: o.as_object().unwrap().contains_key("immobile"),
             stages: stages
                 .iter()
                 .take(stages.len() - 1)
@@ -297,7 +296,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
         }
     };
 
-    let environment = {
+    let habitat = {
         let temperature = if has_stat(stats, "isTropical") {
             Ok(Temperature::Warm)
         } else if has_stat(stats, "isColdwater") {
@@ -306,21 +305,23 @@ fn read_single_species(o: &Value) -> Result<Species> {
             Err(bad_json("Unknown temperature"))
         }?;
 
-        let salinity = Salinity::Salty;
+        let minimum_quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"))?;
 
-        let quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"))?;
+        let active_swimmer = has_stat(stats, "activeSwimmer");
 
-        let plants = stat_number(stats, "likesPlants", "value")?.unwrap_or(0) as u16;
-        let rocks = stat_number(stats, "likesRocks", "value")?.unwrap_or(0) as u16;
-        let caves = stat_number(stats, "likesCave", "value")?.unwrap_or(0) as u16;
+        let tank = if has_stat(stats, "needsRounded") {
+            Some(TankType::Rounded)
+        } else if has_stat(stats, "needsKreisel") {
+            Some(TankType::Kreisel)
+        } else {
+            None
+        };
 
-        Environment {
+        Habitat {
             temperature,
-            salinity,
-            quality,
-            plants,
-            rocks,
-            caves,
+            minimum_quality,
+            active_swimmer,
+            tank,
         }
     };
 
@@ -334,6 +335,27 @@ fn read_single_species(o: &Value) -> Result<Species> {
             Diet::Scavenger
         } else {
             Diet::DoesNotEat
+        }
+    };
+
+    let needs = {
+        let plants = stat_number(stats, "likesPlants", "value")?.map(|x| Need::Loves(x));
+        let rocks = stat_number(stats, "likesRocks", "value")?.map(|x| Need::Loves(x));
+        let caves = stat_number(stats, "likesCave", "value")?;
+
+        let light = if has_stat(stats, "dislikesLights") {
+            Some(Need::Dislikes)
+        } else if let Some(v) = stat_number(stats, "light", "value")? {
+            Some(Need::Loves(v))
+        } else {
+            None
+        };
+
+        Needs {
+            plants,
+            rocks,
+            caves,
+            light,
         }
     };
 
@@ -377,19 +399,12 @@ fn read_single_species(o: &Value) -> Result<Species> {
         id: id.to_string(),
         genus: tags[1].to_string(),
         prey_type,
-        immobile,
         size,
-        environment,
+        habitat,
         diet,
+        needs,
         shoaling: stat_number(stats, "shoaler", "req")?,
         fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
-        lighting: if has_stat(stats, "dislikesLights") {
-            Some(Lighting::Disallows)
-        } else if let Some(v) = stat_number(stats, "light", "value")? {
-            Some(Lighting::Requires(v))
-        } else {
-            None
-        },
         cohabitation: one_of(
             stats,
             &[
@@ -399,10 +414,6 @@ fn read_single_species(o: &Value) -> Result<Species> {
                 ("dislikesFoodCompetitors", Cohabitation::NoFoodCompetitors),
             ],
         )?,
-        tank: TankNeeds {
-            active_swimmer: has_stat(stats, "activeSwimmer"),
-            rounded_tank: has_stat(stats, "needsRounded"),
-        },
         predation,
     })
 }

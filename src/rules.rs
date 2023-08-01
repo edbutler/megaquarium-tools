@@ -1,5 +1,5 @@
 use crate::{
-    animal::{self, Cohabitation, Diet, Lighting, PreyType},
+    animal::{self, Cohabitation, Diet, PreyType, Need},
     tank,
 };
 use Constraint::*;
@@ -14,9 +14,9 @@ pub enum Constraint {
     Quality(u8),
     Shoaler(u8),
     NoBully,
-    Lighting(Lighting),
+    Lighting(Need),
     Cohabitation(Cohabitation),
-    RoundedTank,
+    TankType(animal::TankType),
     TankSize(u16),
     Predator { prey: PreyType, size: u16 },
 }
@@ -49,9 +49,9 @@ impl std::fmt::Display for Violation {
             (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
             (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
             (NoBully, Some(o)) => write!(f, "{} will bully {}", o, s),
-            (Lighting(Lighting::Disallows), None) => write!(f, "{} requires no light", s),
-            (Lighting(Lighting::Disallows), Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
-            (Lighting(Lighting::Requires(l)), _) => write!(f, "{} requires at least {} light", s, l),
+            (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s),
+            (Lighting(Need::Dislikes), Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
+            (Lighting(Need::Loves(l)), _) => write!(f, "{} requires at least {} light", s, l),
             (Cohabitation(Cohabitation::OnlyCongeners), Some(o)) => {
                 write!(f, "{} requires congeners but there is {}", s, o)
             }
@@ -127,16 +127,16 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
     match constraint {
         Temperature(t) => with_conflict(
             *t == exhibit.tank.environment.temperature,
-            exhibit.animals.iter().find(|a| a.species.environment.temperature != *t),
+            exhibit.animals.iter().find(|a| a.species.habitat.temperature != *t),
         ),
         Quality(q) => simple(*q <= exhibit.tank.environment.quality),
         Shoaler(c) => simple(s.count >= (*c as u16)),
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
-        Lighting(Lighting::Disallows) => with_conflict(
+        Lighting(Need::Dislikes) => with_conflict(
             exhibit.tank.lighting == Some(0),
             exhibit.animals.iter().find(|a| a.species.needs_light()),
         ),
-        Lighting(Lighting::Requires(l)) => simple(if let Some(x) = exhibit.tank.lighting {
+        Lighting(Need::Loves(l)) => simple(if let Some(x) = exhibit.tank.lighting {
             x >= *l
         } else {
             false

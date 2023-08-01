@@ -17,7 +17,7 @@ impl ToSexp for Species {
 
         builder.add("prey-type", symbol_of_str(self.prey_type.as_str()));
 
-        let size = if self.immobile {
+        let size = if self.size.immobile {
             Value::symbol("immobile")
         } else {
             Value::Number(self.maximum_size().into())
@@ -28,7 +28,7 @@ impl ToSexp for Species {
             builder.add("armored?", Value::Bool(true));
         }
 
-        builder.add("environment", self.environment.to_sexp());
+        builder.add("habitat", self.habitat.to_sexp());
 
         let diet =
             match &self.diet {
@@ -38,6 +38,10 @@ impl ToSexp for Species {
             };
         builder.add("diet", diet);
 
+        if let Some(v) = self.needs.try_to_sexp() {
+            builder.add("needs", v);
+        }
+
         if let Some(s) = &self.shoaling {
             builder.add("shoaler", (*s).into());
         }
@@ -46,24 +50,8 @@ impl ToSexp for Species {
             builder.add("fighting", invoke_symbol(f.as_str()));
         }
 
-        if let Some(l) = &self.lighting {
-            let value = match l {
-                Lighting::Disallows => sexp!((#"no-light")),
-                Lighting::Requires(r) => sexp!((light ,(*r)))
-            };
-            builder.add("light", value);
-        }
-
         if let Some(c) = &self.cohabitation {
             builder.add("cohabitation", invoke_symbol(c.as_str()));
-        }
-
-        if self.tank.rounded_tank {
-            builder.add("rounded-tank?", true.into());
-        }
-
-        if self.tank.active_swimmer {
-            builder.add("active-swimmer?", true.into());
         }
 
         if self.predation.len() > 0 {
@@ -75,6 +63,64 @@ impl ToSexp for Species {
         }
 
         builder.to_value()
+    }
+}
+
+impl ToSexp for Habitat {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        let mut builder = StructBuilder::new("habitat");
+
+        builder.add("temperature", symbol_of_str(self.temperature.as_str()));
+
+        builder.add("quality", self.minimum_quality.into());
+
+        if let Some(t) = self.tank {
+            let s = match t { TankType::Rounded => "rounded", TankType::Kreisel => "kreisel" };
+            builder.add("tank", symbol_of_str(s));
+        }
+
+        if self.active_swimmer {
+            builder.add("active-swimmer?", true.into());
+        }
+
+        builder.to_value()
+    }
+}
+
+impl Needs {
+    #[allow(unused_parens)]
+    fn try_to_sexp(&self) -> Option<lexpr::Value> {
+        let mut builder: StructBuilder = StructBuilder::new("needs");
+
+        if let Some(p) = self.plants {
+            builder.add("plants", p.to_sexp());
+        }
+        if let Some(r) = self.rocks {
+            builder.add("rocks", r.to_sexp());
+        }
+        if let Some(c) = self.caves {
+            builder.add("caves", c.into());
+        }
+        if let Some(l) = self.light {
+            builder.add("light", l.to_sexp());
+        }
+
+        if builder.added > 0 {
+            Some(builder.to_value())
+        } else {
+            None
+        }
+    }
+}
+
+impl ToSexp for Need {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        match self {
+            Need::Dislikes => sexp!((#"dislikes")),
+            Need::Loves(r) => sexp!((loves ,(*r)))
+        }
     }
 }
 

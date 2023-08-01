@@ -69,25 +69,33 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
     let constrained_size = species.iter().map(|s| s.species.minimum_needed_tank_size()).max().unwrap();
     let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_size()).sum();
     let lighting = species.iter().filter_map(|s| {
-        match s.species.lighting {
-            Some(Lighting::Requires(x)) => Some(x),
-            Some(Lighting::Disallows) => Some(0),
+        match s.species.needs.light {
+            Some(Need::Loves(x)) => Some(x),
+            Some(Need::Dislikes) => Some(0),
             None => None,
         }
     }).max();
 
+    fn needed(need: Option<Need>) -> u16 {
+        match need {
+            Some(Need::Loves(x)) => x as u16,
+            _ => 0
+        }
+    }
+
     TankStatus {
         size: std::cmp::max(constrained_size, summed_size),
         environment: Environment {
-            temperature: species[0].species.environment.temperature,
-            salinity: species[0].species.environment.salinity,
-            quality: species.iter().map(|s| s.species.environment.quality).max().unwrap(),
-            plants: species.iter().map(|s| s.count * s.species.environment.plants).sum(),
-            rocks: species.iter().map(|s| s.count * s.species.environment.rocks).sum(),
-            caves: species.iter().map(|s| s.count * s.species.environment.caves).sum(),
+            temperature: species[0].species.habitat.temperature,
+            salinity: Salinity::Salty,
+            quality: species.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
+            plants: species.iter().map(|s| s.count * needed(s.species.needs.plants)).sum(),
+            rocks: species.iter().map(|s| s.count * needed(s.species.needs.rocks)).sum(),
+            caves: species.iter().map(|s| s.count * s.species.needs.caves.unwrap_or(0) as u16).sum(),
         },
         lighting,
-        rounded: species.iter().any(|s| s.species.tank.rounded_tank),
+        // TODO include kreisel
+        rounded: species.iter().any(|s| s.species.habitat.tank == Some(TankType::Rounded)),
     }
 }
 
