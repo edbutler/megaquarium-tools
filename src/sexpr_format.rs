@@ -1,4 +1,6 @@
+use std::{fmt, error::Error};
 use lexpr::*;
+use crate::util::Result;
 
 pub fn symbol_of_string(s:&String) -> Value {
     Value::symbol(s.clone())
@@ -15,6 +17,34 @@ pub fn invoke_symbol(s:&str) -> Value {
 
 pub trait ToSexp {
     fn to_sexp(&self) -> lexpr::Value;
+}
+
+#[derive(Debug, Clone)]
+pub struct BadSexp {
+    pub message: String,
+}
+
+pub fn bad_sexp<S: Into<String>>(msg: S) -> BadSexp {
+    BadSexp {
+        message: msg.into(),
+    }
+}
+
+impl fmt::Display for BadSexp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl Error for BadSexp {}
+
+pub trait FromSexp where Self : Sized {
+    fn from_sexp(value: &lexpr::Value) -> Result<Self>;
+}
+
+pub fn from_str<T: FromSexp>(text: &str) -> Result<T> {
+    let value = lexpr::from_str(text)?;
+    T::from_sexp(&value)
 }
 
 pub struct PrettyPrinted {

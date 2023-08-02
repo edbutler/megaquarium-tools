@@ -5,6 +5,7 @@ use crate::tank::*;
 use crate::animal::*;
 use crate::aquarium::*;
 use crate::sexpr_format::*;
+use crate::util;
 use lexpr::*;
 
 impl ToSexp for Species {
@@ -170,6 +171,21 @@ impl ToSexp for AquariumDesc {
     fn to_sexp(&self) -> lexpr::Value {
         let exhibits = self.exhibits.iter().map(|e| e.to_sexp());
         sexp!((aquarium ,(Value::list(exhibits))))
+    }
+}
+
+impl FromSexp for AquariumDesc {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<AquariumDesc> {
+        match value {
+            lexpr::Value::Cons(cons) => {
+                if cons.car().as_symbol() != Some("aquarium") {
+                    return Err(Box::new(bad_sexp("expected aquarium")))
+                }
+
+                Ok(AquariumDesc { exhibits: vec![] })
+            }
+            _ => Err(Box::new(bad_sexp("expected list")))
+        }
     }
 }
 

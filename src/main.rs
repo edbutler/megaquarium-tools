@@ -75,6 +75,10 @@ fn main() {
                 }
             }
         }
+
+        SubCommand::Optimize(_) => {
+            println!("hello");
+        }
     }
 }
 
@@ -90,6 +94,7 @@ enum SubCommand {
     Lookup(Lookup),
     Extract(Extract),
     Check(Check),
+    Optimize(Optimize),
 }
 
 #[derive(Debug, Parser)]
@@ -119,6 +124,10 @@ struct Check {
     #[clap(long)]
     assume_fully_grown: bool,
 }
+
+/// Optimizes an aquarium provided over stdin
+#[derive(Debug, Parser)]
+struct Optimize { }
 
 fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
 where

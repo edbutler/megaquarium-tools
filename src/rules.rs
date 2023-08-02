@@ -71,7 +71,8 @@ impl std::fmt::Display for Violation<'_> {
             (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s.id),
             (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s.id),
             (Predator { prey: _, size }, Some(o)) => {
-                if o.species.maximum_size() > *size {
+                let ropt = RuleOptions { assume_all_fish_fully_grown: true };
+                if size_for_predation(&ropt, o) > *size {
                     write!(f, "{} will eat {} (though it will be fine if fully grown)", s.id, o.species.id)
                 } else {
                     write!(f, "{} will eat {}", s.id, o.species.id)
@@ -183,9 +184,14 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, s: &'a SpeciesSpec<'a>, co
 }
 
 fn size_for_predation(options: &RuleOptions, spec: &SpeciesSpec) -> u16 {
-    if options.assume_all_fish_fully_grown {
-        spec.species.maximum_size()
-    } else {
-        spec.species.minimum_size()
-    }
+    let base =
+        if options.assume_all_fish_fully_grown {
+            spec.species.maximum_size()
+        } else {
+            spec.species.minimum_size()
+        };
+
+    let factor = if spec.species.size.armored { 2 } else { 1 };
+
+    base * factor
 }
