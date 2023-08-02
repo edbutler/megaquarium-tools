@@ -40,7 +40,7 @@ pub struct Environment {
     pub plants: Option<u16>,
     pub rocks: Option<u16>,
     pub caves: Option<u16>,
-    pub lighting: Option<u8>,
+    pub light: Option<u8>,
     pub interior: Option<Interior>,
 }
 

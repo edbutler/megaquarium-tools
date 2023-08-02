@@ -33,50 +33,56 @@ pub struct ExhibitSpec<'a> {
     pub tank: tank::Environment,
 }
 
-pub struct Violation {
-    pub species: String,
+pub struct Violation<'a> {
+    pub species: &'a SpeciesSpec<'a>,
     pub constraint: Constraint,
-    pub conflicting_species: Option<String>,
+    pub conflicting_species: Option<&'a SpeciesSpec<'a>>,
 }
 
-impl std::fmt::Display for Violation {
+impl std::fmt::Display for Violation<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let s = &self.species;
+        let s = self.species.species;
 
         match (&self.constraint, &self.conflicting_species) {
-            (Temperature(t), None) => write!(f, "{} requires {} tank", s, t),
-            (Temperature(t), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s, t, o, t.other()),
-            (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
-            (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
-            (NoBully, Some(o)) => write!(f, "{} will bully {}", o, s),
-            (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s),
-            (Lighting(Need::Dislikes), Some(o)) => write!(f, "{} requires no light but {} needs light", s, o),
-            (Lighting(Need::Loves(l)), _) => write!(f, "{} requires at least {} light", s, l),
+            (Temperature(t), None) => write!(f, "{} requires {} tank", s.id, t),
+            (Temperature(t), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s.id, t, o.species.id, t.other()),
+            (Quality(q), _) => write!(f, "{} requires at least quality {}", s.id, q),
+            (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s.id, c),
+            (NoBully, Some(o)) => write!(f, "{} will bully {}", o.species.id, s.id),
+            (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s.id),
+            (Lighting(Need::Dislikes), Some(o)) => write!(f, "{} requires no light but {} needs light", s.id, o.species.id),
+            (Lighting(Need::Loves(l)), _) => write!(f, "{} requires at least {} light", s.id, l),
             (Cohabitation(Cohabitation::OnlyCongeners), Some(o)) => {
-                write!(f, "{} requires congeners but there is {}", s, o)
+                write!(f, "{} requires congeners but there is {}", s.id, o.species.id)
             }
             (Cohabitation(Cohabitation::NoCongeners), Some(o)) => {
-                if s == o {
-                    write!(f, "{} cannot be with congeners but there are multiple {}", s, o)
+                if std::ptr::eq(s, o.species) {
+                    write!(f, "{} cannot be with congeners but there are multiple {}", s.id, o.species.id)
                 } else {
-                    write!(f, "{} cannot be with congeners but there is {}", s, o)
+                    write!(f, "{} cannot be with congeners but there is {}", s.id, o.species.id)
                 }
             }
             (Cohabitation(Cohabitation::NoConspecifics), _) => {
-                write!(f, "{} cannot be with its own species but there are multiple", s)
+                write!(f, "{} cannot be with its own species but there are multiple", s.id)
             }
             (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => {
-                write!(f, "{} will compete for food with {}", s, o)
+                write!(f, "{} will compete for food with {}", s.id, o.species.id)
             }
-            (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s),
-            (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s),
-            (Predator { prey: _, size: _ }, Some(o)) => write!(f, "{} will eat {}", s, o),
+            (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s.id),
+            (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s.id),
+            (Predator { prey: _, size }, Some(o)) => {
+                if o.species.maximum_size() > *size {
+                    write!(f, "{} will eat {} (though it will be fine if fully grown)", s.id, o.species.id)
+                } else {
+                    write!(f, "{} will eat {}", s.id, o.species.id)
+                }
+            }
             _ => todo!(),
         }
     }
 }
 
-pub fn find_violations(exhibit: &ExhibitSpec) -> Vec<Violation> {
+pub fn find_violations<'a>(exhibit: &'a ExhibitSpec<'a>) -> Vec<Violation<'a>> {
     let mut result = Vec::new();
 
     for s in exhibit.animals {
@@ -90,37 +96,36 @@ pub fn find_violations(exhibit: &ExhibitSpec) -> Vec<Violation> {
     result
 }
 
-fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constraint: &Constraint) -> Option<Violation> {
+fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, s: &'a SpeciesSpec<'a>, constraint: &Constraint) -> Option<Violation<'a>> {
     let simple = |is_okay: bool| {
         if is_okay {
             None
         } else {
             Some(Violation {
-                species: s.species.id.clone(),
+                species: s,
                 constraint: constraint.clone(),
                 conflicting_species: None,
             })
         }
     };
 
-    let if_conflict = |other: Option<&SpeciesSpec>| match other {
+    let if_conflict = |other: Option<&'a SpeciesSpec>| match other {
         None => None,
         Some(o) => Some(Violation {
-            species: s.species.id.clone(),
+            species: s,
             constraint: constraint.clone(),
-            conflicting_species: Some(o.species.id.clone()),
+            conflicting_species: Some(o),
         }),
     };
 
-    let with_conflict = |is_okay: bool, conflict: Option<&SpeciesSpec>| {
+    let with_conflict = |is_okay: bool, conflict: Option<&'a SpeciesSpec>| {
         if is_okay {
             None
         } else {
-            let conflicting_species = conflict.map(|s| s.species.id.clone());
             Some(Violation {
-                species: s.species.id.clone(),
+                species: s,
                 constraint: constraint.clone(),
-                conflicting_species,
+                conflicting_species: conflict,
             })
         }
     };
@@ -134,10 +139,10 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
         Shoaler(c) => simple(s.count >= (*c as u16)),
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         Lighting(Need::Dislikes) => with_conflict(
-            exhibit.tank.lighting == Some(0),
+            exhibit.tank.light == Some(0),
             exhibit.animals.iter().find(|a| a.species.needs_light()),
         ),
-        Lighting(Need::Loves(l)) => simple(if let Some(x) = exhibit.tank.lighting {
+        Lighting(Need::Loves(l)) => simple(if let Some(x) = exhibit.tank.light {
             x >= *l
         } else {
             false

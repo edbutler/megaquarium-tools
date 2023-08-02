@@ -68,7 +68,7 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
 
     let constrained_size = species.iter().map(|s| s.species.minimum_needed_tank_size()).max().unwrap();
     let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_size()).sum();
-    let lighting = species.iter().filter_map(|s| {
+    let light = species.iter().filter_map(|s| {
         match s.species.needs.light {
             Some(Need::Loves(x)) => Some(x),
             Some(Need::Dislikes) => Some(0),
@@ -83,7 +83,7 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
         plants: minimum_need(species, |s| s.needs.plants),
         rocks: minimum_need(species, |s| s.needs.rocks),
         caves: minimum_need(species, |s| s.needs.caves.map(|x| Need::Loves(x))),
-        lighting,
+        light,
         interior: species.iter().find_map(|s| s.species.habitat.interior),
     }
 }
