@@ -36,7 +36,6 @@ impl TankModel {
 pub struct Environment {
     pub size: u16,
     pub temperature: Temperature,
-    pub salinity: Salinity,
     pub quality: u8,
     pub plants: Option<u16>,
     pub rocks: Option<u16>,
@@ -87,9 +86,3 @@ impl Temperature {
 }
 
 as_str_display!(Temperature);
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Salinity {
-    Fresh,
-    Salty,
-}

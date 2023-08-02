@@ -79,7 +79,6 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
     Environment {
         size: std::cmp::max(constrained_size, summed_size),
         temperature: species[0].species.habitat.temperature,
-        salinity: Salinity::Salty,
         quality: species.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
         plants: minimum_need(species, |s| s.needs.plants),
         rocks: minimum_need(species, |s| s.needs.rocks),

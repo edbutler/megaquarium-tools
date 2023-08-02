@@ -153,11 +153,6 @@ impl ToSexp for Environment {
 
         builder.add("size", self.size.into());
         builder.add("temperature", symbol_of_str(self.temperature.as_str()));
-        let salinity = match self.salinity {
-            Salinity::Fresh => "fresh",
-            Salinity::Salty => "salty"
-        };
-        builder.add("salinity", symbol_of_str(salinity));
         builder.add("quality", self.quality.into());
         add_if_some(&mut builder, "plants", self.plants);
         add_if_some(&mut builder, "rocks", self.rocks);
