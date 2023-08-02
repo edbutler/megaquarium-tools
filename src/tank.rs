@@ -37,8 +37,25 @@ pub struct TankStatus {
     // lighting it stored separately from environment due to animal constraints being more complex than a simple comparison
     // None means uncontrained, Some means it has to be that value
     pub lighting: Option<u8>,
-    pub rounded: bool,
+    pub interior: Option<Interior>,
 }
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Interior {
+    Rounded,
+    Kreisel,
+}
+
+impl Interior {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Interior::Rounded => "rounded",
+            Interior::Kreisel => "kreisel",
+        }
+    }
+}
+
+as_str_display!(Interior);
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Environment {

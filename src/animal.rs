@@ -1,5 +1,5 @@
 use crate::rules::Constraint;
-use crate::tank;
+use crate::tank::{Interior, Temperature};
 use crate::util::as_str_display;
 
 #[derive(Debug)]
@@ -104,8 +104,8 @@ impl Species {
             result.push(Constraint::TankSize(self.minimum_needed_tank_size()));
         }
 
-        if let Some(t) = self.habitat.tank {
-            result.push(Constraint::TankType(t));
+        if let Some(t) = self.habitat.interior {
+            result.push(Constraint::Interior(t));
         }
 
         for p in &self.predation {
@@ -183,15 +183,9 @@ pub struct Stage {
 #[derive(Debug, PartialEq)]
 pub struct Habitat {
     pub minimum_quality: u8,
-    pub temperature: tank::Temperature,
-    pub tank: Option<TankType>,
+    pub temperature: Temperature,
+    pub interior: Option<Interior>,
     pub active_swimmer: bool,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum TankType {
-    Rounded,
-    Kreisel,
 }
 
 #[derive(Debug, PartialEq)]
@@ -266,7 +260,7 @@ pub mod test {
                 temperature: Temperature::Warm,
                 minimum_quality: 55,
                 active_swimmer: false,
-                tank: None,
+                interior: None,
             },
             needs: Needs {
                 plants: None,

@@ -94,8 +94,7 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
             caves: species.iter().map(|s| s.count * s.species.needs.caves.unwrap_or(0) as u16).sum(),
         },
         lighting,
-        // TODO include kreisel
-        rounded: species.iter().any(|s| s.species.habitat.tank == Some(TankType::Rounded)),
+        interior: species.iter().find_map(|s| s.species.habitat.interior),
     }
 }
 

@@ -75,9 +75,8 @@ impl ToSexp for Habitat {
 
         builder.add("quality", self.minimum_quality.into());
 
-        if let Some(t) = self.tank {
-            let s = match t { TankType::Rounded => "rounded", TankType::Kreisel => "kreisel" };
-            builder.add("tank", symbol_of_str(s));
+        if let Some(t) = self.interior {
+            builder.add("interior", symbol_of_str(t.as_str()));
         }
 
         if self.active_swimmer {
@@ -119,7 +118,7 @@ impl ToSexp for Need {
     fn to_sexp(&self) -> lexpr::Value {
         match self {
             Need::Dislikes => sexp!((#"dislikes")),
-            Need::Loves(r) => sexp!((loves ,(*r)))
+            Need::Loves(r) => (*r).into()
         }
     }
 }
@@ -186,8 +185,8 @@ impl ToSexp for TankStatus {
             builder.add("lighting", l.into());
         }
 
-        if self.rounded {
-            builder.add("rounded", Value::Bool(true));
+        if let Some(t) = self.interior {
+            builder.add("interior", symbol_of_str(t.as_str()));
         }
 
         builder.to_value()

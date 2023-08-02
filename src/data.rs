@@ -310,9 +310,9 @@ fn read_single_species(o: &Value) -> Result<Species> {
         let active_swimmer = has_stat(stats, "activeSwimmer");
 
         let tank = if has_stat(stats, "needsRounded") {
-            Some(TankType::Rounded)
+            Some(Interior::Rounded)
         } else if has_stat(stats, "needsKreisel") {
-            Some(TankType::Kreisel)
+            Some(Interior::Kreisel)
         } else {
             None
         };
@@ -321,7 +321,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             temperature,
             minimum_quality,
             active_swimmer,
-            tank,
+            interior: tank,
         }
     };
 

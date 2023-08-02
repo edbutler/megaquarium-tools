@@ -1,5 +1,5 @@
 use crate::{
-    animal::{self, Cohabitation, Diet, PreyType, Need},
+    animal::{self, Cohabitation, Diet, Need, PreyType},
     tank,
 };
 use Constraint::*;
@@ -16,7 +16,7 @@ pub enum Constraint {
     NoBully,
     Lighting(Need),
     Cohabitation(Cohabitation),
-    TankType(animal::TankType),
+    Interior(tank::Interior),
     TankSize(u16),
     Predator { prey: PreyType, size: u16 },
 }
@@ -68,7 +68,8 @@ impl std::fmt::Display for Violation {
             (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => {
                 write!(f, "{} will compete for food with {}", s, o)
             }
-            (RoundedTank, _) => write!(f, "{} requies a rounded tank", s),
+            (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s),
+            (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s),
             (Predator { prey: _, size: _ }, Some(o)) => write!(f, "{} will eat {}", s, o),
             _ => todo!(),
         }
@@ -165,7 +166,7 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
             })),
             _ => None,
         },
-        RoundedTank => simple(exhibit.tank.rounded),
+        Interior(i) => simple(exhibit.tank.interior == Some(*i)),
         TankSize(s) => simple(exhibit.tank.size >= *s),
         Predator { prey, size } => if_conflict(
             exhibit
