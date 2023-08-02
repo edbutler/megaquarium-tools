@@ -30,7 +30,7 @@ pub struct SpeciesSpec<'a> {
 pub struct ExhibitSpec<'a> {
     pub options: RuleOptions,
     pub animals: &'a [SpeciesSpec<'a>],
-    pub tank: tank::TankStatus,
+    pub tank: tank::Environment,
 }
 
 pub struct Violation {
@@ -127,10 +127,10 @@ fn check_constraint<'a>(exhibit: &ExhibitSpec<'a>, s: &SpeciesSpec<'a>, constrai
 
     match constraint {
         Temperature(t) => with_conflict(
-            *t == exhibit.tank.environment.temperature,
+            *t == exhibit.tank.temperature,
             exhibit.animals.iter().find(|a| a.species.habitat.temperature != *t),
         ),
-        Quality(q) => simple(*q <= exhibit.tank.environment.quality),
+        Quality(q) => simple(*q <= exhibit.tank.quality),
         Shoaler(c) => simple(s.count >= (*c as u16)),
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         Lighting(Need::Dislikes) => with_conflict(

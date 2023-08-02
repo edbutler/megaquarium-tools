@@ -30,12 +30,17 @@ impl TankModel {
     }
 }
 
+/// Properties of a tank. a None value for a property means "unconstrained," in that any animal with a
+/// need for that property will not be satisfied by this tank.
 #[derive(Debug, Clone)]
-pub struct TankStatus {
+pub struct Environment {
     pub size: u16,
-    pub environment: Environment,
-    // lighting it stored separately from environment due to animal constraints being more complex than a simple comparison
-    // None means uncontrained, Some means it has to be that value
+    pub temperature: Temperature,
+    pub salinity: Salinity,
+    pub quality: u8,
+    pub plants: Option<u16>,
+    pub rocks: Option<u16>,
+    pub caves: Option<u16>,
     pub lighting: Option<u8>,
     pub interior: Option<Interior>,
 }
@@ -56,16 +61,6 @@ impl Interior {
 }
 
 as_str_display!(Interior);
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Environment {
-    pub temperature: Temperature,
-    pub salinity: Salinity,
-    pub quality: u8,
-    pub plants: u16,
-    pub rocks: u16,
-    pub caves: u16,
-}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Temperature {

@@ -140,26 +140,9 @@ impl ToSexp for TankModel {
     }
 }
 
-fn add_if_positive(builder: &mut StructBuilder, key: &str, x:u16) {
-    if x > 0 {
-        builder.add(key, x.into())
-    }
-}
-
-impl Environment {
-    #[allow(unused_parens)]
-    fn add_to_sexp(&self, builder: &mut StructBuilder) {
-        builder.add("temperature", symbol_of_str(self.temperature.as_str()));
-        let salinity = match self.salinity {
-            Salinity::Fresh => "fresh",
-            Salinity::Salty => "salty"
-        };
-        builder.add("salinity", symbol_of_str(salinity));
-        builder.add("quality", self.quality.into());
-
-        add_if_positive(builder, "plants", self.plants);
-        add_if_positive(builder, "rocks", self.rocks);
-        add_if_positive(builder, "caves", self.caves);
+fn add_if_some<I: Into<Value>>(builder: &mut StructBuilder, key: &str, x:Option<I>) {
+    if let Some(v) = x {
+        builder.add(key, v.into())
     }
 }
 
@@ -167,24 +150,18 @@ impl ToSexp for Environment {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
         let mut builder = StructBuilder::new("environment");
-        self.add_to_sexp(&mut builder);
-        builder.to_value()
-    }
-}
-
-impl ToSexp for TankStatus {
-    #[allow(unused_parens)]
-    fn to_sexp(&self) -> lexpr::Value {
-        let mut builder = StructBuilder::new("tank-status");
 
         builder.add("size", self.size.into());
-
-        self.environment.add_to_sexp(&mut builder);
-
-        if let Some(l) = self.lighting {
-            builder.add("lighting", l.into());
-        }
-
+        builder.add("temperature", symbol_of_str(self.temperature.as_str()));
+        let salinity = match self.salinity {
+            Salinity::Fresh => "fresh",
+            Salinity::Salty => "salty"
+        };
+        builder.add("salinity", symbol_of_str(salinity));
+        builder.add("quality", self.quality.into());
+        add_if_some(&mut builder, "plants", self.plants);
+        add_if_some(&mut builder, "rocks", self.rocks);
+        add_if_some(&mut builder, "caves", self.caves);
         if let Some(t) = self.interior {
             builder.add("interior", symbol_of_str(t.as_str()));
         }

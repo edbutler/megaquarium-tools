@@ -61,7 +61,7 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
 
 // Guess at the minimum viable tank for the given species.
 // Still requires checking for constraint violations.
-fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
+fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
     if species.len() == 0 {
         panic!("need to specify at least some animals");
     }
@@ -76,26 +76,29 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> TankStatus {
         }
     }).max();
 
-    fn needed(need: Option<Need>) -> u16 {
-        match need {
-            Some(Need::Loves(x)) => x as u16,
-            _ => 0
-        }
-    }
-
-    TankStatus {
+    Environment {
         size: std::cmp::max(constrained_size, summed_size),
-        environment: Environment {
-            temperature: species[0].species.habitat.temperature,
-            salinity: Salinity::Salty,
-            quality: species.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
-            plants: species.iter().map(|s| s.count * needed(s.species.needs.plants)).sum(),
-            rocks: species.iter().map(|s| s.count * needed(s.species.needs.rocks)).sum(),
-            caves: species.iter().map(|s| s.count * s.species.needs.caves.unwrap_or(0) as u16).sum(),
-        },
+        temperature: species[0].species.habitat.temperature,
+        salinity: Salinity::Salty,
+        quality: species.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
+        plants: minimum_need(species, |s| s.needs.plants),
+        rocks: minimum_need(species, |s| s.needs.rocks),
+        caves: minimum_need(species, |s| s.needs.caves.map(|x| Need::Loves(x))),
         lighting,
         interior: species.iter().find_map(|s| s.species.habitat.interior),
     }
+}
+
+fn minimum_need<F: Fn(&Species)->Option<Need>>(list: &[SpeciesSpec], f: F) -> Option<u16> {
+    let foldfn = |acc: Option<u16>, s:&SpeciesSpec| -> Option<u16> {
+        match f(s.species) {
+            Some(Need::Dislikes) => Some(0),
+            Some(Need::Loves(x)) => Some((x as u16) * s.count + acc.unwrap_or(0)),
+            None => acc,
+        }
+    };
+
+    list.iter().fold(None, foldfn)
 }
 
 fn lookup<'a>(data: &'a data::GameData, species: &str) -> Result<&'a Species> {
