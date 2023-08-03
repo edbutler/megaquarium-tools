@@ -1,5 +1,6 @@
 use crate::animal::*;
 use crate::data;
+use crate::data::GameData;
 use crate::tank::*;
 use crate::util::*;
 use crate::rules::*;
@@ -53,6 +54,11 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
         } else {
             println!("{}", PrettyPrinted { expr: exhibit.tank.to_sexp() });
         }
+
+        println!("\nWill require food (average per day):");
+        for item in minimum_required_food(data, &animals) {
+            println!("- {}x {}", item.count, item.food);
+        }
     }
 
 
@@ -86,6 +92,31 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
         light,
         interior: species.iter().find_map(|s| s.species.habitat.interior),
     }
+}
+
+struct FoodAmount {
+    pub food: String,
+    pub count: u16,
+}
+
+fn minimum_required_food(data: &GameData, species: &[SpeciesSpec<'_>]) -> Vec<FoodAmount> {
+    let diets: Vec<(&String, u16)> = species.iter().filter_map(|s| {
+        match &s.species.diet {
+            Diet::Food { food, period: _ } => {
+                Some((food, s.count * s.species.amount_food_eaten()))
+            }
+            _ => None
+        }
+    }).collect();
+
+    data.food.iter().filter_map(|food| {
+        let count = diets.iter().filter_map(|(x, c)| if food == *x { Some(c) } else { None }).sum();
+        if count > 0 {
+            Some(FoodAmount { food: food.clone(), count })
+        } else {
+            None
+        }
+    }).collect()
 }
 
 fn minimum_need<F: Fn(&Species)->Option<Need>>(list: &[SpeciesSpec], f: F) -> Option<u16> {

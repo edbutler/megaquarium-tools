@@ -8,9 +8,18 @@ static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &[
     "~/Library/Application Support/Steam/steamapps/common/Megaquarium/Megaquarium.app/Contents/GameData"
 ];
 
-pub const TANKS_PATH: &str = "Data/tanks.data";
-pub const FISHES_PATH: &str = "Data/animals.data";
-pub const CORALS_PATH: &str = "Data/corals.data";
+pub const TANK_PATHS: &[&str] = &[
+    "Data/tanks.data",
+];
+pub const FISH_PATHS: &[&str] = &[
+    "Data/animals.data",
+    "Data/corals.data",
+];
+pub const FOOD_PATHS: &[&str] = &[
+    "Data/fishFood.data",
+    "DLC/Freshwater Frenzy/Data/ff fishFood.data",
+    "DLC/Architect's Collection/Data/ac fishFood.data",
+];
 
 pub fn find_data_dir() -> PathBuf {
     let dirs = UserDirs::new().unwrap();

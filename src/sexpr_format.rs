@@ -42,8 +42,8 @@ pub trait FromSexp where Self : Sized {
     fn from_sexp(value: &lexpr::Value) -> Result<Self>;
 }
 
-pub fn from_str<T: FromSexp>(text: &str) -> Result<T> {
-    let value = lexpr::from_str(text)?;
+pub fn from_reader<R: std::io::Read, T: FromSexp>(reader: R) -> Result<T> {
+    let value = lexpr::from_reader(reader)?;
     T::from_sexp(&value)
 }
 

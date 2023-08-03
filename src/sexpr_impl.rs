@@ -39,6 +39,10 @@ impl ToSexp for Species {
             };
         builder.add("diet", diet);
 
+        if self.greedy {
+            builder.add("greedy", Value::Bool(true));
+        }
+
         if let Some(v) = self.needs.try_to_sexp() {
             builder.add("needs", v);
         }

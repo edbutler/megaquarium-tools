@@ -24,6 +24,7 @@ pub struct Species {
     pub habitat: Habitat,
     pub diet: Diet,
     pub needs: Needs,
+    pub greedy: bool,
     pub shoaling: Option<u8>,
     pub fighting: Option<Fighting>,
     pub cohabitation: Option<Cohabitation>,
@@ -53,7 +54,12 @@ impl Species {
         if self.size.immobile {
             0
         } else {
-            self.size.stages.iter().map(|s| s.size).min().unwrap_or(self.size.final_size)
+            self.size
+                .stages
+                .iter()
+                .map(|s| s.size)
+                .min()
+                .unwrap_or(self.size.final_size)
         }
     }
 
@@ -76,6 +82,18 @@ impl Species {
         let size = self.size.final_size;
         // number from https://steamcommunity.com/app/600480/discussions/0/3276824488724294545/
         (0.4 * (size as f64)).floor() as u16
+    }
+
+    pub fn amount_food_eaten(&self) -> u16 {
+        match self.diet {
+            Diet::Food { food: _, period } => {
+                let size = self.maximum_size();
+                let per_feed = if self.greedy { (4 * size) / 3 } else { size };
+                // TODO should this be a float?
+                per_feed / period
+            }
+            _ => 0,
+        }
     }
 
     pub fn constraints(&self) -> Vec<Constraint> {
@@ -109,7 +127,10 @@ impl Species {
         }
 
         for p in &self.predation {
-            result.push(Constraint::Predator { prey: p.clone(), size: self.predation_size() });
+            result.push(Constraint::Predator {
+                prey: p.clone(),
+                size: self.predation_size(),
+            });
         }
 
         result
@@ -152,7 +173,7 @@ impl PreyType {
             "clam" => Some(PreyType::Clam),
             "gorgonian" => Some(PreyType::Gorgonian),
             "anemone" => Some(PreyType::Anemone),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -269,6 +290,7 @@ pub mod test {
                 light: None,
             },
             diet: Diet::DoesNotEat,
+            greedy: false,
             shoaling: None,
             fighting: None,
             cohabitation: None,

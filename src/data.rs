@@ -16,6 +16,7 @@ use std::path::Path;
 pub struct GameData {
     pub species: Vec<Species>,
     pub tanks: Vec<TankModel>,
+    pub food: Vec<String>,
 }
 
 impl GameData {
@@ -55,6 +56,7 @@ pub fn read_game_data() -> Result<GameData> {
     let result = GameData {
         species: read_species(&directory)?,
         tanks: read_tank_models(&directory)?,
+        food: read_food(&directory)?,
     };
 
     Ok(result)
@@ -218,9 +220,13 @@ where
 }
 
 fn read_species(directory: &Path) -> Result<Vec<Species>> {
-    let mut animals = read_species_file(&read_json(directory, FISHES_PATH)?)?;
-    let mut corals = read_species_file(&read_json(directory, CORALS_PATH)?)?;
-    animals.append(&mut corals);
+    let mut animals = Vec::new();
+
+    for path in FISH_PATHS {
+        let list = read_species_file(&read_json(directory, path)?)?;
+        animals.extend(list);
+    }
+
     Ok(animals)
 }
 
@@ -403,6 +409,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
         habitat,
         diet,
         needs,
+        greedy: has_stat(stats, "greedy"),
         shoaling: stat_number(stats, "shoaler", "req")?,
         fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
         cohabitation: one_of(
@@ -419,10 +426,18 @@ fn read_single_species(o: &Value) -> Result<Species> {
 }
 
 fn read_tank_models(directory: &Path) -> Result<Vec<TankModel>> {
-    let json = read_json(directory, TANKS_PATH)?;
-    let objects = json["objects"].as_array().ok_or("no species objects")?;
-    let tanks: Result<Vec<TankModel>> = objects.iter().map(|o| read_single_tank_model(o)).collect();
-    Ok(tanks?)
+    let mut tanks = Vec::new();
+
+    for path in TANK_PATHS {
+        let json = read_json(directory, path)?;
+        let objects = json["objects"].as_array().ok_or("no tank objects")?;
+        for x in objects {
+            let tank = read_single_tank_model(x)?;
+            tanks.push(tank);
+        }
+    }
+
+    Ok(tanks)
 }
 
 fn read_single_tank_model(o: &Value) -> Result<TankModel> {
@@ -449,6 +464,35 @@ fn read_single_tank_model(o: &Value) -> Result<TankModel> {
         double_density: (2.0 * density).round() as u16,
         rounded: bool_or_default(&tank["isRounded"], false),
     })
+}
+
+fn read_food(directory: &Path) -> Result<Vec<String>> {
+    let mut food = Vec::new();
+
+    for path in FOOD_PATHS {
+        let json = read_json(directory, path)?;
+        let objects = json["objects"].as_array().ok_or("no tank objects")?;
+        for x in objects {
+            let value = read_single_food(x)?;
+            match value {
+                Some(v) => food.push(v),
+                None => ()
+            };
+        }
+    }
+
+    Ok(food)
+}
+
+fn read_single_food(o: &Value) -> Result<Option<String>> {
+    let id = o["id"].as_str().ok_or("no id")?;
+    let tags = as_string_array(&o["tags"])?;
+
+    if tags.iter().any(|t| *t == "animalFood") {
+        Ok(Some(id.to_string()))
+    } else {
+        Ok(None)
+    }
 }
 
 fn read_json(directory: &Path, file: &str) -> Result<Value> {
@@ -487,7 +531,8 @@ mod test {
     fn test_data(species: Vec<Species>) -> GameData {
         GameData {
             species,
-            tanks: vec!(),
+            tanks: vec![],
+            food: vec![],
         }
     }
 

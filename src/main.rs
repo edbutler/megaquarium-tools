@@ -9,8 +9,9 @@ mod sexpr_impl;
 mod tank;
 mod util;
 
+use aquarium::AquariumDesc;
 use check::*;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use data::*;
 use sexpr_format::*;
 use std::error::Error;
@@ -76,8 +77,38 @@ fn main() {
             }
         }
 
+        SubCommand::List(list) => {
+            match list.kind {
+                ListOptions::Animals => {
+                    println!("Animals:");
+                    for x in data.species {
+                        println!("- {}", x.id);
+                    }
+                }
+                ListOptions::Tanks => {
+                    println!("Tanks:");
+                    for x in data.tanks {
+                        println!("- {}", x.id);
+                    }
+                }
+                ListOptions::Food => {
+                    println!("Food:");
+                    for x in data.food {
+                        println!("- {}", x);
+                    }
+                }
+            }
+        }
+
         SubCommand::Optimize(_) => {
-            println!("hello");
+            let stdin = std::io::stdin();
+            match from_reader::<std::io::Stdin,AquariumDesc>(stdin) {
+                Ok(_) => println!("hello"),
+                Err(error) => {
+                    println!("{}", error);
+                    std::process::exit(2);
+                }
+            }
         }
     }
 }
@@ -94,6 +125,7 @@ enum SubCommand {
     Lookup(Lookup),
     Extract(Extract),
     Check(Check),
+    List(List),
     Optimize(Optimize),
 }
 
@@ -128,6 +160,19 @@ struct Check {
 /// Optimizes an aquarium provided over stdin
 #[derive(Debug, Parser)]
 struct Optimize { }
+
+#[derive(Debug, Copy, Clone, ValueEnum)]
+enum ListOptions {
+    Animals,
+    Tanks,
+    Food,
+}
+
+/// List various game objects
+#[derive(Debug, Parser)]
+struct List {
+    kind: ListOptions,
+}
 
 fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
 where
