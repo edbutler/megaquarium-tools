@@ -13,7 +13,7 @@ impl ToSexp for Species {
     fn to_sexp(&self) -> lexpr::Value {
         let mut builder = StructBuilder::new("species");
 
-        builder.add("id", symbol_of_string(&self.id));
+        builder.add("id", Value::string(self.id.clone()));
         builder.add("genus", symbol_of_string(&self.genus));
 
         builder.add("prey-type", symbol_of_str(self.prey_type.as_str()));
@@ -133,7 +133,7 @@ impl ToSexp for TankModel {
     fn to_sexp(&self) -> lexpr::Value {
         let mut builder = StructBuilder::new("tank-model");
 
-        builder.add("id", symbol_of_string(&self.id));
+        builder.add("id", Value::string(self.id.clone()));
         builder.add("min-size", Value::cons(self.min_size.0, self.min_size.1));
         builder.add("max-size", Value::cons(self.max_size.0, self.max_size.1));
         builder.add("density", self.density().into());
@@ -180,16 +180,10 @@ impl ToSexp for AquariumDesc {
 
 impl FromSexp for AquariumDesc {
     fn from_sexp(value: &lexpr::Value) -> util::Result<AquariumDesc> {
-        match value {
-            lexpr::Value::Cons(cons) => {
-                if cons.car().as_symbol() != Some("aquarium") {
-                    return Err(Box::new(bad_sexp("expected aquarium")))
-                }
-
-                Ok(AquariumDesc { exhibits: vec![] })
-            }
-            _ => Err(Box::new(bad_sexp("expected list")))
-        }
+        let obj = expect_list_that_starts_with(value, "aquarium")?;
+        let iter = expect_list(obj)?;
+        let exhibits: util::Result<Vec<ExhibitDesc>> = iter.map(|x| ExhibitDesc::from_sexp(x)).collect();
+        Ok(AquariumDesc { exhibits: exhibits? })
     }
 }
 
@@ -201,16 +195,89 @@ impl ToSexp for ExhibitDesc {
     }
 }
 
+impl FromSexp for ExhibitDesc {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<ExhibitDesc> {
+        let mut obj = expect_list_that_starts_with(value, "exhibit")?;
+        let tank = TankDesc::from_sexp(consume_keyword_arg(&mut obj, "tank")?)?;
+        let animal_list = consume_keyword_arg(&mut obj, "animals")?.list_iter().ok_or(bad_sexp("expected error to be list"))?;
+        let animals: util::Result<Vec<AnimalDesc>> = animal_list.map(|x| AnimalDesc::from_sexp(x)).collect();
+        Ok(ExhibitDesc { tank, animals: animals? })
+    }
+}
+
 impl ToSexp for TankDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
-        sexp!((tank ,(symbol_of_string(&self.model)) ,(self.size)))
+        sexp!((tank ,(self.model.clone()) ,(self.size)))
+    }
+}
+
+impl FromSexp for TankDesc {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<TankDesc> {
+        let obj = expect_list_that_starts_with(value, "tank")?;
+        let (model, size) = expect_string_and_number(obj)?;
+        Ok(TankDesc { model, size })
     }
 }
 
 impl ToSexp for AnimalDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
-        sexp!((animals ,(symbol_of_string(&self.species)) ,(self.count)))
+        sexp!((animals ,(self.species.clone()) ,(self.count)))
     }
+}
+
+impl FromSexp for AnimalDesc {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<AnimalDesc> {
+        let obj = expect_list_that_starts_with(value, "animals")?;
+        let (species, count) = expect_string_and_number(obj)?;
+        Ok(AnimalDesc { species, count })
+    }
+}
+
+fn expect_list_that_starts_with<'a>(value: &'a lexpr::Value, opening_symbol: &str) -> util::Result<lexpr::cons::ListIter<'a>> {
+    match value {
+        lexpr::Value::Cons(cons) => {
+            if cons.car().as_symbol() != Some(opening_symbol) {
+                return Err(Box::new(bad_sexp(format!("expected {}", opening_symbol))));
+            }
+
+            match cons.cdr().list_iter() {
+                Some(iter) => Ok(iter),
+                None => Err(Box::new(bad_sexp("expected arg to be proper list")))
+            }
+        }
+        _ => Err(Box::new(bad_sexp("expected list")))
+    }
+}
+
+fn expect_list<'a>(iter: lexpr::cons::ListIter<'a>) -> util::Result<lexpr::cons::ListIter<'a>> {
+    let items: Vec<&lexpr::Value> = iter.collect();
+    if items.len() != 1 {
+        return Err(Box::new(bad_sexp("expected call to have single argument")));
+    }
+    let result = items[0].list_iter().ok_or(bad_sexp("expected arg to be list"))?;
+    Ok(result)
+}
+
+fn expect_string_and_number(iter: lexpr::cons::ListIter<'_>) -> util::Result<(String,u16)> {
+    let items: Vec<&lexpr::Value> = iter.collect();
+    if items.len() != 2 {
+        return Err(Box::new(bad_sexp(format!("expected call to have 2 arguments, got {:#?}", items))));
+    }
+    let string = items[0].as_str().ok_or(bad_sexp("expected first arg to be symbol"))?;
+    let number = items[1].as_number().and_then(|x| x.as_u64()).ok_or(bad_sexp("expected second arg to be number"))?;
+
+    Ok((string.to_string(), number as u16))
+}
+
+fn consume_keyword_arg<'a>(iter: &mut lexpr::cons::ListIter<'a>, expected_keyword: &str) -> util::Result<&'a lexpr::Value> {
+    match iter.next() {
+        Some(lexpr::Value::Keyword(s)) if **s == *expected_keyword => (),
+        _ => return Err(Box::new(bad_sexp(format!("expected keyword {}", expected_keyword)))),
+    };
+
+    let result = iter.next().ok_or(bad_sexp("expected value after keyword"))?;
+
+    Ok(result)
 }
