@@ -6,7 +6,13 @@ use crate::util::as_str_display;
 pub struct Animal<'a> {
     pub id: u64,
     pub species: &'a Species,
-    pub age: u32,
+    pub age: u16,
+}
+
+#[derive(Debug)]
+pub struct AnimalGroup<'a> {
+    pub species: &'a Species,
+    pub ages: Vec<u16>,
 }
 
 #[derive(Debug)]

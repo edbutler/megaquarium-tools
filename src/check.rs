@@ -43,7 +43,7 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     };
 
     for exhibit in &args.aquarium.exhibits {
-        let spec: Result<Vec<_>> = exhibit
+        let species = exhibit
             .animals
             .iter()
             .map(|d| {
@@ -53,8 +53,7 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
                     count: d.count,
                 })
             })
-            .collect();
-        let species = spec?;
+            .collect::<Result<Vec<_>>>()?;
 
         let tank = minimum_viable_tank(&species);
 
