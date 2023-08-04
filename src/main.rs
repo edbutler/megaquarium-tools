@@ -100,10 +100,17 @@ fn main() {
             }
         }
 
-        SubCommand::Optimize(_) => {
-            let stdin = std::io::stdin();
-            match from_reader::<std::io::Stdin,AquariumDesc>(stdin) {
-                Ok(_) => println!("hello"),
+        SubCommand::Validate(_) => {
+            fn do_work(data: &GameData) -> util::Result<()> {
+                let stdin = std::io::stdin();
+                let aquarium = from_reader::<std::io::Stdin,AquariumDesc>(stdin)?;
+                let args = ValidateArgs { aquarium, debug: false, assume_all_fish_fully_grown: false };
+                check_for_viable_aquarium(data, &args)?;
+                Ok(())
+            }
+
+            match do_work(&data) {
+                Ok(_) => (),
                 Err(error) => {
                     println!("{}", error);
                     std::process::exit(2);
@@ -126,9 +133,10 @@ enum SubCommand {
     Extract(Extract),
     Check(Check),
     List(List),
-    Optimize(Optimize),
+    Validate(Validate),
 }
 
+/// Show information about the any game entity for a given search string.
 #[derive(Debug, Parser)]
 struct Lookup {
     search_term: String,
@@ -137,6 +145,7 @@ struct Lookup {
     debug: bool,
 }
 
+/// Print an aquarium summary in s-expression format to stdout for a given save filename
 #[derive(Debug, Parser)]
 struct Extract {
     save_name: String,
@@ -145,6 +154,7 @@ struct Extract {
     debug: bool,
 }
 
+/// Check the validity of the given set of animals, printing the minimum viable tank
 #[derive(Debug, Parser)]
 struct Check {
     #[clap(value_parser = parse_key_val::<String,u16>)]
@@ -157,9 +167,9 @@ struct Check {
     assume_fully_grown: bool,
 }
 
-/// Optimizes an aquarium provided over stdin
+/// Validates an aquarium provided over stdin
 #[derive(Debug, Parser)]
-struct Optimize { }
+struct Validate { }
 
 #[derive(Debug, Copy, Clone, ValueEnum)]
 enum ListOptions {

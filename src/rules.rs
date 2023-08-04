@@ -28,7 +28,7 @@ pub struct SpeciesSpec<'a> {
 }
 
 pub struct ExhibitSpec<'a> {
-    pub options: RuleOptions,
+    pub options: &'a RuleOptions,
     pub animals: &'a [SpeciesSpec<'a>],
     pub tank: tank::Environment,
 }

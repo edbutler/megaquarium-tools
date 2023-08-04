@@ -1,10 +1,10 @@
 use crate::animal::*;
-use crate::data;
-use crate::data::GameData;
-use crate::tank::*;
-use crate::util::*;
+use crate::aquarium::AquariumDesc;
+use crate::data::{self, GameData};
 use crate::rules::*;
 use crate::sexpr_format::*;
+use crate::tank::*;
+use crate::util::*;
 
 pub struct CheckArgs {
     pub species: Vec<(String, u16)>,
@@ -12,15 +12,73 @@ pub struct CheckArgs {
     pub assume_all_fish_fully_grown: bool,
 }
 
+pub struct ValidateArgs {
+    pub aquarium: AquariumDesc,
+    pub debug: bool,
+    pub assume_all_fish_fully_grown: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct BadCheck {
+    pub message: String,
+}
+
+pub fn bad_check<S: Into<String>>(msg: S) -> BadCheck {
+    BadCheck { message: msg.into() }
+}
+
+impl std::fmt::Display for BadCheck {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for BadCheck {}
+
+pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> Result<()> {
+    println!("Checking {} tanks...", args.aquarium.exhibits.len());
+
+    let options = RuleOptions {
+        assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
+    };
+
+    for exhibit in &args.aquarium.exhibits {
+        let spec: Result<Vec<_>> = exhibit
+            .animals
+            .iter()
+            .map(|d| {
+                let species = data.species_ref(&d.species).ok_or(bad_check("invalid species"))?;
+                Ok(SpeciesSpec {
+                    species,
+                    count: d.count,
+                })
+            })
+            .collect();
+        let species = spec?;
+
+        let tank = minimum_viable_tank(&species);
+
+        let exhibit = ExhibitSpec {
+            options: &options,
+            animals: &species,
+            tank,
+        };
+
+        let violations = find_violations(&exhibit);
+        for v in violations {
+            println!("- {}", v);
+        }
+    }
+
+    Ok(())
+}
+
 pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<()> {
     let mut animals = Vec::new();
 
     for (s, count) in args.species {
         let species = lookup(&data, &s)?;
-        animals.push(SpeciesSpec {
-            species,
-            count,
-        });
+        animals.push(SpeciesSpec { species, count });
     }
 
     let tank = minimum_viable_tank(&animals);
@@ -30,9 +88,9 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
     };
 
     let exhibit = ExhibitSpec {
-        options,
+        options: &options,
         animals: &animals,
-        tank
+        tank,
     };
 
     let violations = find_violations(&exhibit);
@@ -52,7 +110,12 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
         if args.debug {
             println!("{:#?}", exhibit.tank);
         } else {
-            println!("{}", PrettyPrinted { expr: exhibit.tank.to_sexp() });
+            println!(
+                "{}",
+                PrettyPrinted {
+                    expr: exhibit.tank.to_sexp()
+                }
+            );
         }
 
         println!("\nWill require food (average per day):");
@@ -60,7 +123,6 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
             println!("- {}x {}", item.count, item.food);
         }
     }
-
 
     Ok(())
 }
@@ -72,15 +134,20 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
         panic!("need to specify at least some animals");
     }
 
-    let constrained_size = species.iter().map(|s| s.species.minimum_needed_tank_size()).max().unwrap();
+    let constrained_size = species
+        .iter()
+        .map(|s| s.species.minimum_needed_tank_size())
+        .max()
+        .unwrap();
     let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_size()).sum();
-    let light = species.iter().filter_map(|s| {
-        match s.species.needs.light {
+    let light = species
+        .iter()
+        .filter_map(|s| match s.species.needs.light {
             Some(Need::Loves(x)) => Some(x),
             Some(Need::Dislikes) => Some(0),
             None => None,
-        }
-    }).max();
+        })
+        .max();
 
     Environment {
         size: std::cmp::max(constrained_size, summed_size),
@@ -100,27 +167,35 @@ struct FoodAmount {
 }
 
 fn minimum_required_food(data: &GameData, species: &[SpeciesSpec<'_>]) -> Vec<FoodAmount> {
-    let diets: Vec<(&String, u16)> = species.iter().filter_map(|s| {
-        match &s.species.diet {
-            Diet::Food { food, period: _ } => {
-                Some((food, s.count * s.species.amount_food_eaten()))
-            }
-            _ => None
-        }
-    }).collect();
+    let diets: Vec<(&String, u16)> = species
+        .iter()
+        .filter_map(|s| match &s.species.diet {
+            Diet::Food { food, period: _ } => Some((food, s.count * s.species.amount_food_eaten())),
+            _ => None,
+        })
+        .collect();
 
-    data.food.iter().filter_map(|food| {
-        let count = diets.iter().filter_map(|(x, c)| if food == *x { Some(c) } else { None }).sum();
-        if count > 0 {
-            Some(FoodAmount { food: food.clone(), count })
-        } else {
-            None
-        }
-    }).collect()
+    data.food
+        .iter()
+        .filter_map(|food| {
+            let count = diets
+                .iter()
+                .filter_map(|(x, c)| if food == *x { Some(c) } else { None })
+                .sum();
+            if count > 0 {
+                Some(FoodAmount {
+                    food: food.clone(),
+                    count,
+                })
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
-fn minimum_need<F: Fn(&Species)->Option<Need>>(list: &[SpeciesSpec], f: F) -> Option<u16> {
-    let foldfn = |acc: Option<u16>, s:&SpeciesSpec| -> Option<u16> {
+fn minimum_need<F: Fn(&Species) -> Option<Need>>(list: &[SpeciesSpec], f: F) -> Option<u16> {
+    let foldfn = |acc: Option<u16>, s: &SpeciesSpec| -> Option<u16> {
         match f(s.species) {
             Some(Need::Dislikes) => Some(0),
             Some(Need::Loves(x)) => Some((x as u16) * s.count + acc.unwrap_or(0)),
