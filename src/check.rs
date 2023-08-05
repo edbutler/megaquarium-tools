@@ -1,5 +1,5 @@
 use crate::animal::*;
-use crate::aquarium::AquariumDesc;
+use crate::aquarium::*;
 use crate::data::{self, GameData};
 use crate::rules::*;
 use crate::sexpr_format::*;
@@ -39,6 +39,7 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     println!("Checking {} tanks...", args.aquarium.exhibits.len());
 
     let options = RuleOptions {
+        animals_come_from_spec: true,
         assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
     };
 
@@ -59,7 +60,7 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
 
         let exhibit = ExhibitSpec {
             options: &options,
-            animals: &species,
+            animals: &animals_from_spec(&species, args.assume_all_fish_fully_grown),
             tank,
         };
 
@@ -83,12 +84,13 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
     let tank = minimum_viable_tank(&animals);
 
     let options = RuleOptions {
+        animals_come_from_spec: true,
         assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
     };
 
     let exhibit = ExhibitSpec {
         options: &options,
-        animals: &animals,
+        animals: &animals_from_spec(&animals, args.assume_all_fish_fully_grown),
         tank,
     };
 
@@ -124,6 +126,21 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
     }
 
     Ok(())
+}
+
+fn animals_from_spec<'a>(animals: &[SpeciesSpec<'a>], assume_fully_grown: bool) -> Vec<Animal<'a>> {
+    let mut counter = 0;
+
+    animals.iter().flat_map(|s| {
+        (0..s.count).map(move |_| {
+            counter += 1;
+            Animal {
+                id: counter,
+                species: s.species,
+                age: if assume_fully_grown { s.species.age_for_maximum_size() } else { 0 },
+            }
+        })
+    }).collect()
 }
 
 // Guess at the minimum viable tank for the given species.

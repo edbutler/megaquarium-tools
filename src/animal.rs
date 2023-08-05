@@ -15,12 +15,6 @@ pub struct AnimalGroup<'a> {
     pub ages: Vec<u16>,
 }
 
-#[derive(Debug)]
-pub struct AnimalSpec<'a> {
-    pub species: &'a Species,
-    pub count: u16,
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Species {
     pub id: String,
@@ -35,6 +29,21 @@ pub struct Species {
     pub fighting: Option<Fighting>,
     pub cohabitation: Option<Cohabitation>,
     pub predation: Vec<PreyType>,
+}
+
+impl Animal<'_> {
+    pub fn size(&self) -> u16 {
+        let mut age = self.age as i32;
+
+        for stage in &self.species.size.stages {
+            age -= stage.duration as i32;
+            if age < 0 {
+                return stage.size;
+            }
+        }
+
+        self.species.size.final_size
+    }
 }
 
 impl Species {
@@ -55,26 +64,16 @@ impl Species {
         }
     }
 
-    pub fn minimum_size(&self) -> u16 {
-        // make sure immobile always is 0 so predation calculations work (corals can always been eaten)
-        if self.size.immobile {
-            0
-        } else {
-            self.size
-                .stages
-                .iter()
-                .map(|s| s.size)
-                .min()
-                .unwrap_or(self.size.final_size)
-        }
-    }
-
     pub fn maximum_size(&self) -> u16 {
         if self.size.immobile {
             0
         } else {
             self.size.final_size
         }
+    }
+
+    pub fn age_for_maximum_size(&self) -> u16 {
+        self.size.stages.iter().map(|s| s.duration).sum()
     }
 
     pub fn needs_light(&self) -> bool {
