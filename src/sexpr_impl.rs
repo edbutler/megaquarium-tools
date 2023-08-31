@@ -223,15 +223,47 @@ impl FromSexp for TankDesc {
 impl ToSexp for AnimalDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
-        sexp!((animals ,(self.species.clone()) ,(self.count)))
+        match self {
+            AnimalDesc::Summary { species, count } =>
+                sexp!((animals ,(species.clone()) ,(*count))),
+            AnimalDesc::Individual { species, age } =>
+                sexp!((animal ,(species.clone()) ,(*age))),
+        }
     }
 }
 
 impl FromSexp for AnimalDesc {
     fn from_sexp(value: &lexpr::Value) -> util::Result<AnimalDesc> {
-        let obj = expect_list_that_starts_with(value, "animals")?;
-        let (species, count) = expect_string_and_number(obj)?;
-        Ok(AnimalDesc { species, count })
+        let (symbol, obj) = expect_list_with_any_opening_symbol(value)?;
+        match symbol {
+            "animals" => {
+                let (species, count) = expect_string_and_number(obj)?;
+                Ok(AnimalDesc::Summary { species, count })
+            }
+            "animal" => {
+                let (species, age) = expect_string_and_number(obj)?;
+                Ok(AnimalDesc::Individual { species, age })
+            },
+            _ => Err(Box::new(bad_sexp("expected (animal ...) or (animals ...)")))
+        }
+    }
+}
+
+fn expect_list_with_any_opening_symbol<'a>(value: &'a lexpr::Value) -> util::Result<(&'a str, lexpr::cons::ListIter<'a>)> {
+    match value {
+        lexpr::Value::Cons(cons) => {
+            match cons.car().as_symbol() {
+                None => return Err(Box::new(bad_sexp(format!("expected opening symbol")))),
+                Some(symbol) => {
+                    match cons.cdr().list_iter() {
+                        Some(iter) => Ok((symbol, iter)),
+                        None => Err(Box::new(bad_sexp("expected arg to be proper list")))
+                    }
+                }
+            }
+
+        }
+        _ => Err(Box::new(bad_sexp("expected list")))
     }
 }
 

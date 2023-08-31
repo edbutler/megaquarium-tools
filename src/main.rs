@@ -53,7 +53,7 @@ fn main() {
 
         SubCommand::Extract(e) => {
             let save = read_save(&data, &e.save_name).unwrap();
-            let desc = save.description();
+            let desc = save.description(e.summary);
 
             if e.debug {
                 println!("{:#?}", desc);
@@ -149,6 +149,9 @@ struct Lookup {
 #[derive(Debug, Parser)]
 struct Extract {
     save_name: String,
+    /// Extract a summary of animals instead of individuals, will not have age.
+    #[clap(short)]
+    summary: bool,
     /// Show debug-printed structs instead of pretty output
     #[clap(short)]
     debug: bool,

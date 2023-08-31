@@ -44,23 +44,32 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     };
 
     for exhibit in &args.aquarium.exhibits {
-        let species = exhibit
-            .animals
-            .iter()
-            .map(|d| {
-                let species = data.species_ref(&d.species).ok_or(bad_check("invalid species"))?;
-                Ok(SpeciesSpec {
-                    species,
-                    count: d.count,
-                })
-            })
-            .collect::<Result<Vec<_>>>()?;
+        let mut animals = Vec::new();
+        let mut counter = 0;
 
-        let tank = minimum_viable_tank(&species);
+        for desc in &exhibit.animals {
+            match desc {
+                AnimalDesc::Summary { species, count } => {
+                    let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
+                    for _ in 0 .. *count {
+                        counter += 1;
+                        let age = if options.assume_all_fish_fully_grown { species.age_for_maximum_size() } else { 0 };
+                        animals.push(Animal { id: counter, species, age })
+                    }
+                }
+                AnimalDesc::Individual { species, age } => {
+                    let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
+                    counter += 1;
+                    animals.push(Animal { id: counter, species, age: *age })
+                }
+            }
+        }
+
+        let tank = minimum_viable_tank(&animals_to_spec(&animals));
 
         let exhibit = ExhibitSpec {
             options: &options,
-            animals: &animals_from_spec(&species, args.assume_all_fish_fully_grown),
+            animals: &animals,
             tank,
         };
 
