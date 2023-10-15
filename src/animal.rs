@@ -2,17 +2,18 @@ use crate::rules::Constraint;
 use crate::tank::{Interior, Temperature};
 use crate::util::as_str_display;
 
+#[derive(Copy,Clone,Debug,PartialEq)]
+pub enum Growth {
+    Final,
+    // if growth >= stage length, means that the animal should have grown but the tank size stopped it
+    Growing{stage:u8, growth:u8}
+}
+
 #[derive(Debug)]
 pub struct Animal<'a> {
     pub id: u64,
     pub species: &'a Species,
-    pub age: u16,
-}
-
-#[derive(Debug)]
-pub struct AnimalGroup<'a> {
-    pub species: &'a Species,
-    pub ages: Vec<u16>,
+    pub growth: Growth,
 }
 
 #[derive(Debug, PartialEq)]
@@ -33,16 +34,13 @@ pub struct Species {
 
 impl Animal<'_> {
     pub fn size(&self) -> u16 {
-        let mut age = self.age as i32;
-
-        for stage in &self.species.size.stages {
-            age -= stage.duration as i32;
-            if age < 0 {
-                return stage.size;
+        match self.growth {
+            Growth::Final => self.species.size.final_size,
+            Growth::Growing { stage, .. } => {
+                assert!((stage as usize) < self.species.size.stages.len());
+                self.species.size.stages[stage as usize].size
             }
         }
-
-        self.species.size.final_size
     }
 }
 
@@ -72,8 +70,12 @@ impl Species {
         }
     }
 
-    pub fn age_for_maximum_size(&self) -> u16 {
-        self.size.stages.iter().map(|s| s.duration).sum()
+    pub fn earliest_growth_stage(&self) -> Growth {
+        if self.size.stages.len() > 0 {
+            Growth::Growing { stage: 0, growth: 0 }
+        } else {
+            Growth::Final
+        }
     }
 
     pub fn needs_light(&self) -> bool {

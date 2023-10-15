@@ -220,14 +220,38 @@ impl FromSexp for TankDesc {
     }
 }
 
+impl ToSexp for Growth {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        match self {
+            Growth::Final => sexp!((grown)),
+            Growth::Growing { stage, growth } => sexp!((growing ,(*stage) ,(*growth))),
+        }
+    }
+}
+
+impl FromSexp for Growth {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<Growth> {
+        let (symbol, obj) = expect_list_with_any_opening_symbol(value)?;
+        match symbol {
+            "grown" => Ok(Growth::Final),
+            "growing" => {
+                let (stage, growth) = expect_u8_and_u8(obj)?;
+                Ok(Growth::Growing { stage, growth })
+            },
+            _ => Err(Box::new(bad_sexp("expected (grown ...) or (growing ...)")))
+        }
+    }
+}
+
 impl ToSexp for AnimalDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
         match self {
             AnimalDesc::Summary { species, count } =>
                 sexp!((animals ,(species.clone()) ,(*count))),
-            AnimalDesc::Individual { species, age } =>
-                sexp!((animal ,(species.clone()) ,(*age))),
+            AnimalDesc::Individual { species, growth } =>
+                sexp!((animal ,(species.clone()) ,(growth.to_sexp()))),
         }
     }
 }
@@ -241,8 +265,9 @@ impl FromSexp for AnimalDesc {
                 Ok(AnimalDesc::Summary { species, count })
             }
             "animal" => {
-                let (species, age) = expect_string_and_number(obj)?;
-                Ok(AnimalDesc::Individual { species, age })
+                let (species, growth_obj) = expect_string_and_any(obj)?;
+                let growth = Growth::from_sexp(growth_obj)?;
+                Ok(AnimalDesc::Individual { species, growth })
             },
             _ => Err(Box::new(bad_sexp("expected (animal ...) or (animals ...)")))
         }
@@ -292,15 +317,48 @@ fn expect_list<'a>(iter: lexpr::cons::ListIter<'a>) -> util::Result<lexpr::cons:
     Ok(result)
 }
 
-fn expect_string_and_number(iter: lexpr::cons::ListIter<'_>) -> util::Result<(String,u16)> {
+fn expect_two_args<'a,T,U,F1,F2>(iter: lexpr::cons::ListIter<'a>, f1:F1, f2:F2) -> util::Result<(T,U)>
+        where F1:Fn(&'a Value)->util::Result<T>, F2:Fn(&'a Value)->util::Result<U> {
     let items: Vec<&lexpr::Value> = iter.collect();
     if items.len() != 2 {
         return Err(Box::new(bad_sexp(format!("expected call to have 2 arguments, got {:#?}", items))));
     }
-    let string = items[0].as_str().ok_or(bad_sexp("expected first arg to be symbol"))?;
-    let number = items[1].as_number().and_then(|x| x.as_u64()).ok_or(bad_sexp("expected second arg to be number"))?;
+    let x = f1(items[0])?;
+    let y = f2(items[1])?;
 
-    Ok((string.to_string(), number as u16))
+    Ok((x, y))
+}
+
+fn expect_string_and_number(iter: lexpr::cons::ListIter<'_>) -> util::Result<(String,u16)> {
+    expect_two_args(
+        iter,
+        |v| {
+            let s = v.as_str().ok_or(bad_sexp("expected first arg to be symbol"))?;
+            Ok(s.to_string())
+        },
+        |v| {
+            let n = v.as_number().and_then(|x| x.as_u64()).ok_or(bad_sexp("expected second arg to be number"))?;
+            Ok(n as u16)
+        })
+}
+
+fn expect_string_and_any(iter: lexpr::cons::ListIter<'_>) -> util::Result<(String,&Value)> {
+    expect_two_args(
+        iter,
+        |v| {
+            let s = v.as_str().ok_or(bad_sexp("expected first arg to be symbol"))?;
+            Ok(s.to_string())
+        },
+        |v| Ok(v))
+}
+
+fn expect_u8_and_u8(iter: lexpr::cons::ListIter<'_>) -> util::Result<(u8,u8)> {
+    let f = |v:&Value| -> util::Result<u8> {
+        let n = v.as_number().and_then(|x| x.as_u64()).ok_or(bad_sexp("expected arg to be number"))?;
+        Ok(n as u8)
+    };
+
+    expect_two_args(iter, f, f)
 }
 
 fn consume_keyword_arg<'a>(iter: &mut lexpr::cons::ListIter<'a>, expected_keyword: &str) -> util::Result<&'a lexpr::Value> {

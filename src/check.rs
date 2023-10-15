@@ -53,14 +53,14 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
                     let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
                     for _ in 0 .. *count {
                         counter += 1;
-                        let age = if options.assume_all_fish_fully_grown { species.age_for_maximum_size() } else { 0 };
-                        animals.push(Animal { id: counter, species, age })
+                        let growth = if options.assume_all_fish_fully_grown { Growth::Final } else { species.earliest_growth_stage() };
+                        animals.push(Animal { id: counter, species, growth })
                     }
                 }
-                AnimalDesc::Individual { species, age } => {
+                AnimalDesc::Individual { species, growth } => {
                     let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
                     counter += 1;
-                    animals.push(Animal { id: counter, species, age: *age })
+                    animals.push(Animal { id: counter, species, growth: *growth })
                 }
             }
         }
@@ -143,10 +143,11 @@ fn animals_from_spec<'a>(animals: &[SpeciesSpec<'a>], assume_fully_grown: bool) 
     animals.iter().flat_map(|s| {
         (0..s.count).map(move |_| {
             counter += 1;
+            let growth = if assume_fully_grown { Growth::Final } else { s.species.earliest_growth_stage() };
             Animal {
                 id: counter,
                 species: s.species,
-                age: if assume_fully_grown { s.species.age_for_maximum_size() } else { 0 },
+                growth,
             }
         })
     }).collect()

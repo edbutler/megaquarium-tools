@@ -25,7 +25,7 @@ pub struct ExhibitDesc {
 
 #[derive(Debug)]
 pub enum AnimalDesc {
-    Individual { species: String, age: u16 },
+    Individual { species: String, growth: Growth },
     Summary { species: String, count: u16 },
 }
 
@@ -92,7 +92,7 @@ impl Aquarium<'_> {
                         .iter()
                         .map(|a| AnimalDesc::Individual {
                             species: a.species.id.to_string(),
-                            age: a.age,
+                            growth: a.growth,
                         })
                         .collect()
                 };
@@ -126,47 +126,47 @@ mod test {
             Animal {
                 id: 1,
                 species: &species1,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species2,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species2,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species1,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species3,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species3,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species1,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species2,
-                age: 1,
+                growth: Growth::Final,
             },
             Animal {
                 id: 1,
                 species: &species2,
-                age: 1,
+                growth: Growth::Final,
             },
         ];
 

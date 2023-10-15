@@ -97,7 +97,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
             let animal = Animal {
                 id: id,
                 species: species,
-                age: uint_or_default(&a["growth"], 0)?.try_into()?, // TODO check this
+                growth: read_growth(a, species)?,
             };
             let tank = o["hosting"]["host"]
                 .as_u64()
@@ -153,6 +153,30 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
         .collect();
 
     Ok(Aquarium { exhibits: exhibits })
+}
+
+fn read_growth(v: &Value, s: &Species) -> Result<Growth> {
+    // growth is number of days along current stage, may be == state length if cannot growth due to tank size
+    // so when converting to age, we need to cap it to `stage len - 1` or it will seem like it's the wrong stage
+    // could consider adding flag to allow growth when possible
+
+    let stage: u8 = uint_or_default(&v["stageNumber"], 0)?.try_into()?;
+    let growth: u8 = uint_or_default(&v["growth"], 0)?.try_into()?;
+
+    if (stage as usize) > s.size.stages.len() {
+        return Err(Box::new(bad_json("stageNumber greater than number of stages!")));
+    }
+
+    if stage as usize == s.size.stages.len() {
+        if growth > 0 {
+            return Err(Box::new(bad_json("growth should be zero if on final stage!")));
+        }
+
+        Ok(Growth::Final)
+    } else {
+        Ok(Growth::Growing { stage, growth })
+    }
+
 }
 
 #[derive(Debug, Clone)]
