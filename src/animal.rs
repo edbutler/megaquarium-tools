@@ -2,11 +2,11 @@ use crate::rules::Constraint;
 use crate::tank::{Interior, Temperature};
 use crate::util::as_str_display;
 
-#[derive(Copy,Clone,Debug,PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Growth {
     Final,
     // if growth >= stage length, means that the animal should have grown but the tank size stopped it
-    Growing{stage:u8, growth:u8}
+    Growing { stage: u8, growth: u8 },
 }
 
 #[derive(Debug)]

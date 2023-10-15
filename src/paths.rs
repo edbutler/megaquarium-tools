@@ -1,20 +1,15 @@
-use std::env;
 use directories::UserDirs;
+use std::env;
 use std::path::{Path, PathBuf};
 
 static POSSIBLE_DATA_DIRECTORIES: &'static [&str] = &[
     "C:/Program Files (x86)/Steam/steamapps/common/Megaquarium/Megaquarium_Data/GameData",
     "D:/steam/steamapps/common/Megaquarium/Megaquarium_Data/GameData",
-    "~/Library/Application Support/Steam/steamapps/common/Megaquarium/Megaquarium.app/Contents/GameData"
+    "~/Library/Application Support/Steam/steamapps/common/Megaquarium/Megaquarium.app/Contents/GameData",
 ];
 
-pub const TANK_PATHS: &[&str] = &[
-    "Data/tanks.data",
-];
-pub const FISH_PATHS: &[&str] = &[
-    "Data/animals.data",
-    "Data/corals.data",
-];
+pub const TANK_PATHS: &[&str] = &["Data/tanks.data"];
+pub const FISH_PATHS: &[&str] = &["Data/animals.data", "Data/corals.data"];
 pub const FOOD_PATHS: &[&str] = &[
     "Data/fishFood.data",
     "DLC/Freshwater Frenzy/Data/ff fishFood.data",

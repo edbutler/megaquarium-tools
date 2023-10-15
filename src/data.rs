@@ -35,7 +35,10 @@ impl GameData {
     }
 }
 
-fn fuzzy_match_string<'a, T, F>(f: F, search_string: &str, list: &'a [T]) -> Vec<&'a T> where F: Fn(&T) -> &str {
+fn fuzzy_match_string<'a, T, F>(f: F, search_string: &str, list: &'a [T]) -> Vec<&'a T>
+where
+    F: Fn(&T) -> &str,
+{
     let mut result = Vec::new();
 
     let parts: Vec<&str> = search_string.split(" ").collect();
@@ -176,7 +179,6 @@ fn read_growth(v: &Value, s: &Species) -> Result<Growth> {
     } else {
         Ok(Growth::Growing { stage, growth })
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -500,7 +502,7 @@ fn read_food(directory: &Path) -> Result<Vec<String>> {
             let value = read_single_food(x)?;
             match value {
                 Some(v) => food.push(v),
-                None => ()
+                None => (),
             };
         }
     }
@@ -562,10 +564,7 @@ mod test {
 
     #[test]
     fn test_species_ref() {
-        let data = test_data(
-            vec![
-                test_species("foo"),
-                test_species("bar")]);
+        let data = test_data(vec![test_species("foo"), test_species("bar")]);
         let foo = &data.species[0];
         let bar = &data.species[1];
 
@@ -577,12 +576,11 @@ mod test {
 
     #[test]
     fn test_species_search() {
-        let data = test_data(
-            vec![
-                test_species("2_crescent_earthen"),
-                test_species("4_pancake_scuppernong"),
-                test_species("7_violet_crescent"),
-            ]);
+        let data = test_data(vec![
+            test_species("2_crescent_earthen"),
+            test_species("4_pancake_scuppernong"),
+            test_species("7_violet_crescent"),
+        ]);
         let two = &data.species[0];
         let four = &data.species[1];
         let seven = &data.species[2];
@@ -603,5 +601,4 @@ mod test {
         let species = data.species_ref("11_yellow_tang").unwrap();
         assert_eq!(species.size.final_size, 5);
     }
-
 }

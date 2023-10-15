@@ -51,16 +51,28 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
             match desc {
                 AnimalDesc::Summary { species, count } => {
                     let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
-                    for _ in 0 .. *count {
+                    for _ in 0..*count {
                         counter += 1;
-                        let growth = if options.assume_all_fish_fully_grown { Growth::Final } else { species.earliest_growth_stage() };
-                        animals.push(Animal { id: counter, species, growth })
+                        let growth = if options.assume_all_fish_fully_grown {
+                            Growth::Final
+                        } else {
+                            species.earliest_growth_stage()
+                        };
+                        animals.push(Animal {
+                            id: counter,
+                            species,
+                            growth,
+                        })
                     }
                 }
                 AnimalDesc::Individual { species, growth } => {
                     let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
                     counter += 1;
-                    animals.push(Animal { id: counter, species, growth: *growth })
+                    animals.push(Animal {
+                        id: counter,
+                        species,
+                        growth: *growth,
+                    })
                 }
             }
         }
@@ -140,17 +152,24 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
 fn animals_from_spec<'a>(animals: &[SpeciesSpec<'a>], assume_fully_grown: bool) -> Vec<Animal<'a>> {
     let mut counter = 0;
 
-    animals.iter().flat_map(|s| {
-        (0..s.count).map(move |_| {
-            counter += 1;
-            let growth = if assume_fully_grown { Growth::Final } else { s.species.earliest_growth_stage() };
-            Animal {
-                id: counter,
-                species: s.species,
-                growth,
-            }
+    animals
+        .iter()
+        .flat_map(|s| {
+            (0..s.count).map(move |_| {
+                counter += 1;
+                let growth = if assume_fully_grown {
+                    Growth::Final
+                } else {
+                    s.species.earliest_growth_stage()
+                };
+                Animal {
+                    id: counter,
+                    species: s.species,
+                    growth,
+                }
+            })
         })
-    }).collect()
+        .collect()
 }
 
 // Guess at the minimum viable tank for the given species.

@@ -9,9 +9,7 @@ struct BasicError {
 }
 
 pub fn error<S: Into<String>>(msg: S) -> Box<dyn Error> {
-    let err = BasicError {
-        message: msg.into(),
-    };
+    let err = BasicError { message: msg.into() };
     Box::new(err)
 }
 
@@ -30,6 +28,6 @@ macro_rules! as_str_display {
                 write!(f, "{}", self.as_str())
             }
         }
-    }
+    };
 }
 pub(crate) use as_str_display;

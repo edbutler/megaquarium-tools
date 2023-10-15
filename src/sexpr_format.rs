@@ -1,17 +1,17 @@
-use std::{fmt, error::Error};
-use lexpr::*;
 use crate::util::Result;
+use lexpr::*;
+use std::{error::Error, fmt};
 
-pub fn symbol_of_string(s:&String) -> Value {
+pub fn symbol_of_string(s: &String) -> Value {
     Value::symbol(s.clone())
 }
 
-pub fn symbol_of_str(s:&str) -> Value {
+pub fn symbol_of_str(s: &str) -> Value {
     Value::symbol(s)
 }
 
 #[allow(unused_parens)]
-pub fn invoke_symbol(s:&str) -> Value {
+pub fn invoke_symbol(s: &str) -> Value {
     sexp!((,(symbol_of_str(s))))
 }
 
@@ -25,9 +25,7 @@ pub struct BadSexp {
 }
 
 pub fn bad_sexp<S: Into<String>>(msg: S) -> BadSexp {
-    BadSexp {
-        message: msg.into(),
-    }
+    BadSexp { message: msg.into() }
 }
 
 impl fmt::Display for BadSexp {
@@ -38,7 +36,10 @@ impl fmt::Display for BadSexp {
 
 impl Error for BadSexp {}
 
-pub trait FromSexp where Self : Sized {
+pub trait FromSexp
+where
+    Self: Sized,
+{
     fn from_sexp(value: &lexpr::Value) -> Result<Self>;
 }
 
@@ -85,11 +86,11 @@ fn is_call(cons: &Cons) -> bool {
     cons.car().is_symbol() && cons.cdr().is_list()
 }
 
-fn should_show_call_on_multiple_lines(cons: &Cons, indent:u32) -> bool {
+fn should_show_call_on_multiple_lines(cons: &Cons, indent: u32) -> bool {
     indent < 3 && cons.cdr().list_iter().unwrap().any(|x| x.is_keyword())
 }
 
-fn format(f: &mut std::fmt::Formatter, expr:&Value, indent:u32) -> std::fmt::Result {
+fn format(f: &mut std::fmt::Formatter, expr: &Value, indent: u32) -> std::fmt::Result {
     match expr {
         Value::Cons(cons) if is_call(cons) && should_show_call_on_multiple_lines(cons, indent) => {
             write!(f, "({}", cons.car().as_symbol().unwrap())?;
@@ -132,7 +133,7 @@ fn format(f: &mut std::fmt::Formatter, expr:&Value, indent:u32) -> std::fmt::Res
             Ok(())
         }
 
-        _ => write!(f, "{}", expr)
+        _ => write!(f, "{}", expr),
     }
 }
 

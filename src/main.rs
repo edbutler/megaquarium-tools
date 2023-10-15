@@ -77,34 +77,36 @@ fn main() {
             }
         }
 
-        SubCommand::List(list) => {
-            match list.kind {
-                ListOptions::Animals => {
-                    println!("Animals:");
-                    for x in data.species {
-                        println!("- {}", x.id);
-                    }
-                }
-                ListOptions::Tanks => {
-                    println!("Tanks:");
-                    for x in data.tanks {
-                        println!("- {}", x.id);
-                    }
-                }
-                ListOptions::Food => {
-                    println!("Food:");
-                    for x in data.food {
-                        println!("- {}", x);
-                    }
+        SubCommand::List(list) => match list.kind {
+            ListOptions::Animals => {
+                println!("Animals:");
+                for x in data.species {
+                    println!("- {}", x.id);
                 }
             }
-        }
+            ListOptions::Tanks => {
+                println!("Tanks:");
+                for x in data.tanks {
+                    println!("- {}", x.id);
+                }
+            }
+            ListOptions::Food => {
+                println!("Food:");
+                for x in data.food {
+                    println!("- {}", x);
+                }
+            }
+        },
 
         SubCommand::Validate(_) => {
             fn do_work(data: &GameData) -> util::Result<()> {
                 let stdin = std::io::stdin();
-                let aquarium = from_reader::<std::io::Stdin,AquariumDesc>(stdin)?;
-                let args = ValidateArgs { aquarium, debug: false, assume_all_fish_fully_grown: false };
+                let aquarium = from_reader::<std::io::Stdin, AquariumDesc>(stdin)?;
+                let args = ValidateArgs {
+                    aquarium,
+                    debug: false,
+                    assume_all_fish_fully_grown: false,
+                };
                 check_for_viable_aquarium(data, &args)?;
                 Ok(())
             }
@@ -172,7 +174,7 @@ struct Check {
 
 /// Validates an aquarium provided over stdin
 #[derive(Debug, Parser)]
-struct Validate { }
+struct Validate {}
 
 #[derive(Debug, Copy, Clone, ValueEnum)]
 enum ListOptions {

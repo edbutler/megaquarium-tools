@@ -165,7 +165,11 @@ fn check_constraint<'a>(
         ),
         Quality(q) => simple(*q <= exhibit.tank.quality),
         Shoaler(c) => {
-            let count = exhibit.animals.iter().filter(|a| std::ptr::eq(s.species, a.species)).count();
+            let count = exhibit
+                .animals
+                .iter()
+                .filter(|a| std::ptr::eq(s.species, a.species))
+                .count();
             simple(count >= (*c as usize))
         }
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
