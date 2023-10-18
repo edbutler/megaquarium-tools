@@ -181,6 +181,20 @@ fn read_growth(v: &Value, s: &Species) -> Result<Growth> {
     }
 }
 
+#[derive(Debug)]
+struct WrappedError {
+    pub message: String,
+    pub inner: Box<dyn Error>,
+}
+
+impl fmt::Display for WrappedError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {}", self.message, self.inner)
+    }
+}
+
+impl Error for WrappedError {}
+
 #[derive(Debug, Clone)]
 struct BadJson {
     pub message: Option<String>,
@@ -258,15 +272,37 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
 
 fn read_species_file(json: &Value) -> Result<Vec<Species>> {
     let objects = json["objects"].as_array().ok_or("no species objects")?;
-    let species: Result<Vec<Species>> = objects.iter().map(|o| read_single_species(o)).collect();
+    let species: Result<Vec<Species>> = objects.iter().map(|o| read_single_species_wrapper(o)).collect();
     Ok(species?)
+}
+
+fn read_single_species_wrapper(o: &Value) -> Result<Species> {
+    match read_single_species(o) {
+        Ok(r) => Ok(r),
+        Err(e) => {
+            let id = o["id"].as_str().unwrap_or("unknown");
+            let wrapped = WrappedError {
+                message: format!("error reading species {}", id),
+                inner: e
+            };
+            Err(Box::new(wrapped))
+        }
+    }
 }
 
 fn read_single_species(o: &Value) -> Result<Species> {
     let id = o["id"].as_str().ok_or("no id")?;
-    let tags = as_string_array(&o["tags"])?;
     let animal = o["animal"].as_object().ok_or("no animal")?;
     let stats = animal["stats"].as_object().ok_or("no stats")?;
+
+    let genus = {
+        let tags = as_string_array(&o["tags"])?;
+        if tags.len() < 2 {
+            "unknown"
+        } else {
+            tags[1]
+        }.to_string()
+    };
 
     fn has_stat(stats: &Map<String, Value>, stat: &str) -> bool {
         stats.contains_key(stat)
@@ -429,7 +465,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
 
     Ok(Species {
         id: id.to_string(),
-        genus: tags[1].to_string(),
+        genus,
         prey_type,
         size,
         habitat,
