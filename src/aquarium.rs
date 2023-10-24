@@ -8,6 +8,7 @@ pub struct Aquarium<'a> {
 
 #[derive(Debug)]
 pub struct Exhibit<'a> {
+    pub name: String,
     pub tank: Tank<'a>,
     pub animals: Vec<Animal<'a>>,
 }
@@ -19,6 +20,7 @@ pub struct AquariumDesc {
 
 #[derive(Debug)]
 pub struct ExhibitDesc {
+    pub name: String,
     pub tank: TankDesc,
     pub animals: Vec<AnimalDesc>,
 }
@@ -98,6 +100,7 @@ impl Aquarium<'_> {
                 };
 
                 ExhibitDesc {
+                    name: e.name.clone(),
                     tank: TankDesc {
                         model: e.tank.model.id.clone(),
                         size: e.tank.volume(),
@@ -107,7 +110,7 @@ impl Aquarium<'_> {
             })
             .collect();
 
-        AquariumDesc { exhibits: exhibits }
+        AquariumDesc { exhibits }
     }
 }
 

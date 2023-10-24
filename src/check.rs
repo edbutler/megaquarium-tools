@@ -77,16 +77,31 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
             }
         }
 
-        let tank = minimum_viable_tank(&animals_to_spec(&animals));
+        let animal_spec = animals_to_spec(&animals);
 
-        let exhibit = ExhibitSpec {
+        let min_tank = minimum_viable_tank(&animal_spec);
+
+        println!("{}:", exhibit.name);
+        // TODO this isn't quite right if some fish are not grown
+        println!("- {}/{}, {}%", min_tank.size, exhibit.tank.size, min_tank.quality);
+
+        for item in minimum_required_food(data, &animal_spec) {
+            println!("- {}x {}", item.count, item.food);
+        }
+
+        let exhibit_spec = ExhibitSpec {
             options: &options,
             animals: &animals,
-            tank,
+            tank: min_tank,
         };
 
-        let violations = find_violations(&exhibit);
-        for v in violations {
+        let violations = find_violations(&exhibit_spec);
+
+        let mut messages: Vec<_> = violations.iter().map(|v| v.to_string()).collect();
+        messages.sort();
+        messages.dedup();
+
+        for v in messages {
             println!("- {}", v);
         }
     }

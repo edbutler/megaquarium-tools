@@ -191,17 +191,18 @@ impl ToSexp for ExhibitDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
         let animals = self.animals.iter().map(|e| e.to_sexp());
-        sexp!((exhibit #:tank ,(self.tank.to_sexp()) #:animals ,(Value::list(animals))))
+        sexp!((exhibit #:name ,(self.name.as_str()) #:tank ,(self.tank.to_sexp()) #:animals ,(Value::list(animals))))
     }
 }
 
 impl FromSexp for ExhibitDesc {
     fn from_sexp(value: &lexpr::Value) -> util::Result<ExhibitDesc> {
         let mut obj = expect_list_that_starts_with(value, "exhibit")?;
+        let name = consume_keyword_arg(&mut obj, "name")?.as_str().ok_or(bad_sexp("expected name to be string"))?.to_string();
         let tank = TankDesc::from_sexp(consume_keyword_arg(&mut obj, "tank")?)?;
         let animal_list = consume_keyword_arg(&mut obj, "animals")?.list_iter().ok_or(bad_sexp("expected error to be list"))?;
         let animals: util::Result<Vec<AnimalDesc>> = animal_list.map(|x| AnimalDesc::from_sexp(x)).collect();
-        Ok(ExhibitDesc { tank, animals: animals? })
+        Ok(ExhibitDesc { name, tank, animals: animals? })
     }
 }
 
@@ -361,13 +362,20 @@ fn expect_u8_and_u8(iter: lexpr::cons::ListIter<'_>) -> util::Result<(u8,u8)> {
     expect_two_args(iter, f, f)
 }
 
-fn consume_keyword_arg<'a>(iter: &mut lexpr::cons::ListIter<'a>, expected_keyword: &str) -> util::Result<&'a lexpr::Value> {
+fn try_consume_keyword_arg<'a>(iter: &mut lexpr::cons::ListIter<'a>, expected_keyword: &str) -> util::Result<Option<&'a lexpr::Value>> {
     match iter.next() {
         Some(lexpr::Value::Keyword(s)) if **s == *expected_keyword => (),
-        _ => return Err(Box::new(bad_sexp(format!("expected keyword {}", expected_keyword)))),
+        _ => return Ok(None)
     };
 
     let result = iter.next().ok_or(bad_sexp("expected value after keyword"))?;
 
-    Ok(result)
+    Ok(Some(result))
+}
+
+fn consume_keyword_arg<'a>(iter: &mut lexpr::cons::ListIter<'a>, expected_keyword: &str) -> util::Result<&'a lexpr::Value> {
+    match try_consume_keyword_arg(iter, expected_keyword)? {
+        Some(s) => Ok(s),
+        None => Err(Box::new(bad_sexp(format!("expected keyword {}", expected_keyword)))),
+    }
 }

@@ -72,7 +72,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
     let objects = json["objects"].as_array().ok_or("no objects")?;
 
     let mut animals: HashMap<u64, Vec<Animal<'a>>> = HashMap::new();
-    let mut tanks: Vec<Tank> = Vec::new();
+    let mut tanks: Vec<(String,Tank)> = Vec::new();
 
     // sort the tank models by length of id so we always choose the longest prefix
     let mut models: Vec<&'a TankModel> = data.tanks.iter().map(|t| t).collect();
@@ -116,6 +116,8 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
             // they look like "<tank-type-id>_<x-dim>-<y-dim>" (e.g., lagoon_tank_3_4)
             let spec_id = o["specId"].as_str().ok_or(bad_json("no specId"))?;
 
+            let name = o["name"].as_str().ok_or(bad_json("no name"))?;
+
             let model = *models
                 .iter()
                 .find(|t| spec_id.starts_with(&t.id))
@@ -139,19 +141,19 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
                 size: size,
             };
 
-            tanks.push(tank);
+            tanks.push((name.to_string(),tank));
         }
     }
 
     let exhibits = tanks
         .into_iter()
-        .map(|t| {
-            let a = match animals.remove(&t.id) {
+        .map(|(name, tank)| {
+            let animals = match animals.remove(&tank.id) {
                 Some(list) => list,
                 None => Vec::new(),
             };
 
-            Exhibit { tank: t, animals: a }
+            Exhibit { name, tank, animals }
         })
         .collect();
 
