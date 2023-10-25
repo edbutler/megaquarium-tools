@@ -72,7 +72,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
     let objects = json["objects"].as_array().ok_or("no objects")?;
 
     let mut animals: HashMap<u64, Vec<Animal<'a>>> = HashMap::new();
-    let mut tanks: Vec<(String,Tank)> = Vec::new();
+    let mut tanks: Vec<(String, Tank)> = Vec::new();
 
     // sort the tank models by length of id so we always choose the longest prefix
     let mut models: Vec<&'a TankModel> = data.tanks.iter().map(|t| t).collect();
@@ -141,7 +141,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
                 size: size,
             };
 
-            tanks.push((name.to_string(),tank));
+            tanks.push((name.to_string(), tank));
         }
     }
 
@@ -285,7 +285,7 @@ fn read_single_species_wrapper(o: &Value) -> Result<Species> {
             let id = o["id"].as_str().unwrap_or("unknown");
             let wrapped = WrappedError {
                 message: format!("error reading species {}", id),
-                inner: e
+                inner: e,
             };
             Err(Box::new(wrapped))
         }
@@ -299,11 +299,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
 
     let genus = {
         let tags = as_string_array(&o["tags"])?;
-        if tags.len() < 2 {
-            "unknown"
-        } else {
-            tags[1]
-        }.to_string()
+        if tags.len() < 2 { "unknown" } else { tags[1] }.to_string()
     };
 
     fn has_stat(stats: &Map<String, Value>, stat: &str) -> bool {

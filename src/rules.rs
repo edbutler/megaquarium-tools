@@ -224,41 +224,55 @@ fn check_constraint<'a>(
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::animal::*;
-    use crate::tank::*;
-    use crate::tank::test::*;
     use crate::animal::test::test_species;
+    use crate::animal::*;
+    use crate::tank::test::*;
+    use crate::tank::*;
 
-    static OPTIONS: RuleOptions = RuleOptions { assume_all_fish_fully_grown: false };
+    static OPTIONS: RuleOptions = RuleOptions {
+        assume_all_fish_fully_grown: false,
+    };
     static EMPTY_ANIMALS: &[Animal<'static>] = &[];
 
+    fn make_animal(species: &Species) -> Animal {
+        Animal {
+            species: &species,
+            id: 0,
+            growth: Growth::Final,
+        }
+    }
+
+    fn simple_exhibit(environment: Environment) -> ExhibitSpec<'static> {
+        ExhibitSpec {
+            options: &OPTIONS,
+            animals: &EMPTY_ANIMALS,
+            tank: environment,
+        }
+    }
+
     fn simple_violation<'a>(animal: &'a Animal<'a>, constraint: Constraint) -> Violation<'a> {
-        Violation { species: animal, conflicting: None, constraint }
+        Violation {
+            species: animal,
+            conflicting: None,
+            constraint,
+        }
     }
 
     #[test]
     fn test_temperature() {
         let species = test_species("warm");
 
-        let warm_exhibit = ExhibitSpec {
-            options: &OPTIONS,
-            animals: &EMPTY_ANIMALS,
-            tank: Environment {
-                temperature: tank::Temperature::Warm,
-                ..test_environment()
-            }
-        };
+        let warm_exhibit = simple_exhibit(Environment {
+            temperature: tank::Temperature::Warm,
+            ..test_environment()
+        });
 
-        let cold_exhibit = ExhibitSpec {
-            options: &OPTIONS,
-            animals: &EMPTY_ANIMALS,
-            tank: Environment {
-                temperature: tank::Temperature::Cold,
-                ..test_environment()
-            }
-        };
+        let cold_exhibit = simple_exhibit(Environment {
+            temperature: tank::Temperature::Cold,
+            ..test_environment()
+        });
 
-        let animal = Animal { species: &species, id: 0, growth: Growth::Final };
+        let animal = make_animal(&species);
 
         let warm_constraint = super::Temperature(tank::Temperature::Warm);
         let cold_constraint = super::Temperature(tank::Temperature::Cold);
@@ -267,9 +281,14 @@ pub mod test {
         let cold_violation = simple_violation(&animal, cold_constraint);
 
         assert_eq!(check_constraint(&warm_exhibit, &animal, &warm_constraint), None);
-        assert_eq!(check_constraint(&cold_exhibit, &animal, &warm_constraint), Some(warm_violation));
+        assert_eq!(
+            check_constraint(&cold_exhibit, &animal, &warm_constraint),
+            Some(warm_violation)
+        );
         assert_eq!(check_constraint(&cold_exhibit, &animal, &cold_constraint), None);
-        assert_eq!(check_constraint(&warm_exhibit, &animal, &cold_constraint), Some(cold_violation));
+        assert_eq!(
+            check_constraint(&warm_exhibit, &animal, &cold_constraint),
+            Some(cold_violation)
+        );
     }
-
 }
