@@ -16,7 +16,7 @@ pub struct Animal<'a> {
     pub growth: Growth,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Species {
     pub id: String,
     pub genus: String,
@@ -194,7 +194,7 @@ pub enum Diet {
     DoesNotEat,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Size {
     pub stages: Vec<Stage>,
     pub final_size: u16,
@@ -202,13 +202,13 @@ pub struct Size {
     pub immobile: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Stage {
     pub size: u16,
     pub duration: u16,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Habitat {
     pub minimum_quality: u8,
     pub temperature: Temperature,
@@ -216,7 +216,7 @@ pub struct Habitat {
     pub active_swimmer: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Needs {
     pub plants: Option<Need>,
     pub rocks: Option<Need>,

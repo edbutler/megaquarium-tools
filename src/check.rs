@@ -39,9 +39,10 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     println!("Checking {} tanks...", args.aquarium.exhibits.len());
 
     let options = RuleOptions {
-        animals_come_from_spec: true,
         assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
     };
+
+    let mut was_problem = false;
 
     for exhibit in &args.aquarium.exhibits {
         let mut animals = Vec::new();
@@ -102,8 +103,13 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
         messages.dedup();
 
         for v in messages {
+            was_problem = true;
             println!("- {}", v);
         }
+    }
+
+    if !was_problem {
+        println!("No problems!");
     }
 
     Ok(())
@@ -120,7 +126,6 @@ pub fn check_for_viable_tank(data: &data::GameData, args: CheckArgs) -> Result<(
     let tank = minimum_viable_tank(&animals);
 
     let options = RuleOptions {
-        animals_come_from_spec: true,
         assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
     };
 

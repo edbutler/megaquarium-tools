@@ -32,7 +32,7 @@ impl TankModel {
 
 /// Properties of a tank. a None value for a property means "unconstrained," in that any animal with a
 /// need for that property will not be satisfied by this tank.
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Environment {
     pub size: u16,
     pub temperature: Temperature,
@@ -86,3 +86,21 @@ impl Temperature {
 }
 
 as_str_display!(Temperature);
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+
+    pub fn test_environment() -> Environment {
+        Environment {
+            size: 0,
+            temperature: Temperature::Warm,
+            quality: 0,
+            plants: None,
+            rocks: None,
+            caves: None,
+            light: None,
+            interior: None,
+        }
+    }
+}

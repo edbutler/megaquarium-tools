@@ -5,11 +5,10 @@ use crate::{
 use Constraint::*;
 
 pub struct RuleOptions {
-    pub animals_come_from_spec: bool,
     pub assume_all_fish_fully_grown: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Constraint {
     Temperature(tank::Temperature),
     Quality(u8),
@@ -28,6 +27,7 @@ pub struct ExhibitSpec<'a> {
     pub tank: tank::Environment,
 }
 
+#[derive(Debug)]
 pub struct Violation<'a> {
     pub species: &'a Animal<'a>,
     pub constraint: Constraint,
@@ -122,7 +122,7 @@ pub fn find_violations<'a>(exhibit: &'a ExhibitSpec<'a>) -> Vec<Violation<'a>> {
 
 fn check_constraint<'a>(
     exhibit: &'a ExhibitSpec<'a>,
-    s: &'a Animal<'a>,
+    anim: &'a Animal<'a>,
     constraint: &Constraint,
 ) -> Option<Violation<'a>> {
     let simple = |is_okay: bool| {
@@ -130,7 +130,7 @@ fn check_constraint<'a>(
             None
         } else {
             Some(Violation {
-                species: s,
+                species: anim,
                 constraint: constraint.clone(),
                 conflicting: None,
             })
@@ -140,7 +140,7 @@ fn check_constraint<'a>(
     let if_conflict = |other: Option<&'a Animal<'a>>| match other {
         None => None,
         Some(o) => Some(Violation {
-            species: s,
+            species: anim,
             constraint: constraint.clone(),
             conflicting: Some(o),
         }),
@@ -151,7 +151,7 @@ fn check_constraint<'a>(
             None
         } else {
             Some(Violation {
-                species: s,
+                species: anim,
                 constraint: constraint.clone(),
                 conflicting: conflict,
             })
@@ -168,7 +168,7 @@ fn check_constraint<'a>(
             let count = exhibit
                 .animals
                 .iter()
-                .filter(|a| std::ptr::eq(s.species, a.species))
+                .filter(|a| std::ptr::eq(anim.species, a.species))
                 .count();
             simple(count >= (*c as usize))
         }
@@ -183,26 +183,26 @@ fn check_constraint<'a>(
             false
         }),
         Cohabitation(Cohabitation::OnlyCongeners) => {
-            if_conflict(exhibit.animals.iter().find(|a| s.species.genus != a.species.genus))
+            if_conflict(exhibit.animals.iter().find(|a| anim.species.genus != a.species.genus))
         }
         Cohabitation(Cohabitation::NoCongeners) => if_conflict(
             exhibit
                 .animals
                 .iter()
-                .find(|a| !std::ptr::eq(*a, s) && s.species.genus == a.species.genus),
+                .find(|a| !std::ptr::eq(*a, anim) && anim.species.genus == a.species.genus),
         ),
         Cohabitation(Cohabitation::NoConspecifics) => simple(
             exhibit
                 .animals
                 .iter()
-                .all(|a| std::ptr::eq(a, s) || !std::ptr::eq(s.species, a.species)),
+                .all(|a| std::ptr::eq(a, anim) || !std::ptr::eq(anim.species, a.species)),
         ),
-        Cohabitation(Cohabitation::NoFoodCompetitors) => match &s.species.diet {
+        Cohabitation(Cohabitation::NoFoodCompetitors) => match &anim.species.diet {
             Diet::Food {
                 food: myfood,
                 period: _,
             } => if_conflict(exhibit.animals.iter().find(|a| {
-                !std::ptr::eq(s.species, a.species)
+                !std::ptr::eq(anim.species, a.species)
                     && match &a.species.diet {
                         Diet::Food { food, period: _ } => myfood == food,
                         _ => false,
@@ -219,4 +219,57 @@ fn check_constraint<'a>(
                 .find(|a| a.species.prey_type == *prey && a.size() <= *size),
         ),
     }
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+    use crate::animal::*;
+    use crate::tank::*;
+    use crate::tank::test::*;
+    use crate::animal::test::test_species;
+
+    static OPTIONS: RuleOptions = RuleOptions { assume_all_fish_fully_grown: false };
+    static EMPTY_ANIMALS: &[Animal<'static>] = &[];
+
+    fn simple_violation<'a>(animal: &'a Animal<'a>, constraint: Constraint) -> Violation<'a> {
+        Violation { species: animal, conflicting: None, constraint }
+    }
+
+    #[test]
+    fn test_temperature() {
+        let species = test_species("warm");
+
+        let warm_exhibit = ExhibitSpec {
+            options: &OPTIONS,
+            animals: &EMPTY_ANIMALS,
+            tank: Environment {
+                temperature: tank::Temperature::Warm,
+                ..test_environment()
+            }
+        };
+
+        let cold_exhibit = ExhibitSpec {
+            options: &OPTIONS,
+            animals: &EMPTY_ANIMALS,
+            tank: Environment {
+                temperature: tank::Temperature::Cold,
+                ..test_environment()
+            }
+        };
+
+        let animal = Animal { species: &species, id: 0, growth: Growth::Final };
+
+        let warm_constraint = super::Temperature(tank::Temperature::Warm);
+        let cold_constraint = super::Temperature(tank::Temperature::Cold);
+
+        let warm_violation = simple_violation(&animal, warm_constraint);
+        let cold_violation = simple_violation(&animal, cold_constraint);
+
+        assert_eq!(check_constraint(&warm_exhibit, &animal, &warm_constraint), None);
+        assert_eq!(check_constraint(&cold_exhibit, &animal, &warm_constraint), Some(warm_violation));
+        assert_eq!(check_constraint(&cold_exhibit, &animal, &cold_constraint), None);
+        assert_eq!(check_constraint(&warm_exhibit, &animal, &cold_constraint), Some(cold_violation));
+    }
+
 }
