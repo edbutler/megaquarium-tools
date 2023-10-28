@@ -64,7 +64,7 @@ fn main() {
 
         SubCommand::Check(c) => {
             let args = CheckArgs {
-                species: c.species,
+                species: &c.species,
                 debug: c.debug,
                 assume_all_fish_fully_grown: c.assume_fully_grown,
             };
@@ -102,8 +102,7 @@ fn main() {
 
         SubCommand::Validate(_) => {
             fn do_work(data: &GameData) -> util::Result<()> {
-                let stdin = std::io::stdin();
-                let aquarium = from_reader::<std::io::Stdin, AquariumDesc>(stdin)?;
+                let aquarium = load_aquarium_from_stdin()?;
                 let args = ValidateArgs {
                     aquarium,
                     debug: false,
@@ -123,12 +122,28 @@ fn main() {
         }
 
         SubCommand::Expand(e) => {
-            let args = CheckArgs {
-                species: e.species,
-                debug: false,
-                assume_all_fish_fully_grown: false,
-            };
-            match check_for_viable_tank(&data, &args) {
+            fn do_work(e: &Expand, data: &GameData) -> util::Result<()> {
+                let aquarium = load_aquarium_from_stdin()?;
+
+                let args = CheckArgs {
+                    species: &e.species,
+                    debug: false,
+                    assume_all_fish_fully_grown: false,
+                };
+
+                let check_result = check_for_viable_tank(&data, &args)?;
+
+                if !check_result.is_okay() {
+                    print_check_result(&args, &check_result);
+                    return Ok(());
+                }
+
+                let extra_environment = check_result.environment;
+
+                Ok(())
+            }
+
+            match do_work(&e, &data) {
                 Ok(_) => (),
                 Err(error) => {
                     println!("{}", error);
@@ -137,6 +152,11 @@ fn main() {
             }
         }
     }
+}
+
+fn load_aquarium_from_stdin() -> util::Result<AquariumDesc> {
+    let stdin = std::io::stdin();
+    from_reader::<std::io::Stdin, AquariumDesc>(stdin)
 }
 
 #[derive(Parser)]

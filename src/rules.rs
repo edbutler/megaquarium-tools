@@ -67,7 +67,7 @@ impl std::fmt::Display for Violation {
             }
             (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s),
             (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s),
-            (Predator { prey: _, size }, Some(o)) => {
+            (Predator { prey: _, size: _ }, Some(o)) => {
                 if o.growth != Growth::Final {
                     // TODO need to determine this completely
                     write!(f, "{} will eat {} (though may be fine if fully grown)", s, o.species)

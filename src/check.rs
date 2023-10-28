@@ -6,8 +6,8 @@ use crate::sexpr_format::*;
 use crate::tank::*;
 use crate::util::*;
 
-pub struct CheckArgs {
-    pub species: Vec<(String, u16)>,
+pub struct CheckArgs<'a> {
+    pub species: &'a Vec<(String, u16)>,
     pub debug: bool,
     pub assume_all_fish_fully_grown: bool,
 }
@@ -121,10 +121,16 @@ pub struct CheckResult {
     pub environment: Environment,
 }
 
+impl CheckResult {
+    pub fn is_okay(&self) -> bool {
+        self.violations.len() == 0
+    }
+}
+
 pub fn check_for_viable_tank<'a>(data: &'a data::GameData, args: &CheckArgs) -> Result<CheckResult> {
     let mut animals = Vec::new();
 
-    for (s, count) in &args.species {
+    for (s, count) in args.species {
         let species = lookup(&data, &s)?;
         animals.push(SpeciesSpec { species, count: *count });
     }
@@ -154,16 +160,11 @@ pub fn check_for_viable_tank<'a>(data: &'a data::GameData, args: &CheckArgs) -> 
 
 pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
     println!("For contents:");
-    for (spec, count) in &args.species {
+    for (spec, count) in args.species {
         println!("- {}x {}", count, spec);
     }
 
-    if result.violations.len() > 0 {
-        println!("\nA valid tank is not possible:");
-        for v in &result.violations {
-            println!("- {}", v);
-        }
-    } else {
+    if result.is_okay() {
         println!("\nThe minimum viable tank is:");
         if args.debug {
             println!("{:#?}", result.environment);
@@ -180,7 +181,16 @@ pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
         for item in &result.food {
             println!("- {}x {}", item.count, item.food);
         }
+    } else {
+        println!("\nA valid tank is not possible:");
+        for v in &result.violations {
+            println!("- {}", v);
+        }
     }
+}
+
+pub fn try_expand_tank() {
+
 }
 
 fn animals_from_spec<'a>(animals: &[SpeciesSpec<'a>], assume_fully_grown: bool) -> Vec<AnimalRef<'a>> {
