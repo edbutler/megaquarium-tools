@@ -199,11 +199,7 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
         panic!("need to specify at least some animals");
     }
 
-    let constrained_size = species
-        .iter()
-        .map(|s| s.species.minimum_needed_tank_size())
-        .max()
-        .unwrap();
+    let constrained_size = species.iter().map(|s| s.species.minimum_needed_tank_size()).max().unwrap();
     let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_size()).sum();
     let light = species
         .iter()
@@ -243,15 +239,9 @@ fn minimum_required_food(data: &GameData, species: &[SpeciesSpec<'_>]) -> Vec<Fo
     data.food
         .iter()
         .filter_map(|food| {
-            let count = diets
-                .iter()
-                .filter_map(|(x, c)| if food == *x { Some(c) } else { None })
-                .sum();
+            let count = diets.iter().filter_map(|(x, c)| if food == *x { Some(c) } else { None }).sum();
             if count > 0 {
-                Some(FoodAmount {
-                    food: food.clone(),
-                    count,
-                })
+                Some(FoodAmount { food: food.clone(), count })
             } else {
                 None
             }

@@ -205,9 +205,7 @@ struct BadJson {
 const UBJ: BadJson = BadJson { message: None };
 
 fn bad_json<S: Into<String>>(msg: S) -> BadJson {
-    BadJson {
-        message: Some(msg.into()),
-    }
+    BadJson { message: Some(msg.into()) }
 }
 
 impl fmt::Display for BadJson {
