@@ -71,7 +71,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
 
     let objects = json["objects"].as_array().ok_or("no objects")?;
 
-    let mut animals: HashMap<u64, Vec<Animal<'a>>> = HashMap::new();
+    let mut animals: HashMap<u64, Vec<AnimalRef<'a>>> = HashMap::new();
     let mut tanks: Vec<(String, Tank)> = Vec::new();
 
     // sort the tank models by length of id so we always choose the longest prefix
@@ -97,7 +97,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
                 .species_ref(species_id)
                 .ok_or(bad_json(format!("Unknown species {}", species_id)))?;
 
-            let animal = Animal {
+            let animal = AnimalRef {
                 id: id,
                 species: species,
                 growth: read_growth(a, species)?,

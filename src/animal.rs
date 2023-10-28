@@ -1,6 +1,7 @@
+use crate::data::GameData;
 use crate::rules::Constraint;
 use crate::tank::{Interior, Temperature};
-use crate::util::as_str_display;
+use crate::util::{as_str_display, error, Result};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Growth {
@@ -9,9 +10,31 @@ pub enum Growth {
     Growing { stage: u8, growth: u8 },
 }
 
+pub type AnimalId = u64;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Animal {
+    pub id: AnimalId,
+    pub species: String,
+    pub growth: Growth,
+}
+
+impl Animal {
+    pub fn to_ref<'a>(&self, data: &'a GameData) -> Result<AnimalRef<'a>> {
+        match data.species_ref(&self.species) {
+            Some(species) => Ok(AnimalRef {
+                id: self.id,
+                species,
+                growth: self.growth,
+            }),
+            None => Err(error(format!("no such species `{}`", self.species))),
+        }
+    }
+}
+
 #[derive(Debug)]
-pub struct Animal<'a> {
-    pub id: u64,
+pub struct AnimalRef<'a> {
+    pub id: AnimalId,
     pub species: &'a Species,
     pub growth: Growth,
 }
@@ -32,7 +55,15 @@ pub struct Species {
     pub predation: Vec<PreyType>,
 }
 
-impl Animal<'_> {
+impl AnimalRef<'_> {
+    pub fn to_animal(&self) -> Animal {
+        Animal {
+            id: self.id,
+            species: self.species.id.clone(),
+            growth: self.growth,
+        }
+    }
+
     pub fn size(&self) -> u16 {
         match self.growth {
             Growth::Final => self.species.size.final_size,

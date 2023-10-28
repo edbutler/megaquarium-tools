@@ -1,5 +1,5 @@
 use crate::{
-    animal::{Animal, Cohabitation, Diet, Need, PreyType},
+    animal::{Animal, AnimalRef, Cohabitation, Diet, Growth, Need, PreyType},
     tank,
 };
 use Constraint::*;
@@ -23,67 +23,56 @@ pub enum Constraint {
 
 pub struct ExhibitSpec<'a> {
     pub options: &'a RuleOptions,
-    pub animals: &'a [Animal<'a>],
-    pub tank: tank::Environment,
+    pub animals: &'a [AnimalRef<'a>],
+    pub environment: tank::Environment,
 }
 
-#[derive(Debug, Clone)]
-pub struct Violation<'a> {
-    pub species: &'a Animal<'a>,
+#[derive(Debug, PartialEq, Clone)]
+pub struct Violation {
+    pub animal: Animal,
     pub constraint: Constraint,
-    pub conflicting: Option<&'a Animal<'a>>,
+    pub conflicting: Option<Animal>,
 }
 
-impl PartialEq for Violation<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.species, other.species)
-            && self.constraint == other.constraint
-            && match (self.conflicting, other.conflicting) {
-                (None, None) => true,
-                (Some(a), Some(b)) => std::ptr::eq(a.species, b.species),
-                _ => false,
-            }
-    }
-}
-
-impl std::fmt::Display for Violation<'_> {
+impl std::fmt::Display for Violation {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let s = self.species.species;
+        let s = &self.animal.species;
 
         match (&self.constraint, &self.conflicting) {
-            (Temperature(t), None) => write!(f, "{} requires {} tank", s.id, t),
-            (Temperature(t), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s.id, t, o.species.id, t.other()),
-            (Quality(q), _) => write!(f, "{} requires at least quality {}", s.id, q),
-            (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s.id, c),
-            (NoBully, Some(o)) => write!(f, "{} will bully {}", o.species.id, s.id),
-            (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s.id),
+            (Temperature(t), None) => write!(f, "{} requires {} tank", s, t),
+            (Temperature(t), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s, t, o.species, t.other()),
+            (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
+            (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
+            (NoBully, Some(o)) => write!(f, "{} will bully {}", o.species, s),
+            (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s),
             (Lighting(Need::Dislikes), Some(o)) => {
-                write!(f, "{} requires no light but {} needs light", s.id, o.species.id)
+                write!(f, "{} requires no light but {} needs light", s, o.species)
             }
-            (Lighting(Need::Loves(l)), _) => write!(f, "{} requires at least {} light", s.id, l),
+            (Lighting(Need::Loves(l)), _) => write!(f, "{} requires at least {} light", s, l),
             (Cohabitation(Cohabitation::OnlyCongeners), Some(o)) => {
-                write!(f, "{} requires congeners but there is {}", s.id, o.species.id)
+                write!(f, "{} requires congeners but there is {}", s, o.species)
             }
             (Cohabitation(Cohabitation::NoCongeners), Some(o)) => {
-                if std::ptr::eq(s, o.species) {
-                    write!(f, "{} cannot be with congeners but there are multiple {}", s.id, o.species.id)
+                if *s == o.species {
+                    write!(f, "{} cannot be with congeners but there are multiple {}", s, o.species)
                 } else {
-                    write!(f, "{} cannot be with congeners but there is {}", s.id, o.species.id)
+                    write!(f, "{} cannot be with congeners but there is {}", s, o.species)
                 }
             }
             (Cohabitation(Cohabitation::NoConspecifics), _) => {
-                write!(f, "{} cannot be with its own species but there are multiple", s.id)
+                write!(f, "{} cannot be with its own species but there are multiple", s)
             }
             (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => {
-                write!(f, "{} will compete for food with {}", s.id, o.species.id)
+                write!(f, "{} will compete for food with {}", s, o.species)
             }
-            (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s.id),
-            (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s.id),
+            (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s),
+            (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s),
             (Predator { prey: _, size }, Some(o)) => {
-                if o.species.maximum_size() > *size {
-                    write!(f, "{} will eat {} (though it will be fine if fully grown)", s.id, o.species.id)
+                if o.growth != Growth::Final {
+                    // TODO need to determine this completely
+                    write!(f, "{} will eat {} (though may be fine if fully grown)", s, o.species)
                 } else {
-                    write!(f, "{} will eat {}", s.id, o.species.id)
+                    write!(f, "{} will eat {}", s, o.species)
                 }
             }
             _ => todo!(),
@@ -91,7 +80,7 @@ impl std::fmt::Display for Violation<'_> {
     }
 }
 
-pub fn find_violations<'a>(exhibit: &'a ExhibitSpec<'a>) -> Vec<Violation<'a>> {
+pub fn find_violations(exhibit: &ExhibitSpec) -> Vec<Violation> {
     let mut result = Vec::new();
 
     for s in exhibit.animals {
@@ -105,56 +94,56 @@ pub fn find_violations<'a>(exhibit: &'a ExhibitSpec<'a>) -> Vec<Violation<'a>> {
     result
 }
 
-fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a Animal<'a>, constraint: &Constraint) -> Option<Violation<'a>> {
+fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, constraint: &Constraint) -> Option<Violation> {
     let simple = |is_okay: bool| {
         if is_okay {
             None
         } else {
             Some(Violation {
-                species: anim,
+                animal: anim.to_animal(),
                 constraint: constraint.clone(),
                 conflicting: None,
             })
         }
     };
 
-    let if_conflict = |other: Option<&'a Animal<'a>>| match other {
+    let if_conflict = |other: Option<&'a AnimalRef<'a>>| match other {
         None => None,
         Some(o) => Some(Violation {
-            species: anim,
+            animal: anim.to_animal(),
             constraint: constraint.clone(),
-            conflicting: Some(o),
+            conflicting: Some(o.to_animal()),
         }),
     };
 
-    let with_conflict = |is_okay: bool, conflict: Option<&'a Animal<'a>>| {
+    let with_conflict = |is_okay: bool, conflict: Option<&'a AnimalRef<'a>>| {
         if is_okay {
             None
         } else {
             Some(Violation {
-                species: anim,
+                animal: anim.to_animal(),
                 constraint: constraint.clone(),
-                conflicting: conflict,
+                conflicting: conflict.map(|x| x.to_animal()),
             })
         }
     };
 
     match constraint {
         Temperature(t) => with_conflict(
-            *t == exhibit.tank.temperature,
+            *t == exhibit.environment.temperature,
             exhibit.animals.iter().find(|a| a.species.habitat.temperature != *t),
         ),
-        Quality(q) => simple(*q <= exhibit.tank.quality),
+        Quality(q) => simple(*q <= exhibit.environment.quality),
         Shoaler(c) => {
             let count = exhibit.animals.iter().filter(|a| std::ptr::eq(anim.species, a.species)).count();
             simple(count >= (*c as usize))
         }
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         Lighting(Need::Dislikes) => with_conflict(
-            exhibit.tank.light == Some(0),
+            exhibit.environment.light == Some(0),
             exhibit.animals.iter().find(|a| a.species.needs_light()),
         ),
-        Lighting(Need::Loves(l)) => simple(if let Some(x) = exhibit.tank.light { x >= *l } else { false }),
+        Lighting(Need::Loves(l)) => simple(if let Some(x) = exhibit.environment.light { x >= *l } else { false }),
         Cohabitation(Cohabitation::OnlyCongeners) => if_conflict(exhibit.animals.iter().find(|a| anim.species.genus != a.species.genus)),
         Cohabitation(Cohabitation::NoCongeners) => if_conflict(
             exhibit
@@ -178,8 +167,8 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a Animal<'a>, cons
             })),
             _ => None,
         },
-        Interior(i) => simple(exhibit.tank.interior == Some(*i)),
-        TankSize(s) => simple(exhibit.tank.size >= *s),
+        Interior(i) => simple(exhibit.environment.interior == Some(*i)),
+        TankSize(s) => simple(exhibit.environment.size >= *s),
         Predator { prey, size } => if_conflict(exhibit.animals.iter().find(|a| a.species.prey_type == *prey && a.size() <= *size)),
     }
 }
@@ -195,10 +184,10 @@ pub mod test {
     static OPTIONS: RuleOptions = RuleOptions {
         assume_all_fish_fully_grown: false,
     };
-    static EMPTY_ANIMALS: &[Animal<'static>] = &[];
+    static EMPTY_ANIMALS: &[AnimalRef<'static>] = &[];
 
-    fn make_animal(species: &Species) -> Animal {
-        Animal {
+    fn make_animal(species: &Species) -> AnimalRef {
+        AnimalRef {
             species: &species,
             id: 0,
             growth: Growth::Final,
@@ -209,13 +198,13 @@ pub mod test {
         ExhibitSpec {
             options: &OPTIONS,
             animals: &EMPTY_ANIMALS,
-            tank: environment,
+            environment,
         }
     }
 
-    fn simple_violation<'a>(animal: &'a Animal<'a>, constraint: Constraint) -> Violation<'a> {
+    fn simple_violation(animal: &AnimalRef, constraint: Constraint) -> Violation {
         Violation {
-            species: animal,
+            animal: animal.to_animal(),
             conflicting: None,
             constraint,
         }
@@ -277,9 +266,15 @@ pub mod test {
         let q65_violation = simple_violation(&animal, q65_constraint);
 
         assert_eq!(check_constraint(&q55_exhibit, &animal, &q60_constraint), Some(q60_violation));
-        assert_eq!(check_constraint(&q55_exhibit, &animal, &q65_constraint), Some(q65_violation.clone()));
+        assert_eq!(
+            check_constraint(&q55_exhibit, &animal, &q65_constraint),
+            Some(q65_violation.clone())
+        );
         assert_eq!(check_constraint(&q64_exhibit, &animal, &q60_constraint), None);
-        assert_eq!(check_constraint(&q64_exhibit, &animal, &q65_constraint), Some(q65_violation.clone()));
+        assert_eq!(
+            check_constraint(&q64_exhibit, &animal, &q65_constraint),
+            Some(q65_violation.clone())
+        );
         assert_eq!(check_constraint(&q65_exhibit, &animal, &q60_constraint), None);
         assert_eq!(check_constraint(&q65_exhibit, &animal, &q65_constraint), None);
     }

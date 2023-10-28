@@ -68,8 +68,10 @@ fn main() {
                 debug: c.debug,
                 assume_all_fish_fully_grown: c.assume_fully_grown,
             };
-            match check_for_viable_tank(&data, args) {
-                Ok(_) => (),
+            match check_for_viable_tank(&data, &args) {
+                Ok(result) => {
+                    print_check_result(&args, &result);
+                }
                 Err(error) => {
                     println!("{}", error);
                     std::process::exit(2);
@@ -119,6 +121,21 @@ fn main() {
                 }
             }
         }
+
+        SubCommand::Expand(e) => {
+            let args = CheckArgs {
+                species: e.species,
+                debug: false,
+                assume_all_fish_fully_grown: false,
+            };
+            match check_for_viable_tank(&data, &args) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("{}", error);
+                    std::process::exit(2);
+                }
+            }
+        }
     }
 }
 
@@ -136,6 +153,7 @@ enum SubCommand {
     Check(Check),
     List(List),
     Validate(Validate),
+    Expand(Expand),
 }
 
 /// Show information about the any game entity for a given search string.
@@ -162,6 +180,7 @@ struct Extract {
 /// Check the validity of the given set of animals, printing the minimum viable tank
 #[derive(Debug, Parser)]
 struct Check {
+    /// A set of species/count pairs, e.g., `clown_fish=3 anemone=2`
     #[clap(value_parser = parse_key_val::<String,u16>)]
     species: Vec<(String, u16)>,
     /// Show debug-printed structs instead of pretty output
@@ -175,6 +194,18 @@ struct Check {
 /// Validates an aquarium provided over stdin
 #[derive(Debug, Parser)]
 struct Validate {}
+
+/// List which tanks could support the addition of the given fish
+#[derive(Debug, Parser)]
+struct Expand {
+    /// A set of species/count pairs, e.g., `clown_fish=3 anemone=2`
+    #[clap(value_parser = parse_key_val::<String,u16>)]
+    species: Vec<(String, u16)>,
+    /// Show all tanks (with potential violations) even if they cannot support the additions.
+    /// Default is to only show valid tanks
+    #[clap(short)]
+    all: bool,
+}
 
 #[derive(Debug, Copy, Clone, ValueEnum)]
 enum ListOptions {

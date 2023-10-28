@@ -10,7 +10,7 @@ pub struct Aquarium<'a> {
 pub struct Exhibit<'a> {
     pub name: String,
     pub tank: Tank<'a>,
-    pub animals: Vec<Animal<'a>>,
+    pub animals: Vec<AnimalRef<'a>>,
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ pub struct SpeciesSpec<'a> {
     pub count: u16,
 }
 
-pub fn animals_to_spec<'a>(animals: &[Animal<'a>]) -> Vec<SpeciesSpec<'a>> {
+pub fn animals_to_spec<'a>(animals: &[AnimalRef<'a>]) -> Vec<SpeciesSpec<'a>> {
     let mut animals: Vec<_> = animals.iter().collect();
     animals.sort_by_key(|a| &a.species.id);
 
@@ -126,47 +126,47 @@ mod test {
         let species3 = test_species("viscacha");
 
         let input = vec![
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species1,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species2,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species2,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species1,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species3,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species3,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species1,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species2,
                 growth: Growth::Final,
             },
-            Animal {
+            AnimalRef {
                 id: 1,
                 species: &species2,
                 growth: Growth::Final,
