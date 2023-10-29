@@ -22,7 +22,6 @@ pub enum Constraint {
 }
 
 pub struct ExhibitSpec<'a> {
-    pub options: &'a RuleOptions,
     pub animals: &'a [AnimalRef<'a>],
     pub environment: tank::Environment,
 }
@@ -196,7 +195,6 @@ pub mod test {
 
     fn simple_exhibit(environment: Environment) -> ExhibitSpec<'static> {
         ExhibitSpec {
-            options: &OPTIONS,
             animals: &EMPTY_ANIMALS,
             environment,
         }

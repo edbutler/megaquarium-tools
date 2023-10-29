@@ -80,7 +80,7 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
 
         let animal_spec = animals_to_spec(&animals);
 
-        let min_tank = minimum_viable_tank(&animal_spec);
+        let min_tank = minimum_viable_tank(&animals);
 
         println!("{}:", exhibit.name);
         // TODO this isn't quite right if some fish are not grown
@@ -91,7 +91,6 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
         }
 
         let exhibit_spec = ExhibitSpec {
-            options: &options,
             animals: &animals,
             environment: min_tank,
         };
@@ -115,10 +114,6 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     Ok(())
 }
 
-pub fn make_spec() {
-
-}
-
 pub struct CheckResult {
     pub violations: Vec<Violation>,
     pub food: Vec<FoodAmount>,
@@ -132,28 +127,24 @@ impl CheckResult {
 }
 
 pub fn check_for_viable_tank<'a>(data: &'a data::GameData, args: &CheckArgs) -> Result<CheckResult> {
-    let mut animals = Vec::new();
+    let mut animal_specs = Vec::new();
 
     for (s, count) in args.species {
         let species = lookup(&data, &s)?;
-        animals.push(SpeciesSpec { species, count: *count });
+        animal_specs.push(SpeciesSpec { species, count: *count });
     }
 
+    let animals = animals_from_spec(&animal_specs, args.assume_all_fish_fully_grown);
     let environment = minimum_viable_tank(&animals);
 
-    let options = RuleOptions {
-        assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
-    };
-
     let exhibit = ExhibitSpec {
-        options: &options,
-        animals: &animals_from_spec(&animals, args.assume_all_fish_fully_grown),
+        animals: &animals,
         environment,
     };
 
     let violations = find_violations(&exhibit);
 
-    let food = minimum_required_food(data, &animals);
+    let food = minimum_required_food(data, &animal_specs);
 
     Ok(CheckResult {
         violations,
@@ -222,14 +213,14 @@ fn animals_from_spec<'a>(animals: &[SpeciesSpec<'a>], assume_fully_grown: bool) 
 
 // Guess at the minimum viable tank for the given species.
 // Still requires checking for constraint violations.
-fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
-    if species.len() == 0 {
+fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
+    if animals.len() == 0 {
         panic!("need to specify at least some animals");
     }
 
-    let constrained_size = species.iter().map(|s| s.species.minimum_needed_tank_size()).max().unwrap();
-    let summed_size: u16 = species.iter().map(|s| s.count * s.species.maximum_size()).sum();
-    let light = species
+    let constrained_size = animals.iter().map(|a| a.species.minimum_needed_tank_size()).max().unwrap();
+    let summed_size: u16 = animals.iter().map(|a| a.species.maximum_size()).sum();
+    let light = animals
         .iter()
         .filter_map(|s| match s.species.needs.light {
             Some(Need::Loves(x)) => Some(x),
@@ -240,13 +231,13 @@ fn minimum_viable_tank(species: &[SpeciesSpec<'_>]) -> Environment {
 
     Environment {
         size: std::cmp::max(constrained_size, summed_size),
-        temperature: species[0].species.habitat.temperature,
-        quality: species.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
-        plants: minimum_need(species, |s| s.needs.plants),
-        rocks: minimum_need(species, |s| s.needs.rocks),
-        caves: minimum_need(species, |s| s.needs.caves.map(|x| Need::Loves(x))),
+        temperature: animals[0].species.habitat.temperature,
+        quality: animals.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
+        plants: minimum_need(animals, |s| s.needs.plants),
+        rocks: minimum_need(animals, |s| s.needs.rocks),
+        caves: minimum_need(animals, |s| s.needs.caves.map(|x| Need::Loves(x))),
         light,
-        interior: species.iter().find_map(|s| s.species.habitat.interior),
+        interior: animals.iter().find_map(|s| s.species.habitat.interior),
     }
 }
 
@@ -277,11 +268,11 @@ fn minimum_required_food(data: &GameData, species: &[SpeciesSpec<'_>]) -> Vec<Fo
         .collect()
 }
 
-fn minimum_need<F: Fn(&Species) -> Option<Need>>(list: &[SpeciesSpec], f: F) -> Option<u16> {
-    let foldfn = |acc: Option<u16>, s: &SpeciesSpec| -> Option<u16> {
-        match f(s.species) {
+fn minimum_need<F: Fn(&Species) -> Option<Need>>(list: &[AnimalRef], f: F) -> Option<u16> {
+    let foldfn = |acc: Option<u16>, a: &AnimalRef| -> Option<u16> {
+        match f(a.species) {
             Some(Need::Dislikes) => Some(0),
-            Some(Need::Loves(x)) => Some((x as u16) * s.count + acc.unwrap_or(0)),
+            Some(Need::Loves(x)) => Some((x as u16) + acc.unwrap_or(0)),
             None => acc,
         }
     };
