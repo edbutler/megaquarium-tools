@@ -7,9 +7,21 @@ use crate::tank::*;
 use crate::util::*;
 
 pub struct CheckArgs<'a> {
-    pub species: &'a Vec<(String, u16)>,
+    pub species: &'a Vec<SpeciesCount>,
     pub debug: bool,
     pub assume_all_fish_fully_grown: bool,
+}
+
+pub struct CheckResult {
+    pub violations: Vec<Violation>,
+    pub food: Vec<FoodAmount>,
+    pub environment: Environment,
+}
+
+impl CheckResult {
+    pub fn is_okay(&self) -> bool {
+        self.violations.len() == 0
+    }
 }
 
 pub struct ValidateArgs {
@@ -17,23 +29,6 @@ pub struct ValidateArgs {
     pub debug: bool,
     pub assume_all_fish_fully_grown: bool,
 }
-
-#[derive(Debug, Clone)]
-pub struct BadCheck {
-    pub message: String,
-}
-
-pub fn bad_check<S: Into<String>>(msg: S) -> BadCheck {
-    BadCheck { message: msg.into() }
-}
-
-impl std::fmt::Display for BadCheck {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl std::error::Error for BadCheck {}
 
 pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> Result<()> {
     println!("Checking {} tanks...", args.aquarium.exhibits.len());
@@ -50,8 +45,8 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
 
         for desc in &exhibit.animals {
             match desc {
-                AnimalDesc::Summary { species, count } => {
-                    let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
+                AnimalDesc::Summary(SpeciesCount { species, count }) => {
+                    let species = data.species_ref(species)?;
                     for _ in 0..*count {
                         counter += 1;
                         let growth = if options.assume_all_fish_fully_grown {
@@ -66,8 +61,8 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
                         })
                     }
                 }
-                AnimalDesc::Individual { species, growth } => {
-                    let species = data.species_ref(species).ok_or(bad_check("invalid species"))?;
+                AnimalDesc::Individual(Animal { species, growth, .. }) => {
+                    let species = data.species_ref(species)?;
                     counter += 1;
                     animals.push(AnimalRef {
                         id: counter,
@@ -78,15 +73,13 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
             }
         }
 
-        let animal_spec = animals_to_spec(&animals);
-
         let min_tank = minimum_viable_tank(&animals);
 
         println!("{}:", exhibit.name);
         // TODO this isn't quite right if some fish are not grown
         println!("- {}/{}, {}%", min_tank.size, exhibit.tank.size, min_tank.quality);
 
-        for item in minimum_required_food(data, &animal_spec) {
+        for item in minimum_required_food(data, &animals) {
             println!("- {}x {}", item.count, item.food);
         }
 
@@ -114,27 +107,8 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     Ok(())
 }
 
-pub struct CheckResult {
-    pub violations: Vec<Violation>,
-    pub food: Vec<FoodAmount>,
-    pub environment: Environment,
-}
-
-impl CheckResult {
-    pub fn is_okay(&self) -> bool {
-        self.violations.len() == 0
-    }
-}
-
 pub fn check_for_viable_tank<'a>(data: &'a data::GameData, args: &CheckArgs) -> Result<CheckResult> {
-    let mut animal_specs = Vec::new();
-
-    for (s, count) in args.species {
-        let species = lookup(&data, &s)?;
-        animal_specs.push(SpeciesSpec { species, count: *count });
-    }
-
-    let animals = animals_from_spec(&animal_specs, args.assume_all_fish_fully_grown);
+    let animals = animals_from_counts(data, args.species, args.assume_all_fish_fully_grown)?;
     let environment = minimum_viable_tank(&animals);
 
     let exhibit = ExhibitSpec {
@@ -144,7 +118,7 @@ pub fn check_for_viable_tank<'a>(data: &'a data::GameData, args: &CheckArgs) -> 
 
     let violations = find_violations(&exhibit);
 
-    let food = minimum_required_food(data, &animal_specs);
+    let food = minimum_required_food(data, &animals);
 
     Ok(CheckResult {
         violations,
@@ -155,8 +129,8 @@ pub fn check_for_viable_tank<'a>(data: &'a data::GameData, args: &CheckArgs) -> 
 
 pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
     println!("For contents:");
-    for (spec, count) in args.species {
-        println!("- {}x {}", count, spec);
+    for c in args.species {
+        println!("- {}x {}", c.count, c.species);
     }
 
     if result.is_okay() {
@@ -184,31 +158,34 @@ pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
     }
 }
 
-pub fn try_expand_tank() {
+pub fn try_expand_tank(base: &ExhibitRef, expansion: &ExhibitSpec) {
 
 }
 
-fn animals_from_spec<'a>(animals: &[SpeciesSpec<'a>], assume_fully_grown: bool) -> Vec<AnimalRef<'a>> {
+fn animals_from_counts<'a>(data: &'a GameData, counts: &[SpeciesCount], assume_fully_grown: bool) -> Result<Vec<AnimalRef<'a>>> {
     let mut counter = 0;
+    let capacity: u16 = counts.iter().map(|c| c.count).sum();
+    let mut result = Vec::with_capacity(capacity as usize);
 
-    animals
-        .iter()
-        .flat_map(|s| {
-            (0..s.count).map(move |_| {
-                counter += 1;
-                let growth = if assume_fully_grown {
-                    Growth::Final
-                } else {
-                    s.species.earliest_growth_stage()
-                };
-                AnimalRef {
-                    id: counter,
-                    species: s.species,
-                    growth,
-                }
-            })
-        })
-        .collect()
+    for c in counts {
+        let species = data.species_ref(&c.species)?;
+
+        for _ in 0..c.count {
+            counter += 1;
+            let growth = if assume_fully_grown {
+                Growth::Final
+            } else {
+                species.earliest_growth_stage()
+            };
+            result.push(AnimalRef {
+                id: counter,
+                species: species,
+                growth,
+            });
+        }
+    }
+
+    Ok(result)
 }
 
 // Guess at the minimum viable tank for the given species.
@@ -246,11 +223,11 @@ pub struct FoodAmount {
     pub count: u16,
 }
 
-fn minimum_required_food(data: &GameData, species: &[SpeciesSpec<'_>]) -> Vec<FoodAmount> {
+fn minimum_required_food(data: &GameData, species: &[AnimalRef<'_>]) -> Vec<FoodAmount> {
     let diets: Vec<(&String, u16)> = species
         .iter()
         .filter_map(|s| match &s.species.diet {
-            Diet::Food { food, period: _ } => Some((food, s.count * s.species.amount_food_eaten())),
+            Diet::Food { food, period: _ } => Some((food, s.species.amount_food_eaten())),
             _ => None,
         })
         .collect();

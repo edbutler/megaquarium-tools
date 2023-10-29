@@ -39,8 +39,14 @@ pub struct ExhibitDesc {
 
 #[derive(Debug)]
 pub enum AnimalDesc {
-    Individual { species: String, growth: Growth },
-    Summary { species: String, count: u16 },
+    Individual(Animal),
+    Summary(SpeciesCount),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpeciesCount {
+    pub species: String,
+    pub count: u16,
 }
 
 #[derive(Debug)]
@@ -49,31 +55,25 @@ pub struct TankDesc {
     pub size: u16,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct SpeciesSpec<'a> {
-    pub species: &'a Species,
-    pub count: u16,
-}
-
-pub fn animals_to_spec<'a>(animals: &[AnimalRef<'a>]) -> Vec<SpeciesSpec<'a>> {
+pub fn animals_to_counts(animals: &[AnimalRef]) -> Vec<SpeciesCount> {
     let mut animals: Vec<_> = animals.iter().collect();
     animals.sort_by_key(|a| &a.species.id);
 
     let mut result = Vec::new();
 
     let acc = animals.into_iter().fold(None, |acc, a| match acc {
-        None => Some(SpeciesSpec {
-            species: a.species,
+        None => Some(SpeciesCount {
+            species: a.species.id.clone(),
             count: 1,
         }),
-        Some(mut spec) => {
-            if std::ptr::eq(spec.species, a.species) {
-                spec.count += 1;
-                Some(spec)
+        Some(mut c) => {
+            if c.species == a.species.id {
+                c.count += 1;
+                Some(c)
             } else {
-                result.push(spec);
-                Some(SpeciesSpec {
-                    species: a.species,
+                result.push(c);
+                Some(SpeciesCount {
+                    species: a.species.id.clone(),
                     count: 1,
                 })
             }
@@ -94,21 +94,9 @@ impl AquariumRef<'_> {
             .iter()
             .map(|e| {
                 let animals: Vec<_> = if summarize {
-                    animals_to_spec(&e.animals)
-                        .iter()
-                        .map(|spec| AnimalDesc::Summary {
-                            species: spec.species.id.to_string(),
-                            count: spec.count,
-                        })
-                        .collect()
+                    animals_to_counts(&e.animals).into_iter().map(AnimalDesc::Summary).collect()
                 } else {
-                    e.animals
-                        .iter()
-                        .map(|a| AnimalDesc::Individual {
-                            species: a.species.id.to_string(),
-                            growth: a.growth,
-                        })
-                        .collect()
+                    e.animals.iter().map(|a| AnimalDesc::Individual(a.to_animal())).collect()
                 };
 
                 ExhibitDesc {
@@ -186,21 +174,21 @@ mod test {
         ];
 
         let expected = vec![
-            SpeciesSpec {
-                species: &species1,
+            SpeciesCount {
+                species: species1.id.clone(),
                 count: 3,
             },
-            SpeciesSpec {
-                species: &species2,
+            SpeciesCount {
+                species: species2.id.clone(),
                 count: 4,
             },
-            SpeciesSpec {
-                species: &species3,
+            SpeciesCount {
+                species: species3.id.clone(),
                 count: 2,
             },
         ];
 
-        let result = animals_to_spec(&input);
+        let result = animals_to_counts(&input);
 
         assert_eq!(result, expected);
     }

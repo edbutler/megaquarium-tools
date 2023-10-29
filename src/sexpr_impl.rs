@@ -249,10 +249,10 @@ impl ToSexp for AnimalDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
         match self {
-            AnimalDesc::Summary { species, count } =>
+            AnimalDesc::Summary(SpeciesCount { species, count }) =>
                 sexp!((animals ,(species.clone()) ,(*count))),
-            AnimalDesc::Individual { species, growth } =>
-                sexp!((animal ,(species.clone()) ,(growth.to_sexp()))),
+            AnimalDesc::Individual(Animal { id,  species, growth }) =>
+                sexp!((animal ,(*id) ,(species.clone()) ,(growth.to_sexp()))),
         }
     }
 }
@@ -263,12 +263,12 @@ impl FromSexp for AnimalDesc {
         match symbol {
             "animals" => {
                 let (species, count) = expect_string_and_number(obj)?;
-                Ok(AnimalDesc::Summary { species, count })
+                Ok(AnimalDesc::Summary(SpeciesCount { species, count }))
             }
             "animal" => {
-                let (species, growth_obj) = expect_string_and_any(obj)?;
+                let (id, species, growth_obj) = expect_number_and_string_and_any(obj)?;
                 let growth = Growth::from_sexp(growth_obj)?;
-                Ok(AnimalDesc::Individual { species, growth })
+                Ok(AnimalDesc::Individual(Animal { id, species, growth }))
             },
             _ => Err(Box::new(bad_sexp("expected (animal ...) or (animals ...)")))
         }
@@ -330,6 +330,19 @@ fn expect_two_args<'a,T,U,F1,F2>(iter: lexpr::cons::ListIter<'a>, f1:F1, f2:F2) 
     Ok((x, y))
 }
 
+fn expect_three_args<'a,T,U,V,F1,F2,F3>(iter: lexpr::cons::ListIter<'a>, f1:F1, f2:F2, f3:F3) -> util::Result<(T,U,V)>
+        where F1:Fn(&'a Value)->util::Result<T>, F2:Fn(&'a Value)->util::Result<U>, F3:Fn(&'a Value)->util::Result<V> {
+    let items: Vec<&lexpr::Value> = iter.collect();
+    if items.len() != 3 {
+        return Err(Box::new(bad_sexp(format!("expected call to have 2 arguments, got {:#?}", items))));
+    }
+    let x = f1(items[0])?;
+    let y = f2(items[1])?;
+    let z = f3(items[0])?;
+
+    Ok((x, y, z))
+}
+
 fn expect_string_and_number(iter: lexpr::cons::ListIter<'_>) -> util::Result<(String,u16)> {
     expect_two_args(
         iter,
@@ -343,9 +356,13 @@ fn expect_string_and_number(iter: lexpr::cons::ListIter<'_>) -> util::Result<(St
         })
 }
 
-fn expect_string_and_any(iter: lexpr::cons::ListIter<'_>) -> util::Result<(String,&Value)> {
-    expect_two_args(
+fn expect_number_and_string_and_any(iter: lexpr::cons::ListIter<'_>) -> util::Result<(u64,String,&Value)> {
+    expect_three_args(
         iter,
+        |v| {
+            let n = v.as_number().and_then(|x| x.as_u64()).ok_or(bad_sexp("expected second arg to be number"))?;
+            Ok(n)
+        },
         |v| {
             let s = v.as_str().ok_or(bad_sexp("expected first arg to be symbol"))?;
             Ok(s.to_string())

@@ -3,6 +3,7 @@ use crate::aquarium::*;
 use crate::paths::*;
 use crate::tank::*;
 use crate::util::Result;
+use crate::util::error;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -20,7 +21,7 @@ pub struct GameData {
 }
 
 impl GameData {
-    pub fn species_ref(&self, id: &str) -> Option<&Species> {
+    pub fn try_species_ref(&self, id: &str) -> Option<&Species> {
         for s in &self.species {
             if s.id.eq(id) {
                 return Some(s);
@@ -28,6 +29,10 @@ impl GameData {
         }
 
         None
+    }
+
+    pub fn species_ref(&self, id: &str) -> Result<&Species> {
+        self.try_species_ref(id).ok_or(error(format!("uknown species {}", id)))
     }
 
     pub fn species_search(&self, search_string: &str) -> Vec<&Species> {
@@ -93,9 +98,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<
         if let Some(a) = obj.get("animal") {
             let id = o["uid"].as_u64().ok_or("no id")?;
             let species_id = o["specId"].as_str().ok_or("no specId")?;
-            let species = data
-                .species_ref(species_id)
-                .ok_or(bad_json(format!("Unknown species {}", species_id)))?;
+            let species = data .species_ref(species_id)?;
 
             let animal = AnimalRef {
                 id: id,
@@ -595,15 +598,15 @@ mod test {
     }
 
     #[test]
-    fn test_species_ref() {
+    fn test_try_species_ref() {
         let data = test_data(vec![test_species("foo"), test_species("bar")]);
         let foo = &data.species[0];
         let bar = &data.species[1];
 
-        assert_eq!(data.species_ref("foo"), Some(foo));
-        assert_eq!(data.species_ref("fo"), None);
-        assert_eq!(data.species_ref("bar"), Some(bar));
-        assert_eq!(data.species_ref("baz"), None);
+        assert_eq!(data.try_species_ref("foo"), Some(foo));
+        assert_eq!(data.try_species_ref("fo"), None);
+        assert_eq!(data.try_species_ref("bar"), Some(bar));
+        assert_eq!(data.try_species_ref("baz"), None);
     }
 
     #[test]

@@ -9,7 +9,7 @@ mod sexpr_impl;
 mod tank;
 mod util;
 
-use aquarium::AquariumDesc;
+use aquarium::*;
 use check::*;
 use clap::{Parser, ValueEnum};
 use data::*;
@@ -63,8 +63,9 @@ fn main() {
         }
 
         SubCommand::Check(c) => {
+            let counts: Vec<_> = c.species.into_iter().map(|(species,count)| SpeciesCount {species, count}).collect();
             let args = CheckArgs {
-                species: &c.species,
+                species: &counts,
                 debug: c.debug,
                 assume_all_fish_fully_grown: c.assume_fully_grown,
             };
@@ -122,11 +123,12 @@ fn main() {
         }
 
         SubCommand::Expand(e) => {
-            fn do_work(e: &Expand, data: &GameData) -> util::Result<()> {
+            fn do_work(e: Expand, data: &GameData) -> util::Result<()> {
                 let aquarium = load_aquarium_from_stdin()?;
+                let counts: Vec<_> = e.species.into_iter().map(|(species,count)| SpeciesCount {species, count}).collect();
 
                 let args = CheckArgs {
-                    species: &e.species,
+                    species: &counts,
                     debug: false,
                     assume_all_fish_fully_grown: false,
                 };
@@ -143,7 +145,7 @@ fn main() {
                 Ok(())
             }
 
-            match do_work(&e, &data) {
+            match do_work(e, &data) {
                 Ok(_) => (),
                 Err(error) => {
                     println!("{}", error);

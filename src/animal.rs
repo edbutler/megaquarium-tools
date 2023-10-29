@@ -1,7 +1,7 @@
 use crate::data::GameData;
 use crate::rules::Constraint;
 use crate::tank::{Interior, Temperature};
-use crate::util::{as_str_display, error, Result};
+use crate::util::{as_str_display, Result};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Growth {
@@ -21,14 +21,12 @@ pub struct Animal {
 
 impl Animal {
     pub fn to_ref<'a>(&self, data: &'a GameData) -> Result<AnimalRef<'a>> {
-        match data.species_ref(&self.species) {
-            Some(species) => Ok(AnimalRef {
-                id: self.id,
-                species,
-                growth: self.growth,
-            }),
-            None => Err(error(format!("no such species `{}`", self.species))),
-        }
+        let species = data.species_ref(&self.species)?;
+        Ok(AnimalRef {
+            id: self.id,
+            species,
+            growth: self.growth,
+        })
     }
 }
 
