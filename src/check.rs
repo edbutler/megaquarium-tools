@@ -115,6 +115,10 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     Ok(())
 }
 
+pub fn make_spec() {
+
+}
+
 pub struct CheckResult {
     pub violations: Vec<Violation>,
     pub food: Vec<FoodAmount>,

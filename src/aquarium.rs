@@ -2,14 +2,26 @@ use crate::animal::*;
 use crate::tank::*;
 
 #[derive(Debug)]
-pub struct Aquarium<'a> {
-    pub exhibits: Vec<Exhibit<'a>>,
+pub struct Aquarium {
+    pub exhibits: Vec<Exhibit>,
 }
 
 #[derive(Debug)]
-pub struct Exhibit<'a> {
+pub struct AquariumRef<'a> {
+    pub exhibits: Vec<ExhibitRef<'a>>,
+}
+
+#[derive(Debug)]
+pub struct Exhibit {
     pub name: String,
-    pub tank: Tank<'a>,
+    pub tank: Tank,
+    pub animals: Vec<Animal>,
+}
+
+#[derive(Debug)]
+pub struct ExhibitRef<'a> {
+    pub name: String,
+    pub tank: TankRef<'a>,
     pub animals: Vec<AnimalRef<'a>>,
 }
 
@@ -75,7 +87,7 @@ pub fn animals_to_spec<'a>(animals: &[AnimalRef<'a>]) -> Vec<SpeciesSpec<'a>> {
     result
 }
 
-impl Aquarium<'_> {
+impl AquariumRef<'_> {
     pub fn description(&self, summarize: bool) -> AquariumDesc {
         let exhibits = self
             .exhibits

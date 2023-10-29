@@ -65,14 +65,14 @@ pub fn read_game_data() -> Result<GameData> {
     Ok(result)
 }
 
-pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>> {
+pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<'a>> {
     let directory = find_save_dir();
     let json = read_json(&directory, &(save_name.to_string() + ".sav"))?;
 
     let objects = json["objects"].as_array().ok_or("no objects")?;
 
     let mut animals: HashMap<u64, Vec<AnimalRef<'a>>> = HashMap::new();
-    let mut tanks: Vec<(String, Tank)> = Vec::new();
+    let mut tanks: Vec<(String, TankRef)> = Vec::new();
 
     // sort the tank models by length of id so we always choose the longest prefix
     let mut models: Vec<&'a TankModel> = data.tanks.iter().map(|t| t).collect();
@@ -135,7 +135,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
                 }
             };
 
-            let tank = Tank {
+            let tank = TankRef {
                 id: id,
                 model: model,
                 size: size,
@@ -153,11 +153,11 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<Aquarium<'a>
                 None => Vec::new(),
             };
 
-            Exhibit { name, tank, animals }
+            ExhibitRef { name, tank, animals }
         })
         .collect();
 
-    Ok(Aquarium { exhibits: exhibits })
+    Ok(AquariumRef { exhibits: exhibits })
 }
 
 fn read_growth(v: &Value, s: &Species) -> Result<Growth> {

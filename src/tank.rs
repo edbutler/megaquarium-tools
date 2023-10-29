@@ -1,13 +1,22 @@
 use crate::util::as_str_display;
 
+pub type TankId = u64;
+
+#[derive(Debug, Clone)]
+pub struct Tank {
+    pub id: TankId,
+    pub model: String,
+    pub size: (u16, u16),
+}
+
 #[derive(Debug, Copy, Clone)]
-pub struct Tank<'a> {
+pub struct TankRef<'a> {
     pub id: u64,
     pub model: &'a TankModel,
     pub size: (u16, u16),
 }
 
-impl Tank<'_> {
+impl TankRef<'_> {
     pub fn volume(&self) -> u16 {
         // TODO should be ceiling, not floor
         self.size.0 * self.size.1 * self.model.double_density / 2
