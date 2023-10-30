@@ -1,5 +1,8 @@
 use crate::animal::*;
+use crate::data::GameData;
+use crate::rules::RuleOptions;
 use crate::tank::*;
+use crate::util::Result;
 
 #[derive(Debug)]
 pub struct Aquarium {
@@ -111,6 +114,54 @@ impl AquariumRef<'_> {
             .collect();
 
         AquariumDesc { exhibits }
+    }
+}
+
+impl AquariumDesc {
+    pub fn to_aquarium<'a>(&self, data: &'a GameData, options: RuleOptions) -> Result<AquariumRef<'a>> {
+        let mut counter = 0;
+
+        /*
+        let exhibits: Result<Vec<_>> = self.exhibits.iter().map(|exhibit| {
+            let mut animals = Vec::new();
+
+            for desc in &exhibit.animals {
+                match desc {
+                    AnimalDesc::Summary(SpeciesCount { species, count }) => {
+                        let species = data.species_ref(species)?;
+                        for _ in 0..*count {
+                            counter += 1;
+                            let growth = if options.assume_all_fish_fully_grown {
+                                Growth::Final
+                            } else {
+                                species.earliest_growth_stage()
+                            };
+                            animals.push(AnimalRef {
+                                id: counter,
+                                species,
+                                growth,
+                            })
+                        }
+                    }
+                    AnimalDesc::Individual(Animal { species, growth, .. }) => {
+                        let species = data.species_ref(species)?;
+                        counter += 1;
+                        animals.push(AnimalRef {
+                            id: counter,
+                            species,
+                            growth: *growth,
+                        })
+                    }
+                }
+            }
+
+            //ExhibitRef { name: exhibit.name.clone(), animals, tank }
+            unimplemented!("")
+        }).collect();
+        */
+
+        //Ok(AquariumRef { exhibits })
+        unimplemented!("")
     }
 }
 
