@@ -65,16 +65,25 @@ fn main() {
         }
 
         SubCommand::Check(c) => {
-            let counts: Vec<_> = c.species.into_iter().map(|(species,count)| SpeciesCount {species, count}).collect();
-            let args = CheckArgs {
-                species: &counts,
-                debug: c.debug,
-                assume_all_fish_fully_grown: c.assume_fully_grown,
-            };
-            match check_for_viable_tank(&data, &args) {
-                Ok(result) => {
-                    print_check_result(&args, &result);
-                }
+            fn do_work(c: Check, data: &GameData) -> util::Result<()> {
+                let counts: Vec<_> = c
+                    .species
+                    .into_iter()
+                    .map(|(species, count)| SpeciesCount { species, count })
+                    .collect();
+                let args = CheckArgs {
+                    species: &counts,
+                    debug: c.debug,
+                    assume_all_fish_fully_grown: c.assume_fully_grown,
+                };
+                let animals = animals_from_counts(data, &args)?;
+                let result = check_for_viable_tank(&data, &args, &animals)?;
+                print_check_result(&args, &result);
+                Ok(())
+            }
+
+            match do_work(c, &data) {
+                Ok(_) => (),
                 Err(error) => {
                     println!("{}", error);
                     std::process::exit(2);
@@ -127,7 +136,11 @@ fn main() {
         SubCommand::Expand(e) => {
             fn do_work(e: Expand, data: &GameData) -> util::Result<()> {
                 let aquarium = load_aquarium_from_stdin()?;
-                let counts: Vec<_> = e.species.into_iter().map(|(species,count)| SpeciesCount {species, count}).collect();
+                let counts: Vec<_> = e
+                    .species
+                    .into_iter()
+                    .map(|(species, count)| SpeciesCount { species, count })
+                    .collect();
 
                 let args = CheckArgs {
                     species: &counts,
@@ -135,14 +148,16 @@ fn main() {
                     assume_all_fish_fully_grown: false,
                 };
 
-                let check_result = check_for_viable_tank(&data, &args)?;
+                let new_animals = animals_from_counts(data, &args)?;
+
+                let check_result = check_for_viable_tank(&data, &args, &new_animals)?;
 
                 if !check_result.is_okay() {
                     print_check_result(&args, &check_result);
                     return Ok(());
                 }
 
-                let extra_environment = check_result.environment;
+                let extra_environment = check_result.minimum_viable_environment;
 
                 Ok(())
             }

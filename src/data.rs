@@ -2,8 +2,8 @@ use crate::animal::*;
 use crate::aquarium::*;
 use crate::paths::*;
 use crate::tank::*;
-use crate::util::Result;
 use crate::util::error;
+use crate::util::Result;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -112,7 +112,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<
         if let Some(a) = obj.get("animal") {
             let id = o["uid"].as_u64().ok_or("no id")?;
             let species_id = o["specId"].as_str().ok_or("no specId")?;
-            let species = data .species_ref(species_id)?;
+            let species = data.species_ref(species_id)?;
 
             let animal = AnimalRef {
                 id: id,

@@ -1,4 +1,7 @@
-use crate::{util::{as_str_display, Result}, data::GameData};
+use crate::{
+    data::GameData,
+    util::{as_str_display, Result},
+};
 
 pub type TankId = u64;
 
@@ -15,7 +18,7 @@ impl Tank {
         Ok(TankRef {
             id: self.id,
             model,
-            size: self.size
+            size: self.size,
         })
     }
 }
