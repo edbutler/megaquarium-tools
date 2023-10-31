@@ -77,7 +77,8 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
 
         println!("{}:", exhibit.name);
         // TODO this isn't quite right if some fish are not grown
-        println!("- {}/{}, {}%", min_tank.size, exhibit.tank.size, min_tank.quality);
+        // TODO TODO TODO
+        //println!("- {}/{}, {}%", min_tank.size, exhibit.tank.size.0, min_tank.quality);
 
         for item in minimum_required_food(data, &animals) {
             println!("- {}x {}", item.count, item.food);
@@ -168,7 +169,7 @@ fn animals_from_counts<'a>(data: &'a GameData, counts: &[SpeciesCount], assume_f
     let mut result = Vec::with_capacity(capacity as usize);
 
     for c in counts {
-        let species = data.species_ref(&c.species)?;
+        let species = lookup(data, &c.species)?;
 
         for _ in 0..c.count {
             counter += 1;

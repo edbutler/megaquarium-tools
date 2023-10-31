@@ -38,6 +38,20 @@ impl GameData {
     pub fn species_search(&self, search_string: &str) -> Vec<&Species> {
         fuzzy_match_string(|s: &Species| &s.id, search_string, self.species.as_slice())
     }
+
+    pub fn try_tank_ref(&self, id: &str) -> Option<&TankModel> {
+        for t in &self.tanks {
+            if t.id.eq(id) {
+                return Some(t);
+            }
+        }
+
+        None
+    }
+
+    pub fn tank_ref(&self, id: &str) -> Result<&TankModel> {
+        self.try_tank_ref(id).ok_or(error(format!("uknown tank {}", id)))
+    }
 }
 
 fn fuzzy_match_string<'a, T, F>(f: F, search_string: &str, list: &'a [T]) -> Vec<&'a T>

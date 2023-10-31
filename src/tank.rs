@@ -1,4 +1,4 @@
-use crate::util::as_str_display;
+use crate::{util::{as_str_display, Result}, data::GameData};
 
 pub type TankId = u64;
 
@@ -7,6 +7,17 @@ pub struct Tank {
     pub id: TankId,
     pub model: String,
     pub size: (u16, u16),
+}
+
+impl Tank {
+    pub fn to_ref<'a>(&self, data: &'a GameData) -> Result<TankRef<'a>> {
+        let model = data.tank_ref(&self.model)?;
+        Ok(TankRef {
+            id: self.id,
+            model,
+            size: self.size
+        })
+    }
 }
 
 #[derive(Debug, Copy, Clone)]

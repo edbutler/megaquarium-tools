@@ -36,7 +36,7 @@ pub struct AquariumDesc {
 #[derive(Debug)]
 pub struct ExhibitDesc {
     pub name: String,
-    pub tank: TankDesc,
+    pub tank: Tank,
     pub animals: Vec<AnimalDesc>,
 }
 
@@ -50,12 +50,6 @@ pub enum AnimalDesc {
 pub struct SpeciesCount {
     pub species: String,
     pub count: u16,
-}
-
-#[derive(Debug)]
-pub struct TankDesc {
-    pub model: String,
-    pub size: u16,
 }
 
 pub fn animals_to_counts(animals: &[AnimalRef]) -> Vec<SpeciesCount> {
@@ -104,9 +98,10 @@ impl AquariumRef<'_> {
 
                 ExhibitDesc {
                     name: e.name.clone(),
-                    tank: TankDesc {
+                    tank: Tank {
+                        id: e.tank.id,
                         model: e.tank.model.id.clone(),
-                        size: e.tank.volume(),
+                        size: e.tank.size,
                     },
                     animals,
                 }
@@ -121,8 +116,9 @@ impl AquariumDesc {
     pub fn to_aquarium<'a>(&self, data: &'a GameData, options: RuleOptions) -> Result<AquariumRef<'a>> {
         let mut counter = 0;
 
-        /*
         let exhibits: Result<Vec<_>> = self.exhibits.iter().map(|exhibit| {
+            let tank = exhibit.tank.to_ref(data)?;
+
             let mut animals = Vec::new();
 
             for desc in &exhibit.animals {
@@ -155,13 +151,10 @@ impl AquariumDesc {
                 }
             }
 
-            //ExhibitRef { name: exhibit.name.clone(), animals, tank }
-            unimplemented!("")
+            Ok(ExhibitRef { name: exhibit.name.clone(), animals, tank })
         }).collect();
-        */
 
-        //Ok(AquariumRef { exhibits })
-        unimplemented!("")
+        Ok(AquariumRef { exhibits: exhibits? })
     }
 }
 
