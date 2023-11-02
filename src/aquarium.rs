@@ -113,7 +113,7 @@ impl AquariumRef<'_> {
 }
 
 impl AquariumDesc {
-    pub fn to_ref<'a>(&self, data: &'a GameData, options: RuleOptions) -> Result<AquariumRef<'a>> {
+    pub fn to_ref<'a>(&self, data: &'a GameData, options: &RuleOptions) -> Result<AquariumRef<'a>> {
         let mut counter = 0;
 
         let exhibits: Result<Vec<_>> = self

@@ -180,9 +180,6 @@ pub mod test {
     use crate::tank::test::*;
     use crate::tank::*;
 
-    static OPTIONS: RuleOptions = RuleOptions {
-        assume_all_fish_fully_grown: false,
-    };
     static EMPTY_ANIMALS: &[AnimalRef<'static>] = &[];
 
     fn make_animal(species: &Species) -> AnimalRef {

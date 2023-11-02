@@ -24,23 +24,23 @@ impl CheckResult {
     }
 }
 
-pub struct ValidateArgs {
-    pub aquarium: AquariumDesc,
+pub struct ValidateArgs<'a> {
+    pub aquarium: &'a AquariumRef<'a>,
     pub debug: bool,
     pub assume_all_fish_fully_grown: bool,
 }
 
-pub fn check_for_viable_tank<'a>(data: &GameData, args: &CheckArgs, animals: &[AnimalRef]) -> Result<CheckResult> {
+pub fn check_for_viable_tank<'a>(data: &GameData, animals: &[AnimalRef]) -> CheckResult {
     let environment = minimum_viable_tank(&animals);
     let exhibit = ExhibitSpec { animals, environment };
     let violations = find_violations(&exhibit);
     let food = minimum_required_food(data, &exhibit.animals);
 
-    Ok(CheckResult {
+    CheckResult {
         violations,
         food,
         minimum_viable_environment: environment,
-    })
+    }
 }
 
 pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
@@ -77,59 +77,21 @@ pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
 pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> Result<()> {
     println!("Checking {} tanks...", args.aquarium.exhibits.len());
 
-    let options = RuleOptions {
-        assume_all_fish_fully_grown: args.assume_all_fish_fully_grown,
-    };
-
     let mut was_problem = false;
 
     for exhibit in &args.aquarium.exhibits {
-        let mut animals = Vec::new();
-        let mut counter = 0;
-
-        for desc in &exhibit.animals {
-            match desc {
-                AnimalDesc::Summary(SpeciesCount { species, count }) => {
-                    let species = data.species_ref(species)?;
-                    for _ in 0..*count {
-                        counter += 1;
-                        let growth = if options.assume_all_fish_fully_grown {
-                            Growth::Final
-                        } else {
-                            species.earliest_growth_stage()
-                        };
-                        animals.push(AnimalRef {
-                            id: counter,
-                            species,
-                            growth,
-                        })
-                    }
-                }
-                AnimalDesc::Individual(Animal { species, growth, .. }) => {
-                    let species = data.species_ref(species)?;
-                    counter += 1;
-                    animals.push(AnimalRef {
-                        id: counter,
-                        species,
-                        growth: *growth,
-                    })
-                }
-            }
-        }
-
-        let min_tank = minimum_viable_tank(&animals);
+        let min_tank = minimum_viable_tank(&exhibit.animals);
 
         println!("{}:", exhibit.name);
         // TODO this isn't quite right if some fish are not grown
-        // TODO TODO TODO
-        //println!("- {}/{}, {}%", min_tank.size, exhibit.tank.size.0, min_tank.quality);
+        println!("- {}/{}, {}%", min_tank.size, exhibit.tank.volume(), min_tank.quality);
 
-        for item in minimum_required_food(data, &animals) {
+        for item in minimum_required_food(data, &exhibit.animals) {
             println!("- {}x {}", item.count, item.food);
         }
 
         let exhibit_spec = ExhibitSpec {
-            animals: &animals,
+            animals: &exhibit.animals,
             environment: min_tank,
         };
 
@@ -152,7 +114,11 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     Ok(())
 }
 
-pub fn try_expand_tank(base: &ExhibitRef, expansion: &ExhibitSpec) {}
+pub fn try_expand_tank(data: &GameData, base: &ExhibitRef, expansion: &ExhibitSpec) -> CheckResult {
+    let mut animals = base.animals.clone();
+    animals.extend(expansion.animals);
+    check_for_viable_tank(data, &animals)
+}
 
 pub fn animals_from_counts<'a>(data: &'a GameData, args: &CheckArgs) -> Result<Vec<AnimalRef<'a>>> {
     let mut counter = 0;

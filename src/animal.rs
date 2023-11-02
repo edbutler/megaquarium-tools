@@ -30,7 +30,7 @@ impl Animal {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct AnimalRef<'a> {
     pub id: AnimalId,
     pub species: &'a Species,

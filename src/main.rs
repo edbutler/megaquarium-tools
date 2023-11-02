@@ -18,6 +18,8 @@ use data::*;
 use sexpr_format::*;
 use std::error::Error;
 
+use crate::rules::{ExhibitSpec, RuleOptions};
+
 fn main() {
     let opts = Opts::parse();
     let data = read_game_data().unwrap();
@@ -66,18 +68,14 @@ fn main() {
 
         SubCommand::Check(c) => {
             fn do_work(c: Check, data: &GameData) -> util::Result<()> {
-                let counts: Vec<_> = c
-                    .species
-                    .into_iter()
-                    .map(|(species, count)| SpeciesCount { species, count })
-                    .collect();
+                let counts = make_species_counts(c.species);
                 let args = CheckArgs {
                     species: &counts,
                     debug: c.debug,
                     assume_all_fish_fully_grown: c.assume_fully_grown,
                 };
                 let animals = animals_from_counts(data, &args)?;
-                let result = check_for_viable_tank(&data, &args, &animals)?;
+                let result = check_for_viable_tank(&data, &animals);
                 print_check_result(&args, &result);
                 Ok(())
             }
@@ -114,9 +112,12 @@ fn main() {
 
         SubCommand::Validate(_) => {
             fn do_work(data: &GameData) -> util::Result<()> {
-                let aquarium = load_aquarium_from_stdin()?;
+                let options = RuleOptions {
+                    assume_all_fish_fully_grown: false,
+                };
+                let aquarium = load_aquarium_from_stdin()?.to_ref(data, &options)?;
                 let args = ValidateArgs {
-                    aquarium,
+                    aquarium: &aquarium,
                     debug: false,
                     assume_all_fish_fully_grown: false,
                 };
@@ -135,12 +136,13 @@ fn main() {
 
         SubCommand::Expand(e) => {
             fn do_work(e: Expand, data: &GameData) -> util::Result<()> {
-                let aquarium = load_aquarium_from_stdin()?;
-                let counts: Vec<_> = e
-                    .species
-                    .into_iter()
-                    .map(|(species, count)| SpeciesCount { species, count })
-                    .collect();
+                let options = RuleOptions {
+                    assume_all_fish_fully_grown: false,
+                };
+
+                let aquarium = load_aquarium_from_stdin()?.to_ref(data, &options)?;
+
+                let counts = make_species_counts(e.species);
 
                 let args = CheckArgs {
                     species: &counts,
@@ -150,14 +152,24 @@ fn main() {
 
                 let new_animals = animals_from_counts(data, &args)?;
 
-                let check_result = check_for_viable_tank(&data, &args, &new_animals)?;
+                let base_result = check_for_viable_tank(&data, &new_animals);
 
-                if !check_result.is_okay() {
-                    print_check_result(&args, &check_result);
+                if !base_result.is_okay() {
+                    print_check_result(&args, &base_result);
                     return Ok(());
                 }
 
-                let extra_environment = check_result.minimum_viable_environment;
+                let expansion = ExhibitSpec {
+                    animals: &new_animals,
+                    environment: base_result.minimum_viable_environment,
+                };
+
+                for exhibit in &aquarium.exhibits {
+                    let expand_result = try_expand_tank(data, exhibit, &expansion);
+                    if e.all || expand_result.is_okay() {
+                        println!("Can add to {}", exhibit.name);
+                    }
+                }
 
                 Ok(())
             }
@@ -171,6 +183,10 @@ fn main() {
             }
         }
     }
+}
+
+fn make_species_counts(counts: Vec<(String, u16)>) -> Vec<SpeciesCount> {
+    counts.into_iter().map(|(species, count)| SpeciesCount { species, count }).collect()
 }
 
 fn load_aquarium_from_stdin() -> util::Result<AquariumDesc> {
