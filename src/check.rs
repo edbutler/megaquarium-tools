@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::animal::*;
 use crate::aquarium::*;
 use crate::data::{self, GameData};
@@ -43,6 +45,16 @@ pub fn check_for_viable_tank<'a>(data: &GameData, animals: &[AnimalRef]) -> Chec
     }
 }
 
+pub fn print_violations(violations: &[Violation]) {
+    let mut messages: Vec<_> = violations.iter().map(|v| v.to_string()).collect();
+    messages.sort();
+    messages.dedup();
+
+    for v in messages {
+        println!("- {}", v);
+    }
+}
+
 pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
     println!("For contents:");
     for c in args.species {
@@ -68,9 +80,7 @@ pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
         }
     } else {
         println!("\nA valid tank is not possible:");
-        for v in &result.violations {
-            println!("- {}", v);
-        }
+        print_violations(&result.violations);
     }
 }
 
@@ -96,15 +106,8 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
         };
 
         let violations = find_violations(&exhibit_spec);
-
-        let mut messages: Vec<_> = violations.iter().map(|v| v.to_string()).collect();
-        messages.sort();
-        messages.dedup();
-
-        for v in messages {
-            was_problem = true;
-            println!("- {}", v);
-        }
+        print_violations(&violations);
+        was_problem = was_problem || violations.len() > 0;
     }
 
     if !was_problem {
@@ -118,6 +121,35 @@ pub fn try_expand_tank(data: &GameData, base: &ExhibitRef, expansion: &ExhibitSp
     let mut animals = base.animals.clone();
     animals.extend(expansion.animals);
     check_for_viable_tank(data, &animals)
+}
+
+pub fn print_environment_differences(old: &Environment, new: &Environment) {
+    fn format_opt<T>(x: Option<T>) -> String
+            where T : Display {
+        match x {
+            Some(v) => format!("{}", v),
+            None => "n/a".to_string(),
+        }
+    }
+
+    fn compare<T>(name: &str, old: T, new: T) where T : Display + PartialOrd {
+        if old < new {
+            println!("- {}: {} → {}", name, old, new);
+        }
+    }
+
+    fn compare_opt<T>(name: &str, old: Option<T>, new: Option<T>) where T : Display + PartialOrd {
+        if old < new {
+            println!("- {}: {} → {}", name, format_opt(old), format_opt(new));
+        }
+    }
+
+    compare("size", old.size, new.size);
+    compare("quality", old.quality, new.quality);
+    compare_opt("plants", old.plants, new.plants);
+    compare_opt("rocks", old.rocks, new.rocks);
+    compare_opt("caves", old.caves, new.caves);
+    compare_opt("light", old.light, new.light);
 }
 
 pub fn animals_from_counts<'a>(data: &'a GameData, args: &CheckArgs) -> Result<Vec<AnimalRef<'a>>> {
@@ -144,6 +176,16 @@ pub fn animals_from_counts<'a>(data: &'a GameData, args: &CheckArgs) -> Result<V
     }
 
     Ok(result)
+}
+
+pub fn environment_for_exhibit(exhibit: &ExhibitRef) -> Environment {
+    let mut result = minimum_viable_tank(&exhibit.animals);
+
+    // have to correct size to the known tank size since some animals may not be grown
+    result.size = exhibit.tank.volume();
+    result.interior = exhibit.tank.model.interior;
+
+    result
 }
 
 // Guess at the minimum viable tank for the given species.

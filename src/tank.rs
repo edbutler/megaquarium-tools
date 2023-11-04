@@ -44,7 +44,7 @@ pub struct TankModel {
     pub max_size: (u16, u16),
     // some tanks have, e.g., 3.5 vol/tile, so we store double density to avoid floats
     pub double_density: u16,
-    pub rounded: bool,
+    pub interior: Option<Interior>,
 }
 
 impl TankModel {

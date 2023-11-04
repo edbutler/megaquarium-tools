@@ -137,8 +137,8 @@ impl ToSexp for TankModel {
         builder.add("min-size", Value::cons(self.min_size.0, self.min_size.1));
         builder.add("max-size", Value::cons(self.max_size.0, self.max_size.1));
         builder.add("density", self.density().into());
-        if self.rounded {
-            builder.add("rounded", Value::Bool(true));
+        if let Some(t) = self.interior {
+            builder.add("interior", symbol_of_str(t.as_str()));
         }
 
         builder.to_value()

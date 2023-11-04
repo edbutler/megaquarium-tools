@@ -164,11 +164,33 @@ fn main() {
                     environment: base_result.minimum_viable_environment,
                 };
 
+                println!("New fish will use {} additional tank size", expansion.environment.size);
+
+                let mut can_add_somewhere = false;
+
                 for exhibit in &aquarium.exhibits {
                     let expand_result = try_expand_tank(data, exhibit, &expansion);
-                    if e.all || expand_result.is_okay() {
-                        println!("Can add to {}", exhibit.name);
+
+                    let is_okay = expand_result.is_okay();
+                    let do_print = e.all || is_okay;
+
+                    if do_print {
+                        println!("{} add to {}", if is_okay { "Can" } else { "Cannot" }, exhibit.name);
                     }
+
+                    if is_okay {
+                        can_add_somewhere = true;
+                    }
+
+                    if do_print {
+                        print_violations(&expand_result.violations);
+                        let original_environment = environment_for_exhibit(exhibit);
+                        print_environment_differences(&original_environment, &expand_result.minimum_viable_environment);
+                    }
+                }
+
+                if !can_add_somewhere {
+                    println!("Unable to add to current aquarium!");
                 }
 
                 Ok(())

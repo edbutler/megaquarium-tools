@@ -532,12 +532,20 @@ fn read_single_tank_model(o: &Value) -> Result<TankModel> {
 
     let density = tank["volumePerTile"].as_f64().ok_or(UBJ)?;
 
+    let interior = if bool_or_default(&tank["isRounded"], false) {
+        Some(Interior::Rounded)
+    } else if bool_or_default(&tank["isKreisel"], false) {
+        Some(Interior::Kreisel)
+    } else {
+        None
+    };
+
     Ok(TankModel {
         id: id.to_string(),
         min_size: read_size("minSize")?,
         max_size: read_size("baseSize")?,
         double_density: (2.0 * density).round() as u16,
-        rounded: bool_or_default(&tank["isRounded"], false),
+        interior,
     })
 }
 
