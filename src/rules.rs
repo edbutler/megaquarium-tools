@@ -168,7 +168,10 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
         },
         Interior(i) => simple(exhibit.environment.interior == Some(*i)),
         TankSize(s) => simple(exhibit.environment.size >= *s),
-        Predator { prey, size } => if_conflict(exhibit.animals.iter().find(|a| a.species.prey_type == *prey && a.size() <= *size)),
+        Predator { prey, size } => {
+            let can_eat = |a: &&AnimalRef| a.species.prey_type == *prey && a.size_for_predation() <= *size;
+            if_conflict(exhibit.animals.iter().find(can_eat))
+        }
     }
 }
 

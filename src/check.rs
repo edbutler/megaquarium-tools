@@ -125,20 +125,28 @@ pub fn try_expand_tank(data: &GameData, base: &ExhibitRef, expansion: &ExhibitSp
 
 pub fn print_environment_differences(old: &Environment, new: &Environment) {
     fn format_opt<T>(x: Option<T>) -> String
-            where T : Display {
+    where
+        T: Display,
+    {
         match x {
             Some(v) => format!("{}", v),
             None => "n/a".to_string(),
         }
     }
 
-    fn compare<T>(name: &str, old: T, new: T) where T : Display + PartialOrd {
+    fn compare<T>(name: &str, old: T, new: T)
+    where
+        T: Display + PartialOrd,
+    {
         if old < new {
             println!("- {}: {} → {}", name, old, new);
         }
     }
 
-    fn compare_opt<T>(name: &str, old: Option<T>, new: Option<T>) where T : Display + PartialOrd {
+    fn compare_opt<T>(name: &str, old: Option<T>, new: Option<T>)
+    where
+        T: Display + PartialOrd,
+    {
         if old < new {
             println!("- {}: {} → {}", name, format_opt(old), format_opt(new));
         }

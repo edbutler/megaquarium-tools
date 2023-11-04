@@ -71,6 +71,15 @@ impl AnimalRef<'_> {
             }
         }
     }
+
+    pub fn size_for_predation(&self) -> u16 {
+        let size = self.size();
+        if self.species.size.armored {
+            2 * size
+        } else {
+            size
+        }
+    }
 }
 
 impl Species {
