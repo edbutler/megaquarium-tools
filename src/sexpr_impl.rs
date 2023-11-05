@@ -48,7 +48,16 @@ impl ToSexp for Species {
         }
 
         if let Some(s) = &self.shoaling {
-            builder.add("shoaler", (*s).into());
+            let mut b = StructBuilder::new("shoaling");
+            b.add("count", s.count.into());
+            if (s.one_ok) {
+                b.add("oneok?", Value::Bool(true));
+            }
+            if (s.two_ok) {
+                b.add("twook?", Value::Bool(true));
+            }
+
+            builder.add("shoaler", b.to_value());
         }
 
         if let Some(f) = &self.fighting {

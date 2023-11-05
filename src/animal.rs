@@ -35,7 +35,7 @@ pub struct Species {
     pub diet: Diet,
     pub needs: Needs,
     pub greedy: bool,
-    pub shoaling: Option<u8>,
+    pub shoaling: Option<Shoaling>,
     pub fighting: Option<Fighting>,
     pub nibbling: Option<Nibbling>,
     pub cohabitation: Option<Cohabitation>,
@@ -270,6 +270,13 @@ pub struct Needs {
 pub enum Need {
     Loves(u8),
     Dislikes,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Shoaling {
+    pub count: u8,
+    pub one_ok: bool,
+    pub two_ok: bool,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

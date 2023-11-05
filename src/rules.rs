@@ -1,5 +1,5 @@
 use crate::{
-    animal::{Animal, AnimalRef, Cohabitation, Diet, Growth, Need, PreyType},
+    animal::{Animal, AnimalRef, Cohabitation, Diet, Growth, Need, PreyType, Shoaling},
     tank,
 };
 use Constraint::*;
@@ -13,7 +13,7 @@ pub enum Constraint {
     Temperature(tank::Temperature),
     Salinity(tank::Salinity),
     Quality(u8),
-    Shoaler(u8),
+    Shoaler(Shoaling),
     NoBully,
     NoNibbler,
     Lighting(Need),
@@ -45,7 +45,11 @@ impl std::fmt::Display for Violation {
             (Salinity(x), None) => write!(f, "{} requires {} tank", s, x),
             (Salinity(x), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s, x, o.species, x.other()),
             (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
-            (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
+            (Shoaler(c), _) => {
+                let or1 = if c.one_ok { ", or 1" } else { "" };
+                let or2 = if c.one_ok { ", or 2" } else { "" };
+                write!(f, "{} is a shoaler and needs {} of its species{}{}", s, c.count, or1, or2)
+            }
             (NoBully, Some(o)) => write!(f, "{} will bully {}", o.species, s),
             (NoNibbler, Some(o)) => write!(f, "{} will nibble {}", o.species, s),
             (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s),
@@ -147,7 +151,8 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
         Quality(q) => simple(*q <= exhibit.environment.quality),
         Shoaler(c) => {
             let count = exhibit.animals.iter().filter(|a| std::ptr::eq(anim.species, a.species)).count();
-            simple(count >= (*c as usize))
+            let is_okay = (c.one_ok && count == 1) || (c.two_ok && count == 2) || (count >= (c.count as usize));
+            simple(is_okay)
         }
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
         NoNibbler => if_conflict(exhibit.animals.iter().find(|a| a.species.is_nibbler())),

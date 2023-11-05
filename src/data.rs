@@ -506,6 +506,20 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         }
     }?;
 
+    let shoaling = {
+        match stat_number(stats, "shoaler", "req")? {
+            Some(count) => {
+                let x = stats["shoaler"].as_object().unwrap();
+                Some(Shoaling {
+                    count,
+                    one_ok: has_true_value(x, "or1"),
+                    two_ok: has_true_value(x, "or2"),
+                })
+            }
+            None => None,
+        }
+    };
+
     Ok(Some(Species {
         id: id.to_string(),
         genus,
@@ -515,7 +529,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         diet,
         needs,
         greedy: has_stat(stats, "greedy"),
-        shoaling: stat_number(stats, "shoaler", "req")?,
+        shoaling,
         fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
         nibbling: one_of(stats, &[("nibbleable", Nibbling::Nibbleable), ("nibbler", Nibbling::Nibbler)])?,
         cohabitation: one_of(
