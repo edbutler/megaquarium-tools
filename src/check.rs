@@ -207,8 +207,25 @@ fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
         panic!("need to specify at least some animals");
     }
 
-    let constrained_size = animals.iter().map(|a| a.species.minimum_needed_tank_size()).max().unwrap();
-    let summed_size: u16 = animals.iter().map(|a| a.species.maximum_size()).sum();
+    let mut size = animals.iter().map(|a| a.species.maximum_size()).sum();
+    size = std::cmp::max(size, animals.iter().map(|a| a.species.minimum_needed_tank_size()).max().unwrap());
+
+    for a in animals {
+        if a.species.habitat.territorial {
+            let sum_size: u16 = animals
+                .iter()
+                .map(|o| {
+                    if std::ptr::eq(o.species, a.species) {
+                        o.species.maximum_size()
+                    } else {
+                        0
+                    }
+                })
+                .sum();
+            size = std::cmp::max(size, 2 * sum_size);
+        }
+    }
+
     let light = animals
         .iter()
         .filter_map(|s| match s.species.needs.light {
@@ -219,7 +236,7 @@ fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
         .max();
 
     Environment {
-        size: std::cmp::max(constrained_size, summed_size),
+        size,
         temperature: animals[0].species.habitat.temperature,
         salinity: animals.iter().find_map(|a| a.species.habitat.salinity).unwrap_or(Salinity::Salty),
         quality: animals.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),

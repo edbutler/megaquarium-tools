@@ -107,6 +107,10 @@ impl ToSexp for Habitat {
             builder.add("active-swimmer?", true.into());
         }
 
+        if self.territorial {
+            builder.add("territorial?", true.into());
+        }
+
         builder.to_value()
     }
 }

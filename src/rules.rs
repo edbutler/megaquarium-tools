@@ -20,6 +20,7 @@ pub enum Constraint {
     Cohabitation(Cohabitation),
     Interior(tank::Interior),
     TankSize(u16),
+    Territorial,
     Predator { prey: PreyType, size: u16 },
 }
 
@@ -75,6 +76,7 @@ impl std::fmt::Display for Violation {
             }
             (Interior(tank::Interior::Rounded), _) => write!(f, "{} requies a rounded tank", s),
             (Interior(tank::Interior::Kreisel), _) => write!(f, "{} requies a kreisel tank", s),
+            (Territorial, _) => write!(f, "{} is territorial, total size can only be 50% of tank size", s),
             (Predator { prey: _, size: _ }, Some(o)) => {
                 if o.growth != Growth::Final {
                     // TODO need to determine this completely
@@ -186,6 +188,22 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
         },
         Interior(i) => simple(exhibit.environment.interior == Some(*i)),
         TankSize(s) => simple(exhibit.environment.size >= *s),
+        Territorial => {
+            // tank must be twice as big as sum of sizes of this species
+            let sum_size: u16 = exhibit
+                .animals
+                .iter()
+                .map(|a| {
+                    if std::ptr::eq(anim.species, a.species) {
+                        a.species.maximum_size()
+                    } else {
+                        0
+                    }
+                })
+                .sum();
+            println!("{}", sum_size);
+            simple(exhibit.environment.size >= 2 * sum_size)
+        }
         Predator { prey, size } => {
             let can_eat = |a: &&AnimalRef| a.species.prey_type == *prey && a.size_for_predation() <= *size;
             if_conflict(exhibit.animals.iter().find(can_eat))

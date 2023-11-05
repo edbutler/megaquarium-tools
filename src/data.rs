@@ -419,6 +419,8 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
 
         let active_swimmer = has_stat(stats, "activeSwimmer");
 
+        let territorial = has_stat(stats, "territorial");
+
         let tank = if has_stat(stats, "needsRounded") {
             Some(Interior::Rounded)
         } else if has_stat(stats, "needsKreisel") {
@@ -432,6 +434,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
             salinity,
             minimum_quality,
             active_swimmer,
+            territorial,
             interior: tank,
         }
     };

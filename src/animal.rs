@@ -169,6 +169,10 @@ impl Species {
             result.push(Constraint::TankSize(self.minimum_needed_tank_size()));
         }
 
+        if self.habitat.territorial {
+            result.push(Constraint::Territorial);
+        }
+
         if let Some(t) = self.habitat.interior {
             result.push(Constraint::Interior(t));
         }
@@ -256,6 +260,7 @@ pub struct Habitat {
     pub salinity: Option<Salinity>,
     pub interior: Option<Interior>,
     pub active_swimmer: bool,
+    pub territorial: bool,
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -355,6 +360,7 @@ pub mod test {
                 salinity: Some(Salinity::Salty),
                 minimum_quality: 55,
                 active_swimmer: false,
+                territorial: false,
                 interior: None,
             },
             needs: Needs {
