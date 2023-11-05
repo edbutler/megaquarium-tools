@@ -90,6 +90,10 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
     let mut was_problem = false;
 
     for exhibit in &args.aquarium.exhibits {
+        if exhibit.animals.len() == 0 {
+            continue;
+        }
+
         let min_tank = minimum_viable_tank(&exhibit.animals);
 
         println!("{}:", exhibit.name);

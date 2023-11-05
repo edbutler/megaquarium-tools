@@ -182,7 +182,7 @@ fn main() {
                         can_add_somewhere = true;
                     }
 
-                    if do_print {
+                    if do_print && exhibit.animals.len() > 0 {
                         print_violations(&expand_result.violations);
                         let original_environment = environment_for_exhibit(exhibit);
                         print_environment_differences(&original_environment, &expand_result.minimum_viable_environment);
