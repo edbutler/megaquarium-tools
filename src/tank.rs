@@ -61,11 +61,17 @@ pub struct Environment {
     pub temperature: Temperature,
     pub salinity: Salinity,
     pub quality: u8,
+    pub light: Option<u8>,
     pub plants: Option<u16>,
     pub rocks: Option<u16>,
     pub caves: Option<u16>,
-    pub light: Option<u8>,
+    pub bogwood: Option<u16>,
+    pub flat_surfaces: Option<u16>,
+    pub vertical_surfaces: Option<u16>,
+    pub fluffy_foliage: Option<u16>,
     pub interior: Option<Interior>,
+    pub open_space: Option<u8>,
+    pub different_decorations: Option<u8>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -143,11 +149,17 @@ pub mod test {
             temperature: Temperature::Warm,
             salinity: Salinity::Salty,
             quality: 0,
+            light: None,
             plants: None,
             rocks: None,
             caves: None,
-            light: None,
+            flat_surfaces: None,
+            vertical_surfaces: None,
+            fluffy_foliage: None,
+            bogwood: None,
             interior: None,
+            open_space: None,
+            different_decorations: None,
         }
     }
 }

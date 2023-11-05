@@ -456,6 +456,12 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         let plants = stat_number(stats, "likesPlants", "value")?.map(|x| Need::Loves(x));
         let rocks = stat_number(stats, "likesRocks", "value")?.map(|x| Need::Loves(x));
         let caves = stat_number(stats, "likesCave", "value")?;
+        let bogwood = stat_number(stats, "likesBogwood", "value")?;
+        let flat_surfaces = stat_number(stats, "likesFlatSurface", "value")?;
+        let vertical_surfaces = stat_number(stats, "likesVerticalSurface", "value")?;
+        let fluffy_foliage = stat_number(stats, "likesFluffyFoliage", "value")?;
+        let open_space = stat_number(stats, "openSpace", "value")?;
+        let explorer = stat_number(stats, "explorer", "value")?;
 
         let light = if has_stat(stats, "dislikesLights") {
             Some(Need::Dislikes)
@@ -466,10 +472,16 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         };
 
         Needs {
+            light,
             plants,
             rocks,
             caves,
-            light,
+            bogwood,
+            flat_surfaces,
+            vertical_surfaces,
+            fluffy_foliage,
+            open_space,
+            explorer,
         }
     };
 

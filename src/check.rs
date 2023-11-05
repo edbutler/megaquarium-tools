@@ -240,11 +240,17 @@ fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
         temperature: animals[0].species.habitat.temperature,
         salinity: animals.iter().find_map(|a| a.species.habitat.salinity).unwrap_or(Salinity::Salty),
         quality: animals.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
+        light,
         plants: minimum_need(animals, |s| s.needs.plants),
         rocks: minimum_need(animals, |s| s.needs.rocks),
-        caves: minimum_need(animals, |s| s.needs.caves.map(|x| Need::Loves(x))),
-        light,
+        caves: minimum_loves(animals, |s| s.needs.caves),
+        bogwood: minimum_loves(animals, |s| s.needs.bogwood),
+        flat_surfaces: minimum_loves(animals, |s| s.needs.flat_surfaces),
+        vertical_surfaces: minimum_loves(animals, |s| s.needs.vertical_surfaces),
+        fluffy_foliage: minimum_loves(animals, |s| s.needs.fluffy_foliage),
+        open_space: animals.iter().filter_map(|s| s.species.needs.open_space).max(),
         interior: animals.iter().find_map(|s| s.species.habitat.interior),
+        different_decorations: animals.iter().filter_map(|s| s.species.needs.explorer).max(),
     }
 }
 
@@ -280,6 +286,17 @@ fn minimum_need<F: Fn(&Species) -> Option<Need>>(list: &[AnimalRef], f: F) -> Op
         match f(a.species) {
             Some(Need::Dislikes) => Some(0),
             Some(Need::Loves(x)) => Some((x as u16) + acc.unwrap_or(0)),
+            None => acc,
+        }
+    };
+
+    list.iter().fold(None, foldfn)
+}
+
+fn minimum_loves<F: Fn(&Species) -> Option<u8>>(list: &[AnimalRef], f: F) -> Option<u16> {
+    let foldfn = |acc: Option<u16>, a: &AnimalRef| -> Option<u16> {
+        match f(a.species) {
+            Some(x) => Some((x as u16) + acc.unwrap_or(0)),
             None => acc,
         }
     };

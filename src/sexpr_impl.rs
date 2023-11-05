@@ -8,6 +8,18 @@ use crate::sexpr_format::*;
 use crate::util;
 use lexpr::*;
 
+fn add_opt_into<I: Into<Value>>(builder: &mut StructBuilder, key: &str, x:Option<I>) {
+    if let Some(v) = x {
+        builder.add(key, v.into())
+    }
+}
+
+fn add_opt_sexp<S: ToSexp>(builder: &mut StructBuilder, key: &str, x:Option<S>) {
+    if let Some(v) = x {
+        builder.add(key, v.to_sexp())
+    }
+}
+
 impl ToSexp for Species {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
@@ -120,18 +132,16 @@ impl Needs {
     fn try_to_sexp(&self) -> Option<lexpr::Value> {
         let mut builder: StructBuilder = StructBuilder::new("needs");
 
-        if let Some(p) = self.plants {
-            builder.add("plants", p.to_sexp());
-        }
-        if let Some(r) = self.rocks {
-            builder.add("rocks", r.to_sexp());
-        }
-        if let Some(c) = self.caves {
-            builder.add("caves", c.into());
-        }
-        if let Some(l) = self.light {
-            builder.add("light", l.to_sexp());
-        }
+        add_opt_sexp(&mut builder, "light", self.light);
+        add_opt_sexp(&mut builder, "plants", self.plants);
+        add_opt_sexp(&mut builder, "rocks", self.rocks);
+        add_opt_into(&mut builder, "caves", self.caves);
+        add_opt_into(&mut builder, "bogwood", self.bogwood);
+        add_opt_into(&mut builder, "flat-surfaces", self.flat_surfaces);
+        add_opt_into(&mut builder, "vertical-surfaces", self.vertical_surfaces);
+        add_opt_into(&mut builder, "fluffy-foliage", self.fluffy_foliage);
+        add_opt_into(&mut builder, "open-space", self.open_space);
+        add_opt_into(&mut builder, "explorer", self.explorer);
 
         if builder.added > 0 {
             Some(builder.to_value())
@@ -168,12 +178,6 @@ impl ToSexp for TankModel {
     }
 }
 
-fn add_if_some<I: Into<Value>>(builder: &mut StructBuilder, key: &str, x:Option<I>) {
-    if let Some(v) = x {
-        builder.add(key, v.into())
-    }
-}
-
 impl ToSexp for Environment {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
@@ -182,9 +186,16 @@ impl ToSexp for Environment {
         builder.add("size", self.size.into());
         builder.add("temperature", symbol_of_str(self.temperature.as_str()));
         builder.add("quality", self.quality.into());
-        add_if_some(&mut builder, "plants", self.plants);
-        add_if_some(&mut builder, "rocks", self.rocks);
-        add_if_some(&mut builder, "caves", self.caves);
+        add_opt_into(&mut builder, "light", self.light);
+        add_opt_into(&mut builder, "plants", self.plants);
+        add_opt_into(&mut builder, "rocks", self.rocks);
+        add_opt_into(&mut builder, "caves", self.caves);
+        add_opt_into(&mut builder, "bogwood", self.bogwood);
+        add_opt_into(&mut builder, "flat-surfaces", self.flat_surfaces);
+        add_opt_into(&mut builder, "vertical-surfaces", self.vertical_surfaces);
+        add_opt_into(&mut builder, "fluffy-foliage", self.fluffy_foliage);
+        add_opt_into(&mut builder, "open-space", self.open_space);
+        add_opt_into(&mut builder, "different-decorations", self.different_decorations);
         if let Some(t) = self.interior {
             builder.add("interior", symbol_of_str(t.as_str()));
         }

@@ -265,10 +265,16 @@ pub struct Habitat {
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Needs {
+    pub light: Option<Need>,
     pub plants: Option<Need>,
     pub rocks: Option<Need>,
     pub caves: Option<u8>,
-    pub light: Option<Need>,
+    pub bogwood: Option<u8>,
+    pub flat_surfaces: Option<u8>,
+    pub vertical_surfaces: Option<u8>,
+    pub fluffy_foliage: Option<u8>,
+    pub open_space: Option<u8>,
+    pub explorer: Option<u8>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -364,10 +370,16 @@ pub mod test {
                 interior: None,
             },
             needs: Needs {
+                light: None,
                 plants: None,
                 rocks: None,
                 caves: None,
-                light: None,
+                bogwood: None,
+                flat_surfaces: None,
+                vertical_surfaces: None,
+                fluffy_foliage: None,
+                open_space: None,
+                explorer: None,
             },
             diet: Diet::DoesNotEat,
             greedy: false,
