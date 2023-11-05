@@ -221,6 +221,7 @@ fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
     Environment {
         size: std::cmp::max(constrained_size, summed_size),
         temperature: animals[0].species.habitat.temperature,
+        salinity: animals.iter().find_map(|a| a.species.habitat.salinity).unwrap_or(Salinity::Salty),
         quality: animals.iter().map(|s| s.species.habitat.minimum_quality).max().unwrap(),
         plants: minimum_need(animals, |s| s.needs.plants),
         rocks: minimum_need(animals, |s| s.needs.rocks),

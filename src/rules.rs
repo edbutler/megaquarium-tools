@@ -11,9 +11,11 @@ pub struct RuleOptions {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Constraint {
     Temperature(tank::Temperature),
+    Salinity(tank::Salinity),
     Quality(u8),
     Shoaler(u8),
     NoBully,
+    NoNibbler,
     Lighting(Need),
     Cohabitation(Cohabitation),
     Interior(tank::Interior),
@@ -40,9 +42,12 @@ impl std::fmt::Display for Violation {
         match (&self.constraint, &self.conflicting) {
             (Temperature(t), None) => write!(f, "{} requires {} tank", s, t),
             (Temperature(t), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s, t, o.species, t.other()),
+            (Salinity(x), None) => write!(f, "{} requires {} tank", s, x),
+            (Salinity(x), Some(o)) => write!(f, "{} requires {} tank but {} requires {}", s, x, o.species, x.other()),
             (Quality(q), _) => write!(f, "{} requires at least quality {}", s, q),
             (Shoaler(c), _) => write!(f, "{} is a shoaler and needs {} of its species", s, c),
             (NoBully, Some(o)) => write!(f, "{} will bully {}", o.species, s),
+            (NoNibbler, Some(o)) => write!(f, "{} will nibble {}", o.species, s),
             (Lighting(Need::Dislikes), None) => write!(f, "{} requires no light", s),
             (Lighting(Need::Dislikes), Some(o)) => {
                 write!(f, "{} requires no light but {} needs light", s, o.species)
@@ -132,12 +137,20 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
             *t == exhibit.environment.temperature,
             exhibit.animals.iter().find(|a| a.species.habitat.temperature != *t),
         ),
+        Salinity(s) => with_conflict(
+            *s == exhibit.environment.salinity,
+            exhibit
+                .animals
+                .iter()
+                .find(|a| a.species.habitat.salinity.map_or(false, |x| x != *s)),
+        ),
         Quality(q) => simple(*q <= exhibit.environment.quality),
         Shoaler(c) => {
             let count = exhibit.animals.iter().filter(|a| std::ptr::eq(anim.species, a.species)).count();
             simple(count >= (*c as usize))
         }
         NoBully => if_conflict(exhibit.animals.iter().find(|a| a.species.is_bully())),
+        NoNibbler => if_conflict(exhibit.animals.iter().find(|a| a.species.is_nibbler())),
         Lighting(Need::Dislikes) => with_conflict(
             exhibit.environment.light == Some(0),
             exhibit.animals.iter().find(|a| a.species.needs_light()),

@@ -1,7 +1,6 @@
-use crate::data::GameData;
 use crate::rules::Constraint;
-use crate::tank::{Interior, Temperature};
-use crate::util::{as_str_display, Result};
+use crate::tank::{Interior, Salinity, Temperature};
+use crate::util::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Growth {
@@ -17,17 +16,6 @@ pub struct Animal {
     pub id: AnimalId,
     pub species: String,
     pub growth: Growth,
-}
-
-impl Animal {
-    pub fn to_ref<'a>(&self, data: &'a GameData) -> Result<AnimalRef<'a>> {
-        let species = data.species_ref(&self.species)?;
-        Ok(AnimalRef {
-            id: self.id,
-            species,
-            growth: self.growth,
-        })
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -49,6 +37,7 @@ pub struct Species {
     pub greedy: bool,
     pub shoaling: Option<u8>,
     pub fighting: Option<Fighting>,
+    pub nibbling: Option<Nibbling>,
     pub cohabitation: Option<Cohabitation>,
     pub predation: Vec<PreyType>,
 }
@@ -85,6 +74,10 @@ impl AnimalRef<'_> {
 impl Species {
     pub fn is_bully(&self) -> bool {
         self.fighting == Some(Fighting::Bully)
+    }
+
+    pub fn is_nibbler(&self) -> bool {
+        self.nibbling == Some(Nibbling::Nibbler)
     }
 
     pub fn minimum_needed_tank_size(&self) -> u16 {
@@ -145,6 +138,11 @@ impl Species {
         let mut result = Vec::new();
 
         result.push(Constraint::Temperature(self.habitat.temperature));
+
+        if let Some(s) = self.habitat.salinity {
+            result.push(Constraint::Salinity(s));
+        }
+
         result.push(Constraint::Quality(self.habitat.minimum_quality));
 
         if let Some(s) = self.shoaling {
@@ -153,6 +151,10 @@ impl Species {
 
         if let Some(Fighting::Wimp) = self.fighting {
             result.push(Constraint::NoBully);
+        }
+
+        if let Some(Nibbling::Nibbleable) = self.nibbling {
+            result.push(Constraint::NoNibbler);
         }
 
         if let Some(l) = self.needs.light {
@@ -250,6 +252,8 @@ pub struct Stage {
 pub struct Habitat {
     pub minimum_quality: u8,
     pub temperature: Temperature,
+    /// None means either salinity works
+    pub salinity: Option<Salinity>,
     pub interior: Option<Interior>,
     pub active_swimmer: bool,
 }
@@ -284,6 +288,23 @@ impl Fighting {
 }
 
 as_str_display!(Fighting);
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Nibbling {
+    Nibbleable,
+    Nibbler,
+}
+
+impl Nibbling {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Nibbling::Nibbleable => "nibbleable",
+            Nibbling::Nibbler => "nibbler",
+        }
+    }
+}
+
+as_str_display!(Nibbling);
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Cohabitation {
@@ -324,6 +345,7 @@ pub mod test {
             },
             habitat: Habitat {
                 temperature: Temperature::Warm,
+                salinity: Some(Salinity::Salty),
                 minimum_quality: 55,
                 active_swimmer: false,
                 interior: None,
@@ -338,6 +360,7 @@ pub mod test {
             greedy: false,
             shoaling: None,
             fighting: None,
+            nibbling: None,
             cohabitation: None,
             predation: Vec::new(),
         }

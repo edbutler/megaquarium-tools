@@ -59,6 +59,7 @@ impl TankModel {
 pub struct Environment {
     pub size: u16,
     pub temperature: Temperature,
+    pub salinity: Salinity,
     pub quality: u8,
     pub plants: Option<u16>,
     pub rocks: Option<u16>,
@@ -97,9 +98,7 @@ impl Temperature {
             Temperature::Warm => Temperature::Cold,
         }
     }
-}
 
-impl Temperature {
     pub fn as_str(&self) -> &'static str {
         match self {
             Temperature::Warm => "warm",
@@ -110,6 +109,30 @@ impl Temperature {
 
 as_str_display!(Temperature);
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Salinity {
+    Salty,
+    Fresh,
+}
+
+impl Salinity {
+    pub fn other(&self) -> Salinity {
+        match self {
+            Salinity::Salty => Salinity::Fresh,
+            Salinity::Fresh => Salinity::Salty,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Salinity::Salty => "salty",
+            Salinity::Fresh => "fresh",
+        }
+    }
+}
+
+as_str_display!(Salinity);
+
 #[cfg(test)]
 pub mod test {
     use super::*;
@@ -118,6 +141,7 @@ pub mod test {
         Environment {
             size: 0,
             temperature: Temperature::Warm,
+            salinity: Salinity::Salty,
             quality: 0,
             plants: None,
             rocks: None,

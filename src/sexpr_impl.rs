@@ -55,6 +55,10 @@ impl ToSexp for Species {
             builder.add("fighting", invoke_symbol(f.as_str()));
         }
 
+        if let Some(n) = &self.nibbling {
+            builder.add("nibbling", invoke_symbol(n.as_str()));
+        }
+
         if let Some(c) = &self.cohabitation {
             builder.add("cohabitation", invoke_symbol(c.as_str()));
         }
@@ -77,6 +81,12 @@ impl ToSexp for Habitat {
         let mut builder = StructBuilder::new("habitat");
 
         builder.add("temperature", symbol_of_str(self.temperature.as_str()));
+
+        let salinity = match self.salinity {
+            None => "both",
+            Some(s) => s.as_str(),
+        };
+        builder.add("salinity", symbol_of_str(salinity));
 
         builder.add("quality", self.minimum_quality.into());
 

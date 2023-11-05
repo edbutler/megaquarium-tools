@@ -289,11 +289,17 @@ fn read_species(directory: &Path) -> Result<Vec<Species>> {
 
 fn read_species_file(json: &Value) -> Result<Vec<Species>> {
     let objects = json["objects"].as_array().ok_or("no species objects")?;
-    let species: Result<Vec<Species>> = objects.iter().map(|o| read_single_species_wrapper(o)).collect();
-    Ok(species?)
+    let mut result = Vec::with_capacity(objects.len());
+    for o in objects {
+        match read_single_species_wrapper(o)? {
+            Some(s) => result.push(s),
+            None => (),
+        };
+    }
+    Ok(result)
 }
 
-fn read_single_species_wrapper(o: &Value) -> Result<Species> {
+fn read_single_species_wrapper(o: &Value) -> Result<Option<Species>> {
     match read_single_species(o) {
         Ok(r) => Ok(r),
         Err(e) => {
@@ -307,10 +313,19 @@ fn read_single_species_wrapper(o: &Value) -> Result<Species> {
     }
 }
 
-fn read_single_species(o: &Value) -> Result<Species> {
-    let id = o["id"].as_str().ok_or("no id")?;
-    let animal = o["animal"].as_object().ok_or("no animal")?;
+fn read_single_species(o: &Value) -> Result<Option<Species>> {
+    let obj = o.as_object().unwrap();
+
+    let id = obj["id"].as_str().ok_or("no id")?;
+    let animal = obj["animal"].as_object().ok_or("no animal")?;
     let stats = animal["stats"].as_object().ok_or("no stats")?;
+    let empty_map = Map::new();
+    let salinity_obj = obj.get("salinity").and_then(|x| x.as_object()).unwrap_or(&empty_map);
+
+    // TODO skip eggs for now
+    if id.ends_with(".egg") || id.ends_with(".fry") {
+        return Ok(None);
+    }
 
     let genus = {
         let tags = as_string_array(&o["tags"])?;
@@ -319,6 +334,10 @@ fn read_single_species(o: &Value) -> Result<Species> {
 
     fn has_stat(stats: &Map<String, Value>, stat: &str) -> bool {
         stats.contains_key(stat)
+    }
+
+    fn has_true_value(stats: &Map<String, Value>, stat: &str) -> bool {
+        stats.get(stat).and_then(|x| x.as_bool()).unwrap_or(false)
     }
 
     fn stat_number(stats: &Map<String, Value>, stat: &str, key: &str) -> Result<Option<u8>> {
@@ -386,6 +405,16 @@ fn read_single_species(o: &Value) -> Result<Species> {
             Err(bad_json("Unknown temperature"))
         }?;
 
+        let salinity = if has_true_value(salinity_obj, "canGoInFreshwater") {
+            if has_true_value(salinity_obj, "canGoInSaltwater") {
+                None
+            } else {
+                Some(Salinity::Fresh)
+            }
+        } else {
+            Some(Salinity::Salty)
+        };
+
         let minimum_quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"))?;
 
         let active_swimmer = has_stat(stats, "activeSwimmer");
@@ -400,6 +429,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
 
         Habitat {
             temperature,
+            salinity,
             minimum_quality,
             active_swimmer,
             interior: tank,
@@ -476,7 +506,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
         }
     }?;
 
-    Ok(Species {
+    Ok(Some(Species {
         id: id.to_string(),
         genus,
         prey_type,
@@ -487,6 +517,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
         greedy: has_stat(stats, "greedy"),
         shoaling: stat_number(stats, "shoaler", "req")?,
         fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
+        nibbling: one_of(stats, &[("nibbleable", Nibbling::Nibbleable), ("nibbler", Nibbling::Nibbler)])?,
         cohabitation: one_of(
             stats,
             &[
@@ -497,7 +528,7 @@ fn read_single_species(o: &Value) -> Result<Species> {
             ],
         )?,
         predation,
-    })
+    }))
 }
 
 fn read_tank_models(directory: &Path) -> Result<Vec<TankModel>> {
