@@ -74,9 +74,9 @@ fn main() {
                     debug: c.debug,
                     assume_all_fish_fully_grown: c.assume_fully_grown,
                 };
-                let animals = animals_from_counts(data, &args)?;
-                let result = check_for_viable_tank(&data, &animals);
-                print_check_result(&args, &result);
+                let query = create_check_query(data, &args)?;
+                let result = check_for_viable_tank(&data, &query.animals);
+                print_check_result(&query, &result);
                 Ok(())
             }
 
@@ -150,17 +150,17 @@ fn main() {
                     assume_all_fish_fully_grown: false,
                 };
 
-                let new_animals = animals_from_counts(data, &args)?;
+                let query = create_check_query(data, &args)?;
 
-                let base_result = check_for_viable_tank(&data, &new_animals);
+                let base_result = check_for_viable_tank(&data, &query.animals);
 
                 if !base_result.is_okay() {
-                    print_check_result(&args, &base_result);
+                    print_check_result(&query, &base_result);
                     return Ok(());
                 }
 
                 let expansion = ExhibitSpec {
-                    animals: &new_animals,
+                    animals: &query.animals,
                     environment: base_result.minimum_viable_environment,
                 };
 

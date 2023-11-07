@@ -14,6 +14,12 @@ pub struct CheckArgs<'a> {
     pub assume_all_fish_fully_grown: bool,
 }
 
+pub struct CheckQuery<'a> {
+    pub debug: bool,
+    pub counts: Vec<SpeciesCount>,
+    pub animals: Vec<AnimalRef<'a>>,
+}
+
 pub struct CheckResult {
     pub violations: Vec<Violation>,
     pub food: Vec<FoodAmount>,
@@ -55,9 +61,9 @@ pub fn print_violations(violations: &[Violation]) {
     }
 }
 
-pub fn print_check_result(args: &CheckArgs, result: &CheckResult) {
+pub fn print_check_result(args: &CheckQuery, result: &CheckResult) {
     println!("For contents:");
-    for c in args.species {
+    for c in &args.counts {
         println!("- {}x {}", c.count, c.species);
     }
 
@@ -164,13 +170,20 @@ pub fn print_environment_differences(old: &Environment, new: &Environment) {
     compare_opt("light", old.light, new.light);
 }
 
-pub fn animals_from_counts<'a>(data: &'a GameData, args: &CheckArgs) -> Result<Vec<AnimalRef<'a>>> {
+pub fn create_check_query<'a>(data: &'a GameData, args: &CheckArgs) -> Result<CheckQuery<'a>> {
     let mut counter = 0;
     let capacity: u16 = args.species.iter().map(|c| c.count).sum();
-    let mut result = Vec::with_capacity(capacity as usize);
+    let mut counts = Vec::with_capacity(args.species.len());
+    let mut animals = Vec::with_capacity(capacity as usize);
 
     for c in args.species {
         let species = lookup(data, &c.species)?;
+
+        // copy resolved name into query for printing, since arg name is just a search string
+        counts.push(SpeciesCount {
+            species: species.id.clone(),
+            count: c.count,
+        });
 
         for _ in 0..c.count {
             counter += 1;
@@ -179,7 +192,7 @@ pub fn animals_from_counts<'a>(data: &'a GameData, args: &CheckArgs) -> Result<V
             } else {
                 species.earliest_growth_stage()
             };
-            result.push(AnimalRef {
+            animals.push(AnimalRef {
                 id: counter,
                 species: species,
                 growth,
@@ -187,7 +200,11 @@ pub fn animals_from_counts<'a>(data: &'a GameData, args: &CheckArgs) -> Result<V
         }
     }
 
-    Ok(result)
+    Ok(CheckQuery {
+        debug: args.debug,
+        counts,
+        animals,
+    })
 }
 
 pub fn environment_for_exhibit(exhibit: &ExhibitRef) -> Environment {
