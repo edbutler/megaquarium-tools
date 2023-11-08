@@ -535,6 +535,17 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         }
     };
 
+    let cohabitation = one_of(
+        stats,
+        &[
+            ("dislikesConspecifics", Cohabitation::NoConspecifics),
+            ("dislikesCongeners", Cohabitation::NoCongeners),
+            ("congenersOnly", Cohabitation::OnlyCongeners),
+            ("dislikesFoodCompetitors", Cohabitation::NoFoodCompetitors),
+            ("pairsOnly", Cohabitation::PairsOnly),
+        ],
+    )?;
+
     Ok(Some(Species {
         id: id.to_string(),
         genus,
@@ -547,16 +558,9 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         shoaling,
         fighting: one_of(stats, &[("wimp", Fighting::Wimp), ("bully", Fighting::Bully)])?,
         nibbling: one_of(stats, &[("nibbleable", Nibbling::Nibbleable), ("nibbler", Nibbling::Nibbler)])?,
-        cohabitation: one_of(
-            stats,
-            &[
-                ("dislikesConspecifics", Cohabitation::NoConspecifics),
-                ("dislikesCongeners", Cohabitation::NoCongeners),
-                ("congenersOnly", Cohabitation::OnlyCongeners),
-                ("dislikesFoodCompetitors", Cohabitation::NoFoodCompetitors),
-            ],
-        )?,
+        cohabitation,
         predation,
+        communal: stat_number(stats, "communal", "value")?,
     }))
 }
 

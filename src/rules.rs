@@ -22,6 +22,7 @@ pub enum Constraint {
     TankSize(u16),
     Territorial,
     Predator { prey: PreyType, size: u16 },
+    Communal(u8),
 }
 
 pub struct ExhibitSpec<'a> {
@@ -71,6 +72,7 @@ impl std::fmt::Display for Violation {
             (Cohabitation(Cohabitation::NoConspecifics), _) => {
                 write!(f, "{} cannot be with its own species but there are multiple", s)
             }
+            (Cohabitation(Cohabitation::PairsOnly), _) => write!(f, "{} must only be a multiple of two", s),
             (Cohabitation(Cohabitation::NoFoodCompetitors), Some(o)) => {
                 write!(f, "{} will compete for food with {}", s, o.species)
             }
@@ -85,6 +87,7 @@ impl std::fmt::Display for Violation {
                     write!(f, "{} will eat {}", s, o.species)
                 }
             }
+            (Communal(others), _) => write!(f, "{} is communal and requires at least {} other species", s, others),
             _ => todo!(),
         }
     }
@@ -186,6 +189,10 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
             })),
             _ => None,
         },
+        Cohabitation(Cohabitation::PairsOnly) => {
+            let count = exhibit.animals.iter().filter(|a| std::ptr::eq(anim.species, a.species)).count();
+            simple(count % 2 == 0)
+        }
         Interior(i) => simple(exhibit.environment.interior == Some(*i)),
         TankSize(s) => simple(exhibit.environment.size >= *s),
         Territorial => {
@@ -208,7 +215,15 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
             let can_eat = |a: &&AnimalRef| a.species.prey_type == *prey && a.size_for_predation() <= *size;
             if_conflict(exhibit.animals.iter().find(can_eat))
         }
+        Communal(others) => simple(count_distinct_by(exhibit.animals, |a| &a.species.id) > (*others as usize)),
     }
+}
+
+fn count_distinct_by<T, U: Ord, F: Fn(&T) -> U>(list: &[T], f: F) -> usize {
+    let mut arr: Vec<_> = list.iter().map(f).collect();
+    arr.sort();
+    arr.dedup();
+    arr.len()
 }
 
 #[cfg(test)]

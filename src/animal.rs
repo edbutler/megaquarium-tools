@@ -40,6 +40,7 @@ pub struct Species {
     pub nibbling: Option<Nibbling>,
     pub cohabitation: Option<Cohabitation>,
     pub predation: Vec<PreyType>,
+    pub communal: Option<u8>,
 }
 
 impl AnimalRef<'_> {
@@ -182,6 +183,10 @@ impl Species {
                 prey: p.clone(),
                 size: self.predation_size(),
             });
+        }
+
+        if let Some(c) = self.communal {
+            result.push(Constraint::Communal(c));
         }
 
         result
@@ -330,6 +335,7 @@ pub enum Cohabitation {
     NoConspecifics,
     NoCongeners,
     NoFoodCompetitors,
+    PairsOnly,
 }
 
 impl Cohabitation {
@@ -339,6 +345,7 @@ impl Cohabitation {
             Cohabitation::NoConspecifics => "no-conspecifics",
             Cohabitation::NoCongeners => "no-congeners",
             Cohabitation::NoFoodCompetitors => "no-food-competitors",
+            Cohabitation::PairsOnly => "pairs-only",
         }
     }
 }
@@ -388,6 +395,7 @@ pub mod test {
             nibbling: None,
             cohabitation: None,
             predation: Vec::new(),
+            communal: None,
         }
     }
 }

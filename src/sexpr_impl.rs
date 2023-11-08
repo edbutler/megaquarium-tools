@@ -92,6 +92,8 @@ impl ToSexp for Species {
             builder.add("predaction", b.to_value());
         }
 
+        add_opt_into(&mut builder, "communal", self.communal);
+
         builder.to_value()
     }
 }
