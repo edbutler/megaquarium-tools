@@ -36,7 +36,10 @@ impl GameData {
     }
 
     pub fn species_search(&self, search_string: &str) -> Vec<&Species> {
-        fuzzy_match_string(|s: &Species| &s.id, search_string, self.species.as_slice())
+        fn is_adult(s: &Species) -> bool {
+            s.breeding != Breeding::NotFullyGrown
+        }
+        fuzzy_match_string(|s: &Species| &s.id, is_adult, search_string, self.species.as_slice())
     }
 
     pub fn try_tank_ref(&self, id: &str) -> Option<&TankModel> {
@@ -54,17 +57,14 @@ impl GameData {
     }
 }
 
-fn fuzzy_match_string<'a, T, F>(f: F, search_string: &str, list: &'a [T]) -> Vec<&'a T>
-where
-    F: Fn(&T) -> &str,
-{
+fn fuzzy_match_string<'a, T, F: Fn(&T) -> &str, P: Fn(&T) -> bool>(f: F, predicate: P, search_string: &str, list: &'a [T]) -> Vec<&'a T> {
     let mut result = Vec::new();
 
     let parts: Vec<&str> = search_string.split(" ").collect();
 
     for x in list {
         let name = f(x);
-        if parts.iter().all(|p| name.contains(p)) {
+        if predicate(x) && parts.iter().all(|p| name.contains(p)) {
             result.push(x);
         }
     }
@@ -322,10 +322,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
     let empty_map = Map::new();
     let salinity_obj = obj.get("salinity").and_then(|x| x.as_object()).unwrap_or(&empty_map);
 
-    // TODO skip eggs for now
-    if id.ends_with(".egg") || id.ends_with(".fry") {
-        return Ok(None);
-    }
+    let is_adult = !(id.ends_with(".egg") || id.ends_with(".fry"));
 
     let genus = {
         let tags = as_string_array(&o["tags"])?;
@@ -415,7 +412,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
             Some(Salinity::Salty)
         };
 
-        let minimum_quality = stat_number(stats, "waterQuality", "value")?.ok_or(bad_json("no water quality"))?;
+        let minimum_quality = stat_number(stats, "waterQuality", "value")?.unwrap_or(0);
 
         let active_swimmer = has_stat(stats, "activeSwimmer");
 
@@ -490,7 +487,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
             .keys()
             .map(|k| {
                 let str = k.strip_suffix("Eater").ok_or(bad_json("no Eater suffix"))?;
-                let typ = PreyType::from_str(str).ok_or(bad_json("unknown prey type"))?;
+                let typ = PreyType::from_str(str).ok_or(bad_json(format!("unknown prey type {}", str)))?;
                 Ok(typ)
             })
             .collect();
@@ -500,7 +497,9 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
     };
 
     let prey_type = {
-        if has_stat(stats, "isFish") {
+        if has_stat(stats, "baby") {
+            Ok(PreyType::Baby)
+        } else if has_stat(stats, "isFish") {
             Ok(PreyType::Fish)
         } else if has_stat(stats, "isStarfish") {
             Ok(PreyType::Starfish)
@@ -546,6 +545,22 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         ],
     )?;
 
+    let breeding = if is_adult {
+        if has_stat(stats, "breeder") {
+            let breeder = stats["breeder"].as_object().ok_or(bad_json("breeder is not object"))?;
+            let baby = breeder
+                .get("babySpec")
+                .and_then(|b| b.as_str())
+                .ok_or(bad_json("no babySpec"))?
+                .to_string();
+            Breeding::Breedable(Breedable { baby })
+        } else {
+            Breeding::CannotBread
+        }
+    } else {
+        Breeding::NotFullyGrown
+    };
+
     Ok(Some(Species {
         id: id.to_string(),
         genus,
@@ -561,6 +576,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         cohabitation,
         predation,
         communal: stat_number(stats, "communal", "value")?,
+        breeding,
     }))
 }
 

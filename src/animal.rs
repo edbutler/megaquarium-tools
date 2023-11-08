@@ -41,6 +41,19 @@ pub struct Species {
     pub cohabitation: Option<Cohabitation>,
     pub predation: Vec<PreyType>,
     pub communal: Option<u8>,
+    pub breeding: Breeding,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Breedable {
+    pub baby: String,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Breeding {
+    Breedable(Breedable),
+    CannotBread,
+    NotFullyGrown,
 }
 
 impl AnimalRef<'_> {
@@ -195,6 +208,7 @@ impl Species {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum PreyType {
+    Baby,
     Fish,
     Starfish,
     Crustacean,
@@ -208,6 +222,7 @@ pub enum PreyType {
 impl PreyType {
     pub fn as_str(&self) -> &'static str {
         match self {
+            PreyType::Baby => "baby",
             PreyType::Fish => "fish",
             PreyType::Starfish => "starfish",
             PreyType::Crustacean => "crustacean",
@@ -396,6 +411,7 @@ pub mod test {
             cohabitation: None,
             predation: Vec::new(),
             communal: None,
+            breeding: Breeding::CannotBread,
         }
     }
 }
