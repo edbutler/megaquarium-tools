@@ -208,7 +208,6 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
                     }
                 })
                 .sum();
-            println!("{}", sum_size);
             simple(exhibit.environment.size >= 2 * sum_size)
         }
         Predator { prey, size } => {
