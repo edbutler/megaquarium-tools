@@ -147,7 +147,7 @@ fn main() {
                 let args = CheckArgs {
                     species: &counts,
                     debug: false,
-                    assume_all_fish_fully_grown: false,
+                    assume_all_fish_fully_grown: e.assume_fully_grown,
                 };
 
                 let query = create_check_query(data, &args)?;
@@ -264,7 +264,7 @@ struct Check {
     #[clap(short)]
     debug: bool,
     /// Consider all fish fully grown for the purposes of predation
-    #[clap(long)]
+    #[clap(long, short = 'g')]
     assume_fully_grown: bool,
 }
 
@@ -282,6 +282,9 @@ struct Expand {
     /// Default is to only show valid tanks
     #[clap(short)]
     all: bool,
+    /// Consider all fish fully grown for the purposes of predation
+    #[clap(long, short = 'g')]
+    assume_fully_grown: bool,
 }
 
 #[derive(Debug, Copy, Clone, ValueEnum)]

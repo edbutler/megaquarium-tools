@@ -190,10 +190,6 @@ fn read_growth(v: &Value, s: &Species) -> Result<Growth> {
     }
 
     if stage as usize == s.size.stages.len() {
-        if growth > 0 {
-            return Err(Box::new(bad_json("growth should be zero if on final stage!")));
-        }
-
         Ok(Growth::Final)
     } else {
         Ok(Growth::Growing { stage, growth })
