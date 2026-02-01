@@ -1,3 +1,5 @@
+// pattern: Functional Core
+
 // we have to stuff this all in here because rust formatting mangles the sexp! macro
 #![cfg_attr(rustfmt, rustfmt_skip)]
 

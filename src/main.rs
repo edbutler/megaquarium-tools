@@ -1,5 +1,7 @@
 #![feature(trait_alias)]
 
+// pattern: Imperative Shell
+
 mod animal;
 mod aquarium;
 mod check;
@@ -110,22 +112,21 @@ fn main() {
             }
         },
 
-        SubCommand::Validate(_) => {
-            fn do_work(data: &GameData) -> util::Result<()> {
+        SubCommand::Validate(v) => {
+            fn do_work(v: Validate, data: &GameData) -> util::Result<()> {
                 let options = RuleOptions {
-                    assume_all_fish_fully_grown: false,
+                    assume_all_fish_fully_grown: v.assume_fully_grown,
                 };
                 let aquarium = load_aquarium_from_stdin()?.to_ref(data, &options)?;
                 let args = ValidateArgs {
                     aquarium: &aquarium,
-                    debug: false,
-                    assume_all_fish_fully_grown: false,
+                    debug: v.debug,
                 };
                 check_for_viable_aquarium(data, &args)?;
                 Ok(())
             }
 
-            match do_work(&data) {
+            match do_work(v, &data) {
                 Ok(_) => (),
                 Err(error) => {
                     println!("{}", error);
@@ -270,7 +271,14 @@ struct Check {
 
 /// Validates an aquarium provided over stdin
 #[derive(Debug, Parser)]
-struct Validate {}
+struct Validate {
+    /// Show debug-printed structs instead of pretty output
+    #[clap(short)]
+    debug: bool,
+    /// Consider all fish fully grown for the purposes of predation
+    #[clap(long, short = 'g')]
+    assume_fully_grown: bool,
+}
 
 /// List which tanks could support the addition of the given fish
 #[derive(Debug, Parser)]

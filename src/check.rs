@@ -1,3 +1,5 @@
+// pattern: Functional Core
+
 use std::fmt::Display;
 
 use crate::animal::*;
@@ -35,7 +37,6 @@ impl CheckResult {
 pub struct ValidateArgs<'a> {
     pub aquarium: &'a AquariumRef<'a>,
     pub debug: bool,
-    pub assume_all_fish_fully_grown: bool,
 }
 
 pub fn check_for_viable_tank<'a>(data: &GameData, animals: &[AnimalRef]) -> CheckResult {
@@ -104,7 +105,11 @@ pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> 
 
         println!("{}:", exhibit.name);
         // TODO this isn't quite right if some fish are not grown
-        println!("- {}/{}, {}%", min_tank.size, exhibit.tank.volume(), min_tank.quality);
+        if args.debug {
+            println!("{:#?}", min_tank);
+        } else {
+            println!("- {}/{}, {}%", min_tank.size, exhibit.tank.volume(), min_tank.quality);
+        }
 
         for item in minimum_required_food(data, &exhibit.animals) {
             println!("- {}x {}", item.count, item.food);
@@ -170,6 +175,7 @@ pub fn print_environment_differences(old: &Environment, new: &Environment) {
     compare_opt("light", old.light, new.light);
 }
 
+/// Builds a CheckQuery from user arguments by resolving species names.
 pub fn create_check_query<'a>(data: &'a GameData, args: &CheckArgs) -> Result<CheckQuery<'a>> {
     let mut counter = 0;
     let capacity: u16 = args.species.iter().map(|c| c.count).sum();
@@ -321,6 +327,7 @@ fn minimum_loves<F: Fn(&Species) -> Option<u8>>(list: &[AnimalRef], f: F) -> Opt
     list.iter().fold(None, foldfn)
 }
 
+/// Pure lookup: searches the in-memory species list by fuzzy match.
 fn lookup<'a>(data: &'a data::GameData, species: &str) -> Result<&'a Species> {
     let possible = data.species_search(species);
 

@@ -1,3 +1,5 @@
+// pattern: Functional Core
+
 use crate::animal::*;
 use crate::data::GameData;
 use crate::rules::RuleOptions;
@@ -133,10 +135,15 @@ impl AquariumDesc {
                         AnimalDesc::Individual(Animal { species, growth, .. }) => {
                             let species = data.species_ref(species)?;
                             counter += 1;
+                            let effective_growth = if options.assume_all_fish_fully_grown {
+                                Growth::Final
+                            } else {
+                                *growth
+                            };
                             animals.push(AnimalRef {
                                 id: counter,
                                 species,
-                                growth: *growth,
+                                growth: effective_growth,
                             })
                         }
                     }
@@ -158,6 +165,9 @@ impl AquariumDesc {
 mod test {
     use super::*;
     use crate::animal::test::*;
+    use crate::data::GameData;
+    use crate::rules::RuleOptions;
+    use crate::tank::test::test_tank_model;
 
     #[test]
     fn test_animals_to_spec() {
@@ -231,5 +241,73 @@ mod test {
         let result = animals_to_counts(&input);
 
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_ref_preserves_growth_when_flag_false() {
+        let species = test_species_with_stages("goldfish");
+        let tank_model = test_tank_model("basic_tank");
+        let data = GameData {
+            species: vec![species],
+            tanks: vec![tank_model],
+            food: vec![],
+        };
+
+        let aquarium_desc = AquariumDesc {
+            exhibits: vec![ExhibitDesc {
+                name: "Tank1".to_string(),
+                tank: Tank {
+                    id: 1,
+                    model: "basic_tank".to_string(),
+                    size: (5, 5),
+                },
+                animals: vec![AnimalDesc::Individual(Animal {
+                    id: 1,
+                    species: "goldfish".to_string(),
+                    growth: Growth::Growing { stage: 0, growth: 5 },
+                })],
+            }],
+        };
+
+        let options = RuleOptions {
+            assume_all_fish_fully_grown: false,
+        };
+        let result = aquarium_desc.to_ref(&data, &options).unwrap();
+
+        assert_eq!(result.exhibits[0].animals[0].growth, Growth::Growing { stage: 0, growth: 5 });
+    }
+
+    #[test]
+    fn test_to_ref_overrides_growth_when_flag_true() {
+        let species = test_species_with_stages("goldfish");
+        let tank_model = test_tank_model("basic_tank");
+        let data = GameData {
+            species: vec![species],
+            tanks: vec![tank_model],
+            food: vec![],
+        };
+
+        let aquarium_desc = AquariumDesc {
+            exhibits: vec![ExhibitDesc {
+                name: "Tank1".to_string(),
+                tank: Tank {
+                    id: 1,
+                    model: "basic_tank".to_string(),
+                    size: (5, 5),
+                },
+                animals: vec![AnimalDesc::Individual(Animal {
+                    id: 1,
+                    species: "goldfish".to_string(),
+                    growth: Growth::Growing { stage: 0, growth: 5 },
+                })],
+            }],
+        };
+
+        let options = RuleOptions {
+            assume_all_fish_fully_grown: true,
+        };
+        let result = aquarium_desc.to_ref(&data, &options).unwrap();
+
+        assert_eq!(result.exhibits[0].animals[0].growth, Growth::Final);
     }
 }

@@ -1,3 +1,5 @@
+// pattern: Functional Core
+
 use crate::{
     data::GameData,
     util::{as_str_display, Result},
@@ -160,6 +162,16 @@ pub mod test {
             interior: None,
             open_space: None,
             different_decorations: None,
+        }
+    }
+
+    pub fn test_tank_model<S: Into<String>>(id: S) -> TankModel {
+        TankModel {
+            id: id.into(),
+            min_size: (1, 1),
+            max_size: (10, 10),
+            double_density: 2, // 1.0 volume per tile
+            interior: None,
         }
     }
 }

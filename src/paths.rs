@@ -1,3 +1,5 @@
+// pattern: Imperative Shell
+
 use directories::UserDirs;
 use std::env;
 use std::path::{Path, PathBuf};

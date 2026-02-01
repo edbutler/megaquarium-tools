@@ -1,3 +1,5 @@
+// pattern: Imperative Shell
+
 use crate::animal::*;
 use crate::aquarium::*;
 use crate::paths::*;

@@ -1,3 +1,5 @@
+// pattern: Functional Core
+
 use crate::util::Result;
 use lexpr::*;
 use std::{error::Error, fmt};

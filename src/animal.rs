@@ -1,3 +1,5 @@
+// pattern: Functional Core
+
 use crate::rules::Constraint;
 use crate::tank::{Interior, Salinity, Temperature};
 use crate::util::*;
@@ -413,5 +415,11 @@ pub mod test {
             communal: None,
             breeding: Breeding::CannotBread,
         }
+    }
+
+    pub fn test_species_with_stages<S: Into<String>>(id: S) -> Species {
+        let mut species = test_species(id);
+        species.size.stages = vec![Stage { size: 1, duration: 10 }, Stage { size: 3, duration: 10 }];
+        species
     }
 }
