@@ -235,7 +235,7 @@ pub mod test {
 
     static EMPTY_ANIMALS: &[AnimalRef<'static>] = &[];
 
-    fn make_animal(species: &Species) -> AnimalRef {
+    fn make_animal(species: &Species) -> AnimalRef<'_> {
         AnimalRef {
             species: &species,
             id: 0,

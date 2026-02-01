@@ -5,20 +5,8 @@ use crate::tank::*;
 use crate::util::Result;
 
 #[derive(Debug)]
-pub struct Aquarium {
-    pub exhibits: Vec<Exhibit>,
-}
-
-#[derive(Debug)]
 pub struct AquariumRef<'a> {
     pub exhibits: Vec<ExhibitRef<'a>>,
-}
-
-#[derive(Debug)]
-pub struct Exhibit {
-    pub name: String,
-    pub tank: Tank,
-    pub animals: Vec<Animal>,
 }
 
 #[derive(Debug)]
