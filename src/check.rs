@@ -340,3 +340,60 @@ fn lookup<'a>(data: &'a data::GameData, species: &str) -> Result<&'a Species> {
         Ok(possible[0])
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::animal::test::test_species;
+    use crate::animal::Growth;
+    use crate::tank::test::test_tank_model;
+
+    #[test]
+    fn test_happy_path_single_tank_compatible_fish() {
+        let species1 = test_species("clownfish");
+        let species2 = test_species("damselfish");
+
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![species1.clone(), species2.clone()],
+            tanks: vec![tank_model.clone()],
+            food: vec![],
+        };
+
+        let animals = vec![
+            AnimalRef {
+                id: 1,
+                species: &data.species[0],
+                growth: Growth::Final,
+            },
+            AnimalRef {
+                id: 2,
+                species: &data.species[1],
+                growth: Growth::Final,
+            },
+        ];
+
+        let tank_ref = TankRef {
+            id: 1,
+            model: &data.tanks[0],
+            size: (5, 5),
+        };
+
+        let exhibit = ExhibitRef {
+            name: "Test Tank".to_string(),
+            tank: tank_ref,
+            animals,
+        };
+
+        let aquarium = AquariumRef { exhibits: vec![exhibit] };
+
+        let args = ValidateArgs {
+            aquarium: &aquarium,
+            debug: false,
+        };
+
+        let result = check_for_viable_aquarium(&data, &args);
+        assert!(result.is_ok());
+    }
+}
