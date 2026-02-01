@@ -1,4 +1,4 @@
-// pattern: Functional Core
+// pattern: Mixed, some of the code prints out results rather than returning them.
 
 use std::fmt::Display;
 
