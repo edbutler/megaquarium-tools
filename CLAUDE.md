@@ -35,22 +35,27 @@ Use `-g/--assume-fully-grown` with `check`/`expand` to treat all fish as adult s
 
 ## Architecture
 
+The codebase follows a Functional Core / Imperative Shell pattern:
+- **Functional Core** modules are pure, testable, and side-effect free
+- **Imperative Shell** modules handle I/O and CLI interaction
+
 **Core modules:**
-- `main.rs` - CLI entry point using clap
+- `main.rs` - CLI entry point using clap (Imperative Shell)
 - `data.rs` - Game data loading from Steam installation paths (Windows/macOS)
 - `animal.rs` - Species, Animal, Growth stages, behavioral traits (shoaling, predation, cohabitation)
 - `tank.rs` - Tank models, Environment (temperature, salinity, quality, decorations)
 - `rules.rs` - Constraint engine that checks violations (temperature conflicts, predation, shoaling requirements, territorial rules)
-- `check.rs` - Orchestrates validation, calculates minimum viable tank, prints results
+- `check.rs` - Pure validation logic: `validate_aquarium()`, `check_for_viable_tank()`, minimum viable tank calculation (Functional Core)
+- `report.rs` - Output/printing functions: `print_exhibit_result()`, `print_aquarium_result()`, `print_violations()` (Imperative Shell)
 - `aquarium.rs` - Aquarium/Exhibit structures for save file representation
 - `sexpr_format.rs`/`sexpr_impl.rs` - S-expression serialization for aquarium I/O
 
 **Data flow:**
 1. `read_game_data()` loads species/tanks from game files
 2. Commands parse user input into `AnimalRef` collections
-3. `minimum_viable_tank()` calculates required Environment
+3. Pure validation: `validate_aquarium()` or `check_for_viable_tank()` returns result structs
 4. `find_violations()` checks all constraints against the exhibit
-5. Results printed as s-expressions or debug format
+5. Print functions in `report.rs` format results to stdout
 
 **Key domain concepts:**
 - Growth stages affect predation (eggs/fry may be eaten by fish that won't eat adults)

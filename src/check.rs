@@ -1,12 +1,9 @@
-// pattern: Mixed, some of the code prints out results rather than returning them.
-
-use std::fmt::Display;
+// pattern: Functional Core
 
 use crate::animal::*;
 use crate::aquarium::*;
 use crate::data::{self, GameData};
 use crate::rules::*;
-use crate::sexpr_format::*;
 use crate::tank::*;
 use crate::util::*;
 
@@ -22,157 +19,89 @@ pub struct CheckQuery<'a> {
     pub animals: Vec<AnimalRef<'a>>,
 }
 
-pub struct CheckResult {
+pub struct ExhibitCheckResult {
     pub violations: Vec<Violation>,
     pub food: Vec<FoodAmount>,
     pub minimum_viable_environment: Environment,
 }
 
-impl CheckResult {
+impl ExhibitCheckResult {
     pub fn is_okay(&self) -> bool {
-        self.violations.len() == 0
+        self.violations.is_empty()
+    }
+}
+
+#[derive(Debug)]
+pub struct ExhibitValidation {
+    pub name: String,
+    pub tank_volume: u16,
+    pub minimum_viable_environment: Environment,
+    pub food: Vec<FoodAmount>,
+    pub violations: Vec<Violation>,
+}
+
+#[derive(Debug)]
+pub struct AquariumCheckResult {
+    pub exhibits: Vec<ExhibitValidation>,
+}
+
+impl AquariumCheckResult {
+    pub fn is_okay(&self) -> bool {
+        self.exhibits.iter().all(|e| e.violations.is_empty())
     }
 }
 
 pub struct ValidateArgs<'a> {
     pub aquarium: &'a AquariumRef<'a>,
-    pub debug: bool,
 }
 
-pub fn check_for_viable_tank<'a>(data: &GameData, animals: &[AnimalRef]) -> CheckResult {
+pub fn validate_aquarium(data: &data::GameData, args: &ValidateArgs) -> AquariumCheckResult {
+    let mut exhibits = Vec::new();
+
+    for exhibit in &args.aquarium.exhibits {
+        if exhibit.animals.is_empty() {
+            continue;
+        }
+
+        let minimum_viable_environment = minimum_viable_tank(&exhibit.animals);
+        let food = minimum_required_food(data, &exhibit.animals);
+
+        let exhibit_spec = ExhibitSpec {
+            animals: &exhibit.animals,
+            environment: minimum_viable_environment,
+        };
+
+        let violations = find_violations(&exhibit_spec);
+
+        exhibits.push(ExhibitValidation {
+            name: exhibit.name.clone(),
+            tank_volume: exhibit.tank.volume(),
+            minimum_viable_environment,
+            food,
+            violations,
+        });
+    }
+
+    AquariumCheckResult { exhibits }
+}
+
+pub fn check_for_viable_tank<'a>(data: &GameData, animals: &[AnimalRef]) -> ExhibitCheckResult {
     let environment = minimum_viable_tank(&animals);
     let exhibit = ExhibitSpec { animals, environment };
     let violations = find_violations(&exhibit);
     let food = minimum_required_food(data, &exhibit.animals);
 
-    CheckResult {
+    ExhibitCheckResult {
         violations,
         food,
         minimum_viable_environment: environment,
     }
 }
 
-pub fn print_violations(violations: &[Violation]) {
-    let mut messages: Vec<_> = violations.iter().map(|v| v.to_string()).collect();
-    messages.sort();
-    messages.dedup();
-
-    for v in messages {
-        println!("- {}", v);
-    }
-}
-
-pub fn print_check_result(args: &CheckQuery, result: &CheckResult) {
-    println!("For contents:");
-    for c in &args.counts {
-        println!("- {}x {}", c.count, c.species);
-    }
-
-    if result.is_okay() {
-        println!("\nThe minimum viable tank is:");
-        if args.debug {
-            println!("{:#?}", result.minimum_viable_environment);
-        } else {
-            println!(
-                "{}",
-                PrettyPrinted {
-                    expr: result.minimum_viable_environment.to_sexp()
-                }
-            );
-        }
-
-        println!("\nWill require food (average per day):");
-        for item in &result.food {
-            println!("- {}x {}", item.count, item.food);
-        }
-    } else {
-        println!("\nA valid tank is not possible:");
-        print_violations(&result.violations);
-    }
-}
-
-pub fn check_for_viable_aquarium(data: &data::GameData, args: &ValidateArgs) -> Result<()> {
-    println!("Checking {} tanks...", args.aquarium.exhibits.len());
-
-    let mut was_problem = false;
-
-    for exhibit in &args.aquarium.exhibits {
-        if exhibit.animals.len() == 0 {
-            continue;
-        }
-
-        let min_tank = minimum_viable_tank(&exhibit.animals);
-
-        println!("{}:", exhibit.name);
-        // TODO this isn't quite right if some fish are not grown
-        if args.debug {
-            println!("{:#?}", min_tank);
-        } else {
-            println!("- {}/{}, {}%", min_tank.size, exhibit.tank.volume(), min_tank.quality);
-        }
-
-        for item in minimum_required_food(data, &exhibit.animals) {
-            println!("- {}x {}", item.count, item.food);
-        }
-
-        let exhibit_spec = ExhibitSpec {
-            animals: &exhibit.animals,
-            environment: min_tank,
-        };
-
-        let violations = find_violations(&exhibit_spec);
-        print_violations(&violations);
-        was_problem = was_problem || violations.len() > 0;
-    }
-
-    if !was_problem {
-        println!("No problems!");
-    }
-
-    Ok(())
-}
-
-pub fn try_expand_tank(data: &GameData, base: &ExhibitRef, expansion: &ExhibitSpec) -> CheckResult {
+pub fn try_expand_tank(data: &GameData, base: &ExhibitRef, expansion: &ExhibitSpec) -> ExhibitCheckResult {
     let mut animals = base.animals.clone();
     animals.extend(expansion.animals);
     check_for_viable_tank(data, &animals)
-}
-
-pub fn print_environment_differences(old: &Environment, new: &Environment) {
-    fn format_opt<T>(x: Option<T>) -> String
-    where
-        T: Display,
-    {
-        match x {
-            Some(v) => format!("{}", v),
-            None => "n/a".to_string(),
-        }
-    }
-
-    fn compare<T>(name: &str, old: T, new: T)
-    where
-        T: Display + PartialOrd,
-    {
-        if old < new {
-            println!("- {}: {} → {}", name, old, new);
-        }
-    }
-
-    fn compare_opt<T>(name: &str, old: Option<T>, new: Option<T>)
-    where
-        T: Display + PartialOrd,
-    {
-        if old < new {
-            println!("- {}: {} → {}", name, format_opt(old), format_opt(new));
-        }
-    }
-
-    compare("size", old.size, new.size);
-    compare("quality", old.quality, new.quality);
-    compare_opt("plants", old.plants, new.plants);
-    compare_opt("rocks", old.rocks, new.rocks);
-    compare_opt("caves", old.caves, new.caves);
-    compare_opt("light", old.light, new.light);
 }
 
 /// Builds a CheckQuery from user arguments by resolving species names.
@@ -277,6 +206,7 @@ fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
     }
 }
 
+#[derive(Debug)]
 pub struct FoodAmount {
     pub food: String,
     pub count: u16,
@@ -388,12 +318,132 @@ mod test {
 
         let aquarium = AquariumRef { exhibits: vec![exhibit] };
 
-        let args = ValidateArgs {
-            aquarium: &aquarium,
-            debug: false,
+        let args = ValidateArgs { aquarium: &aquarium };
+
+        let result = validate_aquarium(&data, &args);
+        assert!(result.is_okay());
+        assert_eq!(result.exhibits.len(), 1);
+        assert_eq!(result.exhibits[0].name, "Test Tank");
+        assert!(result.exhibits[0].violations.is_empty());
+    }
+
+    #[test]
+    fn test_aquarium_with_temperature_violation() {
+        // Create species that require different temperatures
+        // test_species creates warm fish by default
+        let warm_species = test_species("warm_fish");
+        let mut cold_species = test_species("cold_fish");
+        cold_species.habitat.temperature = crate::tank::Temperature::Cold;
+
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![warm_species.clone(), cold_species.clone()],
+            tanks: vec![tank_model.clone()],
+            food: vec![],
         };
 
-        let result = check_for_viable_aquarium(&data, &args);
-        assert!(result.is_ok());
+        let animals = vec![
+            AnimalRef {
+                id: 1,
+                species: &data.species[0], // warm
+                growth: Growth::Final,
+            },
+            AnimalRef {
+                id: 2,
+                species: &data.species[1], // cold
+                growth: Growth::Final,
+            },
+        ];
+
+        let tank_ref = TankRef {
+            id: 1,
+            model: &data.tanks[0],
+            size: (5, 5),
+        };
+
+        let exhibit = ExhibitRef {
+            name: "Mixed Temperature Tank".to_string(),
+            tank: tank_ref,
+            animals,
+        };
+
+        let aquarium = AquariumRef { exhibits: vec![exhibit] };
+
+        let args = ValidateArgs { aquarium: &aquarium };
+
+        let result = validate_aquarium(&data, &args);
+
+        // The aquarium should have violations due to temperature incompatibility
+        assert!(!result.is_okay());
+        assert_eq!(result.exhibits.len(), 1);
+        assert!(!result.exhibits[0].violations.is_empty());
+    }
+
+    #[test]
+    fn test_validate_aquarium_captures_violation_details() {
+        // Create species with incompatible salinity requirements
+        // test_species creates salty fish by default
+        let salty_species = test_species("salty_fish");
+        let mut freshwater_species = test_species("freshwater_fish");
+        freshwater_species.habitat.salinity = Some(crate::tank::Salinity::Fresh);
+
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![salty_species.clone(), freshwater_species.clone()],
+            tanks: vec![tank_model.clone()],
+            food: vec![],
+        };
+
+        let animals = vec![
+            AnimalRef {
+                id: 1,
+                species: &data.species[0], // salty
+                growth: Growth::Final,
+            },
+            AnimalRef {
+                id: 2,
+                species: &data.species[1], // freshwater
+                growth: Growth::Final,
+            },
+        ];
+
+        let tank_ref = TankRef {
+            id: 1,
+            model: &data.tanks[0],
+            size: (5, 5),
+        };
+
+        let exhibit = ExhibitRef {
+            name: "Mixed Salinity Tank".to_string(),
+            tank: tank_ref,
+            animals,
+        };
+
+        let aquarium = AquariumRef { exhibits: vec![exhibit] };
+
+        let args = ValidateArgs { aquarium: &aquarium };
+
+        let result = validate_aquarium(&data, &args);
+
+        // Verify aquarium-level is_okay() reflects violations
+        assert!(!result.is_okay());
+
+        // Verify exhibit-level data
+        let exhibit_result = &result.exhibits[0];
+        assert_eq!(exhibit_result.name, "Mixed Salinity Tank");
+
+        // Verify we have at least one violation captured
+        assert!(
+            !exhibit_result.violations.is_empty(),
+            "Expected violations for incompatible salinity"
+        );
+
+        // Verify the minimum environment is calculated
+        assert!(
+            exhibit_result.minimum_viable_environment.size > 0,
+            "Expected minimum viable environment to be calculated"
+        );
     }
 }

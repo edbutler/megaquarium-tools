@@ -7,6 +7,7 @@ mod aquarium;
 mod check;
 mod data;
 mod paths;
+mod report;
 mod rules;
 mod sexpr_format;
 mod sexpr_impl;
@@ -17,6 +18,7 @@ use aquarium::*;
 use check::*;
 use clap::{Parser, ValueEnum};
 use data::*;
+use report::*;
 use sexpr_format::*;
 use std::error::Error;
 
@@ -78,7 +80,7 @@ fn main() {
                 };
                 let query = create_check_query(data, &args)?;
                 let result = check_for_viable_tank(&data, &query.animals);
-                print_check_result(&query, &result);
+                print_exhibit_result(&query, &result);
                 Ok(())
             }
 
@@ -118,11 +120,9 @@ fn main() {
                     assume_all_fish_fully_grown: v.assume_fully_grown,
                 };
                 let aquarium = load_aquarium_from_stdin()?.to_ref(data, &options)?;
-                let args = ValidateArgs {
-                    aquarium: &aquarium,
-                    debug: v.debug,
-                };
-                check_for_viable_aquarium(data, &args)?;
+                let args = ValidateArgs { aquarium: &aquarium };
+                let result = validate_aquarium(data, &args);
+                print_aquarium_result(&result, v.debug);
                 Ok(())
             }
 
@@ -156,7 +156,7 @@ fn main() {
                 let base_result = check_for_viable_tank(&data, &query.animals);
 
                 if !base_result.is_okay() {
-                    print_check_result(&query, &base_result);
+                    print_exhibit_result(&query, &base_result);
                     return Ok(());
                 }
 
