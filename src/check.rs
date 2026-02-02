@@ -446,4 +446,44 @@ mod test {
             "Expected minimum viable environment to be calculated"
         );
     }
+
+    #[test]
+    fn test_validate_aquarium_with_empty_exhibit() {
+        // Setup: Create minimal test data - we need a tank model but no species
+        let tank_model = test_tank_model("empty_tank");
+
+        let data = GameData {
+            species: vec![], // No species needed for empty exhibit
+            tanks: vec![tank_model.clone()],
+            food: vec![],
+        };
+
+        // Create an exhibit with no animals
+        let tank_ref = TankRef {
+            id: 1,
+            model: &data.tanks[0],
+            size: (5, 5),
+        };
+
+        let exhibit = ExhibitRef {
+            name: "Empty Tank".to_string(),
+            tank: tank_ref,
+            animals: vec![], // The key: empty animals vector
+        };
+
+        let aquarium = AquariumRef { exhibits: vec![exhibit] };
+
+        let args = ValidateArgs { aquarium: &aquarium };
+
+        // Execute
+        let result = validate_aquarium(&data, &args);
+
+        // Verify: Empty exhibits should be skipped, resulting in no violations and no exhibits in result
+        assert!(result.is_okay(), "Empty exhibit should not cause violations");
+        assert_eq!(
+            result.exhibits.len(),
+            0,
+            "Empty exhibits should be skipped and not appear in results"
+        );
+    }
 }
