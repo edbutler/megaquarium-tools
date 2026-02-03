@@ -277,6 +277,31 @@ where
     }
 }
 
+fn optional_u8(obj: Option<&Value>, key: &str) -> Result<Option<u8>> {
+    match obj.and_then(|o| o.get(key)) {
+        None => Ok(None),
+        Some(v) => uint_or_none(v),
+    }
+}
+
+fn stat_number(stats: &Map<String, Value>, stat: &str, key: &str) -> Result<Option<u8>> {
+    match stats.get(stat) {
+        None => Ok(None),
+        Some(v) => Ok(Some(v[key].as_u64().ok_or(UBJ)?.try_into()?)),
+    }
+}
+
+fn stat_value(stats: &Map<String, Value>, stat: &str) -> Result<Option<u8>> {
+    stat_number(stats, stat, "value")
+}
+
+fn maybe_stat_value(stats: Option<&Map<String, Value>>, stat: &str) -> Result<Option<u8>> {
+    match stats {
+        Some(s) => stat_value(s, stat),
+        None => Ok(None),
+    }
+}
+
 fn read_species(directory: &Path) -> Result<Vec<Species>> {
     let mut animals = Vec::new();
 
@@ -311,24 +336,6 @@ fn read_single_species_wrapper(o: &Value) -> Result<Option<Species>> {
             };
             Err(Box::new(wrapped))
         }
-    }
-}
-
-fn stat_number(stats: &Map<String, Value>, stat: &str, key: &str) -> Result<Option<u8>> {
-    match stats.get(stat) {
-        None => Ok(None),
-        Some(v) => Ok(Some(v[key].as_u64().ok_or(UBJ)?.try_into()?)),
-    }
-}
-
-fn stat_value(stats: &Map<String, Value>, stat: &str) -> Result<Option<u8>> {
-    stat_number(stats, stat, "value")
-}
-
-fn maybe_stat_value(stats: Option<&Map<String, Value>>, stat: &str) -> Result<Option<u8>> {
-    match stats {
-        Some(s) => stat_value(s, stat),
-        None => Ok(None),
     }
 }
 
@@ -624,6 +631,8 @@ fn read_single_fixture_model(o: &Value) -> Result<Option<FixtureModel>> {
         .and_then(|a| a.get("stats"))
         .and_then(|s| s.as_object());
 
+    let light = optional_u8(obj.get("chemistry"), "light")?;
+
     let plants = maybe_stat_value(stats, "isPlant")?;
     let rocks = maybe_stat_value(stats, "isRock")?;
     let caves = maybe_stat_value(stats, "isCave")?;
@@ -634,7 +643,7 @@ fn read_single_fixture_model(o: &Value) -> Result<Option<FixtureModel>> {
 
     Ok(Some(FixtureModel {
         id: id.to_string(),
-        light: None,
+        light,
         plants,
         rocks,
         caves,
