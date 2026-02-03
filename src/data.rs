@@ -605,18 +605,21 @@ fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
     let id = obj["id"].as_str().ok_or("no id")?;
 
     let aquascaping = obj["aquascaping"].as_object().ok_or("no aquascaping")?;
+    let stats = aquascaping["stats"].as_object().ok_or("no stats")?;
 
     // TODO: parse decoration fields from JSON
     println!("decoration {}", id);
 
-    let plants = stat_value(aquascaping, "likesPlants")?;
+    let plants = stat_value(stats, "isPlant")?;
+    let rocks = stat_value(stats, "isRock")?;
+    let caves = stat_value(stats, "isCave")?;
 
     Ok(DecorationModel {
         id: id.to_string(),
         light: None,
         plants,
-        rocks: None,
-        caves: None,
+        rocks,
+        caves,
         bogwood: None,
         flat_surfaces: None,
         vertical_surfaces: None,

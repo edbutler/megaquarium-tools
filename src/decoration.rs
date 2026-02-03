@@ -6,6 +6,7 @@ pub struct Decoration {
     pub model: String,
 }
 
+#[derive(Debug)]
 pub struct DecorationModel {
     pub id: String,
     pub light: Option<u8>,

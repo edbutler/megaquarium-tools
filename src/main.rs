@@ -55,6 +55,17 @@ fn main() {
                 }
             }
 
+            for d in data.decorations {
+                if d.id.contains(&l.search_term) {
+                    did_write = true;
+                    if l.debug {
+                        println!("{:#?}", d);
+                    } else {
+                        println!("{}", PrettyPrinted { expr: d.to_sexp() });
+                    }
+                }
+            }
+
             if !did_write {
                 println!("No entries found for search {}", l.search_term);
             }
