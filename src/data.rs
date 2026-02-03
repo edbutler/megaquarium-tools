@@ -2,6 +2,7 @@
 
 use crate::animal::*;
 use crate::aquarium::*;
+use crate::decoration::*;
 use crate::paths::*;
 use crate::tank::*;
 use crate::util::error;
@@ -19,6 +20,7 @@ use std::path::Path;
 pub struct GameData {
     pub species: Vec<Species>,
     pub tanks: Vec<TankModel>,
+    pub decorations: Vec<DecorationModel>,
     pub food: Vec<String>,
 }
 
@@ -80,6 +82,7 @@ pub fn read_game_data() -> Result<GameData> {
     let result = GameData {
         species: read_species(&directory)?,
         tanks: read_tank_models(&directory)?,
+        decorations: read_decoration_models(&directory)?,
         food: read_food(&directory)?,
     };
 
@@ -576,6 +579,39 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         communal: stat_number(stats, "communal", "value")?,
         breeding,
     }))
+}
+
+fn read_decoration_models(directory: &Path) -> Result<Vec<DecorationModel>> {
+    let mut decorations = Vec::new();
+
+    for path in DECORATION_PATHS {
+        let json = read_json(directory, path)?;
+        let objects = json["objects"].as_array().ok_or("no tank objects")?;
+        for x in objects {
+            let decoration = read_single_decoration_model(x)?;
+            decorations.push(decoration);
+        }
+    }
+
+    Ok(decorations)
+}
+
+fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
+    let id = o["id"].as_str().ok_or("no id")?;
+
+    // TODO: parse decoration fields from JSON
+
+    Ok(DecorationModel {
+        id: id.to_string(),
+        light: None,
+        plants: None,
+        rocks: None,
+        caves: None,
+        bogwood: None,
+        flat_surfaces: None,
+        vertical_surfaces: None,
+        fluffy_foliage: None,
+    })
 }
 
 fn read_tank_models(directory: &Path) -> Result<Vec<TankModel>> {

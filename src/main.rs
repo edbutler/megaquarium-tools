@@ -6,6 +6,7 @@ mod animal;
 mod aquarium;
 mod check;
 mod data;
+mod decoration;
 mod paths;
 mod report;
 mod rules;
