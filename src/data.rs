@@ -325,6 +325,13 @@ fn stat_value(stats: &Map<String, Value>, stat: &str) -> Result<Option<u8>> {
     stat_number(stats, stat, "value")
 }
 
+fn maybe_stat_value(stats: Option<&Map<String, Value>>, stat: &str) -> Result<Option<u8>> {
+    match stats {
+        Some(s) => stat_value(s, stat),
+        None => Ok(None),
+    }
+}
+
 fn read_single_species(o: &Value) -> Result<Option<Species>> {
     let obj = o.as_object().unwrap();
 
@@ -592,30 +599,40 @@ fn read_fixture_models(directory: &Path) -> Result<Vec<FixtureModel>> {
         let json = read_json(directory, path)?;
         let objects = json["objects"].as_array().ok_or("no tank objects")?;
         for x in objects {
-            let fixture = read_single_fixture_model(x)?;
-            fixtures.push(fixture);
+            match read_single_fixture_model(x)? {
+                Some(fixture) => fixtures.push(fixture),
+                None => (),
+            };
         }
     }
 
     Ok(fixtures)
 }
 
-fn read_single_fixture_model(o: &Value) -> Result<FixtureModel> {
+fn read_single_fixture_model(o: &Value) -> Result<Option<FixtureModel>> {
     let obj = o.as_object().unwrap();
     let id = obj["id"].as_str().ok_or("no id")?;
 
-    let aquascaping = obj["aquascaping"].as_object().ok_or("no aquascaping")?;
-    let stats = aquascaping["stats"].as_object().ok_or("no stats")?;
+    // Filter to only include objects with "scenery" or "light" tags
+    let tags = as_string_array(&o["tags"])?;
+    if !tags.iter().any(|t| *t == "scenery" || *t == "light") {
+        return Ok(None);
+    }
 
-    let plants = stat_value(stats, "isPlant")?;
-    let rocks = stat_value(stats, "isRock")?;
-    let caves = stat_value(stats, "isCave")?;
-    let bogwood = stat_value(stats, "isBogwood")?;
-    let flat_surfaces = stat_value(stats, "isFlatSurface")?;
-    let vertical_surfaces = stat_value(stats, "isVerticalSurface")?;
-    let fluffy_foliage = stat_value(stats, "isFluffyFoliage")?;
+    let stats = obj.get("aquascaping")
+        .and_then(|a| a.as_object())
+        .and_then(|a| a.get("stats"))
+        .and_then(|s| s.as_object());
 
-    Ok(FixtureModel {
+    let plants = maybe_stat_value(stats, "isPlant")?;
+    let rocks = maybe_stat_value(stats, "isRock")?;
+    let caves = maybe_stat_value(stats, "isCave")?;
+    let bogwood = maybe_stat_value(stats, "isBogwood")?;
+    let flat_surfaces = maybe_stat_value(stats, "isFlatSurface")?;
+    let vertical_surfaces = maybe_stat_value(stats, "isVerticalSurface")?;
+    let fluffy_foliage = maybe_stat_value(stats, "isFluffyFoliage")?;
+
+    Ok(Some(FixtureModel {
         id: id.to_string(),
         light: None,
         plants,
@@ -625,7 +642,7 @@ fn read_single_fixture_model(o: &Value) -> Result<FixtureModel> {
         flat_surfaces,
         vertical_surfaces,
         fluffy_foliage,
-    })
+    }))
 }
 
 fn read_tank_models(directory: &Path) -> Result<Vec<TankModel>> {
