@@ -1,8 +1,8 @@
-# Decoration Research
+# Fixture Research
 
 ## Source File
 
-Decorations are defined in:
+Fixtures are defined in:
 ```
 C:/Program Files (x86)/Steam/steamapps/common/Megaquarium/Megaquarium_Data/GameData/Data/scenery.data
 ```
@@ -67,12 +67,12 @@ C:/Program Files (x86)/Steam/steamapps/common/Megaquarium/Megaquarium_Data/GameD
 
 ## Key Fields
 
-- **`id`**: Unique identifier for the decoration
+- **`id`**: Unique identifier for the fixture
 - **`tags`**: Categories like "scenery", "cave"
 - **`map`**: Defines the footprint/shape in the tank grid (`x` = occupied, `o` = origin)
 - **`hosting.hostedOn`**: Where it can be placed (e.g., "tank")
-- **`aquascaping.stats`**: Provides decoration values that satisfy animal requirements (e.g., `isCave: 8`, `isRock: 4`)
-- **`aquascaping.decorationBonus`**: Affects the tank's decoration/prestige score (negative values reduce it)
+- **`aquascaping.stats`**: Provides fixture values that satisfy animal requirements (e.g., `isCave: 8`, `isRock: 4`)
+- **`aquascaping.fixtureBonus`**: Affects the tank's fixture/prestige score (negative values reduce it)
 - **`fbx`**: Visual/rendering properties
 - **`unlockable`**: When it becomes available in the game
 
@@ -184,11 +184,11 @@ Source file: `GameData/Data/animals.data`
 }
 ```
 
-## Comparison: Decorations vs Animals
+## Comparison: Fixtures vs Animals
 
 ### Common Fields (Shared Structure)
 
-| Field | Decoration | Animal | Notes |
+| Field | Fixture | Animal | Notes |
 |-------|------------|--------|-------|
 | `id` | Yes | Yes | Unique identifier |
 | `tags` | Yes | Yes | Categories/groupings |
@@ -197,14 +197,14 @@ Source file: `GameData/Data/animals.data`
 | `unlockable` | Yes | Yes | Unlock progression |
 | `sound` | Yes | Yes | Audio effects |
 
-### Decoration-Specific Fields
+### Fixture-Specific Fields
 
 | Field | Purpose |
 |-------|---------|
 | `map` | Grid footprint (shape in tank) |
 | `immobile.rotatable` | Whether it can be rotated |
-| `aquascaping.stats` | **Provides** decoration values (isCave, isRock, etc.) |
-| `aquascaping.decorationBonus` | Affects prestige score |
+| `aquascaping.stats` | **Provides** fixture values (isCave, isRock, etc.) |
+| `aquascaping.fixtureBonus` | Affects prestige score |
 | `aquascaping.interactionPosition/Angle` | Staff interaction point |
 
 ### Animal-Specific Fields
@@ -223,9 +223,9 @@ Source file: `GameData/Data/animals.data`
 
 ### Key Insight: Stats Symmetry
 
-The decoration `aquascaping.stats` **provides** values like `isCave: 8`, while the animal `animal.stats` **requires** values like `likesCave: 7` (seen in other fish). This is how the game matches decorations to animal needs.
+The fixture `aquascaping.stats` **provides** values like `isCave: 8`, while the animal `animal.stats` **requires** values like `likesCave: 7` (seen in other fish). This is how the game matches fixtures to animal needs.
 
-**Decoration provides:**
+**Fixture provides:**
 ```json
 "aquascaping": {
   "stats": {
@@ -245,7 +245,7 @@ The decoration `aquascaping.stats` **provides** values like `isCave: 8`, while t
 ```
 
 The naming convention appears to be:
-- Decorations use `is*` prefix (isRock, isCave, isPlant, etc.)
+- Fixtures use `is*` prefix (isRock, isCave, isPlant, etc.)
 - Animals use `likes*` prefix (likesRock, likesCave, likesPlant, etc.)
 
 ## Additional Findings

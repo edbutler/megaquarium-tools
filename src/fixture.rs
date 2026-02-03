@@ -1,13 +1,13 @@
 
-pub type DecorationId = u64;
+pub type FixtureId = u64;
 
-pub struct Decoration {
-    pub id: DecorationId,
+pub struct Fixture {
+    pub id: FixtureId,
     pub model: String,
 }
 
 #[derive(Debug)]
-pub struct DecorationModel {
+pub struct FixtureModel {
     pub id: String,
     pub light: Option<u8>,
     pub plants: Option<u8>,

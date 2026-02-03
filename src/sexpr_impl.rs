@@ -6,7 +6,7 @@
 use crate::tank::*;
 use crate::animal::*;
 use crate::aquarium::*;
-use crate::decoration::*;
+use crate::fixture::*;
 use crate::sexpr_format::*;
 use crate::util;
 use lexpr::*;
@@ -183,10 +183,10 @@ impl ToSexp for TankModel {
     }
 }
 
-impl ToSexp for DecorationModel {
+impl ToSexp for FixtureModel {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
-        let mut builder = StructBuilder::new("decoration-model");
+        let mut builder = StructBuilder::new("fixture-model");
 
         builder.add("id", Value::string(self.id.clone()));
         add_opt_into(&mut builder, "light", self.light);
@@ -219,7 +219,7 @@ impl ToSexp for Environment {
         add_opt_into(&mut builder, "vertical-surfaces", self.vertical_surfaces);
         add_opt_into(&mut builder, "fluffy-foliage", self.fluffy_foliage);
         add_opt_into(&mut builder, "open-space", self.open_space);
-        add_opt_into(&mut builder, "different-decorations", self.different_decorations);
+        add_opt_into(&mut builder, "different-fixtures", self.different_decorations);
         if let Some(t) = self.interior {
             builder.add("interior", symbol_of_str(t.as_str()));
         }

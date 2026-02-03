@@ -16,7 +16,7 @@ pub const FISH_PATHS: &[&str] = &[
     "Data/corals.data",
     "DLC/Freshwater Frenzy/Data/ff animals.data",
 ];
-pub const DECORATION_PATHS: &[&str] = &[
+pub const FIXTURE_PATHS: &[&str] = &[
     "Data/scenery.data",
     "DLC/Freshwater Frenzy/Data/ff scenery.data",
 ];

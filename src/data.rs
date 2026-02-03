@@ -2,7 +2,7 @@
 
 use crate::animal::*;
 use crate::aquarium::*;
-use crate::decoration::*;
+use crate::fixture::*;
 use crate::paths::*;
 use crate::tank::*;
 use crate::util::error;
@@ -20,7 +20,7 @@ use std::path::Path;
 pub struct GameData {
     pub species: Vec<Species>,
     pub tanks: Vec<TankModel>,
-    pub decorations: Vec<DecorationModel>,
+    pub fixtures: Vec<FixtureModel>,
     pub food: Vec<String>,
 }
 
@@ -82,7 +82,7 @@ pub fn read_game_data() -> Result<GameData> {
     let result = GameData {
         species: read_species(&directory)?,
         tanks: read_tank_models(&directory)?,
-        decorations: read_decoration_models(&directory)?,
+        fixtures: read_fixture_models(&directory)?,
         food: read_food(&directory)?,
     };
 
@@ -585,30 +585,27 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
     }))
 }
 
-fn read_decoration_models(directory: &Path) -> Result<Vec<DecorationModel>> {
-    let mut decorations = Vec::new();
+fn read_fixture_models(directory: &Path) -> Result<Vec<FixtureModel>> {
+    let mut fixtures = Vec::new();
 
-    for path in DECORATION_PATHS {
+    for path in FIXTURE_PATHS {
         let json = read_json(directory, path)?;
         let objects = json["objects"].as_array().ok_or("no tank objects")?;
         for x in objects {
-            let decoration = read_single_decoration_model(x)?;
-            decorations.push(decoration);
+            let fixture = read_single_fixture_model(x)?;
+            fixtures.push(fixture);
         }
     }
 
-    Ok(decorations)
+    Ok(fixtures)
 }
 
-fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
+fn read_single_fixture_model(o: &Value) -> Result<FixtureModel> {
     let obj = o.as_object().unwrap();
     let id = obj["id"].as_str().ok_or("no id")?;
 
     let aquascaping = obj["aquascaping"].as_object().ok_or("no aquascaping")?;
     let stats = aquascaping["stats"].as_object().ok_or("no stats")?;
-
-    // TODO: parse decoration fields from JSON
-    println!("decoration {}", id);
 
     let plants = stat_value(stats, "isPlant")?;
     let rocks = stat_value(stats, "isRock")?;
@@ -618,7 +615,7 @@ fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
     let vertical_surfaces = stat_value(stats, "isVerticalSurface")?;
     let fluffy_foliage = stat_value(stats, "isFluffyFoliage")?;
 
-    Ok(DecorationModel {
+    Ok(FixtureModel {
         id: id.to_string(),
         light: None,
         plants,
@@ -746,7 +743,7 @@ mod test {
         GameData {
             species,
             tanks: vec![],
-            decorations: vec![],
+            fixtures: vec![],
             food: vec![],
         }
     }

@@ -19,10 +19,10 @@ The refactoring introduces `AquariumCheckResult` as a new result type that wraps
 ## Glossary
 
 - **FCIS (Functional Core, Imperative Shell)**: Architectural pattern separating pure logic (functional core) from side effects like I/O (imperative shell). The core contains testable functions that return data; the shell handles interactions with the outside world.
-- **Exhibit**: A single aquarium tank configuration containing fish, decorations, and environmental parameters. The game term for what users validate.
+- **Exhibit**: A single aquarium tank configuration containing fish, fixtures, and environmental parameters. The game term for what users validate.
 - **Aquarium**: A collection of exhibits. In save files, an aquarium can contain multiple tanks/exhibits.
 - **Violations**: Constraint failures detected by the rules engine (e.g., temperature conflicts, predation risks, insufficient shoaling group size).
-- **Minimum viable tank**: The smallest environment configuration (size, temperature range, decorations) that satisfies all fish requirements in an exhibit.
+- **Minimum viable tank**: The smallest environment configuration (size, temperature range, fixtures) that satisfies all fish requirements in an exhibit.
 - **S-expression**: Lisp-style serialization format used for aquarium I/O in this project.
 - **Debug flag**: CLI option controlling output format — when enabled, shows Rust's debug representation; when disabled, uses s-expression format.
 
