@@ -613,6 +613,10 @@ fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
     let plants = stat_value(stats, "isPlant")?;
     let rocks = stat_value(stats, "isRock")?;
     let caves = stat_value(stats, "isCave")?;
+    let bogwood = stat_value(stats, "isBogwood")?;
+    let flat_surfaces = stat_value(stats, "isFlatSurface")?;
+    let vertical_surfaces = stat_value(stats, "isVerticalSurface")?;
+    let fluffy_foliage = stat_value(stats, "isFluffyFoliage")?;
 
     Ok(DecorationModel {
         id: id.to_string(),
@@ -620,10 +624,10 @@ fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
         plants,
         rocks,
         caves,
-        bogwood: None,
-        flat_surfaces: None,
-        vertical_surfaces: None,
-        fluffy_foliage: None,
+        bogwood,
+        flat_surfaces,
+        vertical_surfaces,
+        fluffy_foliage,
     })
 }
 
