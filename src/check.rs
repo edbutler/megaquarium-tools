@@ -288,6 +288,7 @@ mod test {
         let data = GameData {
             species: vec![species1.clone(), species2.clone()],
             tanks: vec![tank_model.clone()],
+            decorations: vec![],
             food: vec![],
         };
 
@@ -340,6 +341,7 @@ mod test {
         let data = GameData {
             species: vec![warm_species.clone(), cold_species.clone()],
             tanks: vec![tank_model.clone()],
+            decorations: vec![],
             food: vec![],
         };
 
@@ -393,6 +395,7 @@ mod test {
         let data = GameData {
             species: vec![salty_species.clone(), freshwater_species.clone()],
             tanks: vec![tank_model.clone()],
+            decorations: vec![],
             food: vec![],
         };
 
@@ -455,6 +458,7 @@ mod test {
         let data = GameData {
             species: vec![], // No species needed for empty exhibit
             tanks: vec![tank_model.clone()],
+            decorations: vec![],
             food: vec![],
         };
 

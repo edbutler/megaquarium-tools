@@ -314,6 +314,17 @@ fn read_single_species_wrapper(o: &Value) -> Result<Option<Species>> {
     }
 }
 
+fn stat_number(stats: &Map<String, Value>, stat: &str, key: &str) -> Result<Option<u8>> {
+    match stats.get(stat) {
+        None => Ok(None),
+        Some(v) => Ok(Some(v[key].as_u64().ok_or(UBJ)?.try_into()?)),
+    }
+}
+
+fn stat_value(stats: &Map<String, Value>, stat: &str) -> Result<Option<u8>> {
+    stat_number(stats, stat, "value")
+}
+
 fn read_single_species(o: &Value) -> Result<Option<Species>> {
     let obj = o.as_object().unwrap();
 
@@ -336,13 +347,6 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
 
     fn has_true_value(stats: &Map<String, Value>, stat: &str) -> bool {
         stats.get(stat).and_then(|x| x.as_bool()).unwrap_or(false)
-    }
-
-    fn stat_number(stats: &Map<String, Value>, stat: &str, key: &str) -> Result<Option<u8>> {
-        match stats.get(stat) {
-            None => Ok(None),
-            Some(v) => Ok(Some(v[key].as_u64().ok_or(UBJ)?.try_into()?)),
-        }
     }
 
     fn one_of<T: Copy>(stats: &Map<String, Value>, potential: &[(&str, T)]) -> Result<Option<T>> {
@@ -413,7 +417,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
             Some(Salinity::Salty)
         };
 
-        let minimum_quality = stat_number(stats, "waterQuality", "value")?.unwrap_or(0);
+        let minimum_quality = stat_value(stats, "waterQuality")?.unwrap_or(0);
 
         let active_swimmer = has_stat(stats, "activeSwimmer");
 
@@ -451,19 +455,19 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
     };
 
     let needs = {
-        let plants = stat_number(stats, "likesPlants", "value")?.map(|x| Need::Loves(x));
-        let rocks = stat_number(stats, "likesRocks", "value")?.map(|x| Need::Loves(x));
-        let caves = stat_number(stats, "likesCave", "value")?;
-        let bogwood = stat_number(stats, "likesBogwood", "value")?;
-        let flat_surfaces = stat_number(stats, "likesFlatSurface", "value")?;
-        let vertical_surfaces = stat_number(stats, "likesVerticalSurface", "value")?;
-        let fluffy_foliage = stat_number(stats, "likesFluffyFoliage", "value")?;
-        let open_space = stat_number(stats, "openSpace", "value")?;
-        let explorer = stat_number(stats, "explorer", "value")?;
+        let plants = stat_value(stats, "likesPlants")?.map(|x| Need::Loves(x));
+        let rocks = stat_value(stats, "likesRocks")?.map(|x| Need::Loves(x));
+        let caves = stat_value(stats, "likesCave")?;
+        let bogwood = stat_value(stats, "likesBogwood")?;
+        let flat_surfaces = stat_value(stats, "likesFlatSurface")?;
+        let vertical_surfaces = stat_value(stats, "likesVerticalSurface")?;
+        let fluffy_foliage = stat_value(stats, "likesFluffyFoliage")?;
+        let open_space = stat_value(stats, "openSpace")?;
+        let explorer = stat_value(stats, "explorer")?;
 
         let light = if has_stat(stats, "dislikesLights") {
             Some(Need::Dislikes)
-        } else if let Some(v) = stat_number(stats, "light", "value")? {
+        } else if let Some(v) = stat_value(stats, "light")? {
             Some(Need::Loves(v))
         } else {
             None
@@ -576,7 +580,7 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         nibbling: one_of(stats, &[("nibbleable", Nibbling::Nibbleable), ("nibbler", Nibbling::Nibbler)])?,
         cohabitation,
         predation,
-        communal: stat_number(stats, "communal", "value")?,
+        communal: stat_value(stats, "communal")?,
         breeding,
     }))
 }
@@ -597,14 +601,20 @@ fn read_decoration_models(directory: &Path) -> Result<Vec<DecorationModel>> {
 }
 
 fn read_single_decoration_model(o: &Value) -> Result<DecorationModel> {
-    let id = o["id"].as_str().ok_or("no id")?;
+    let obj = o.as_object().unwrap();
+    let id = obj["id"].as_str().ok_or("no id")?;
+
+    let aquascaping = obj["aquascaping"].as_object().ok_or("no aquascaping")?;
 
     // TODO: parse decoration fields from JSON
+    println!("decoration {}", id);
+
+    let plants = stat_value(aquascaping, "likesPlants")?;
 
     Ok(DecorationModel {
         id: id.to_string(),
         light: None,
-        plants: None,
+        plants,
         rocks: None,
         caves: None,
         bogwood: None,
@@ -704,8 +714,8 @@ fn read_json(directory: &Path, file: &str) -> Result<Value> {
             // trailing commas (needs to be after comments)
             (Regex::new(",([\r\n \t]*\\})").unwrap(), "$1"),
             (Regex::new(",([\r\n \t]*\\])").unwrap(), "$1"),
-            // multiline strings in tanks.data
-            (Regex::new("(?s)\"map\":\".*?\"").unwrap(), "\"map\":\"\""),
+            // multiline strings in tanks.data and scenery.data
+            (Regex::new("(?s)\"map\":\\s*\".*?\"").unwrap(), "\"map\":\"\""),
         ];
 
     }
@@ -729,6 +739,7 @@ mod test {
         GameData {
             species,
             tanks: vec![],
+            decorations: vec![],
             food: vec![],
         }
     }

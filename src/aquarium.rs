@@ -250,6 +250,7 @@ mod test {
         let data = GameData {
             species: vec![species],
             tanks: vec![tank_model],
+            decorations: vec![],
             food: vec![],
         };
 
@@ -284,6 +285,7 @@ mod test {
         let data = GameData {
             species: vec![species],
             tanks: vec![tank_model],
+            decorations: vec![],
             food: vec![],
         };
 

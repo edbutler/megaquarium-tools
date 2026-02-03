@@ -8,12 +8,12 @@ pub struct Decoration {
 
 pub struct DecorationModel {
     pub id: String,
-    pub light: Option<u16>,
-    pub plants: Option<u16>,
-    pub rocks: Option<u16>,
-    pub caves: Option<u16>,
-    pub bogwood: Option<u16>,
-    pub flat_surfaces: Option<u16>,
-    pub vertical_surfaces: Option<u16>,
-    pub fluffy_foliage: Option<u16>,
+    pub light: Option<u8>,
+    pub plants: Option<u8>,
+    pub rocks: Option<u8>,
+    pub caves: Option<u8>,
+    pub bogwood: Option<u8>,
+    pub flat_surfaces: Option<u8>,
+    pub vertical_surfaces: Option<u8>,
+    pub fluffy_foliage: Option<u8>,
 }
