@@ -6,6 +6,7 @@ mod animal;
 mod aquarium;
 mod check;
 mod data;
+mod fixture;
 mod paths;
 mod report;
 mod rules;
@@ -50,6 +51,17 @@ fn main() {
                         println!("{:#?}", t);
                     } else {
                         println!("{}", PrettyPrinted { expr: t.to_sexp() });
+                    }
+                }
+            }
+
+            for f in data.fixtures {
+                if f.id.contains(&l.search_term) {
+                    did_write = true;
+                    if l.debug {
+                        println!("{:#?}", f);
+                    } else {
+                        println!("{}", PrettyPrinted { expr: f.to_sexp() });
                     }
                 }
             }

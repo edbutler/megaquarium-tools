@@ -43,7 +43,7 @@ The codebase follows a Functional Core / Imperative Shell pattern:
 - `main.rs` - CLI entry point using clap (Imperative Shell)
 - `data.rs` - Game data loading from Steam installation paths (Windows/macOS)
 - `animal.rs` - Species, Animal, Growth stages, behavioral traits (shoaling, predation, cohabitation)
-- `tank.rs` - Tank models, Environment (temperature, salinity, quality, decorations)
+- `tank.rs` - Tank models, Environment (temperature, salinity, quality, fixtures)
 - `rules.rs` - Constraint engine that checks violations (temperature conflicts, predation, shoaling requirements, territorial rules)
 - `check.rs` - Pure validation logic: `validate_aquarium()`, `check_for_viable_tank()`, minimum viable tank calculation (Functional Core)
 - `report.rs` - Output/printing functions: `print_exhibit_result()`, `print_aquarium_result()`, `print_violations()` (Imperative Shell)
@@ -61,7 +61,7 @@ The codebase follows a Functional Core / Imperative Shell pattern:
 - Growth stages affect predation (eggs/fry may be eaten by fish that won't eat adults)
 - Cohabitation rules: congeners-only, no-conspecifics, pairs-only, communal groups
 - Shoaling: some fish need minimum group sizes
-- Tank requirements accumulate (decorations sum, quality takes max)
+- Tank requirements accumulate (fixtures sum, quality takes max)
 
 ## Code Style
 
