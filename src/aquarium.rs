@@ -2,6 +2,7 @@
 
 use crate::animal::*;
 use crate::data::GameData;
+use crate::fixture::{Fixture, FixtureRef};
 use crate::rules::RuleOptions;
 use crate::tank::*;
 use crate::util::Result;
@@ -16,6 +17,7 @@ pub struct ExhibitRef<'a> {
     pub name: String,
     pub tank: TankRef<'a>,
     pub animals: Vec<AnimalRef<'a>>,
+    pub fixtures: Vec<FixtureRef<'a>>,
 }
 
 #[derive(Debug)]
@@ -28,6 +30,7 @@ pub struct ExhibitDesc {
     pub name: String,
     pub tank: Tank,
     pub animals: Vec<AnimalDesc>,
+    pub fixtures: Vec<Fixture>,
 }
 
 #[derive(Debug)]
@@ -94,6 +97,14 @@ impl AquariumRef<'_> {
                         size: e.tank.size,
                     },
                     animals,
+                    fixtures: e
+                        .fixtures
+                        .iter()
+                        .map(|f| Fixture {
+                            id: f.id,
+                            model: f.model.id.clone(),
+                        })
+                        .collect(),
                 }
             })
             .collect();
@@ -149,10 +160,17 @@ impl AquariumDesc {
                     }
                 }
 
+                let fixtures: Result<Vec<_>> = exhibit
+                    .fixtures
+                    .iter()
+                    .map(|f| data.fixture_ref(&f.model).map(|model| FixtureRef { id: f.id, model }))
+                    .collect();
+
                 Ok(ExhibitRef {
                     name: exhibit.name.clone(),
                     animals,
                     tank,
+                    fixtures: fixtures?,
                 })
             })
             .collect();
@@ -267,6 +285,7 @@ mod test {
                     species: "goldfish".to_string(),
                     growth: Growth::Growing { stage: 0, growth: 5 },
                 })],
+                fixtures: vec![],
             }],
         };
 
@@ -302,6 +321,7 @@ mod test {
                     species: "goldfish".to_string(),
                     growth: Growth::Growing { stage: 0, growth: 5 },
                 })],
+                fixtures: vec![],
             }],
         };
 

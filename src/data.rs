@@ -59,6 +59,14 @@ impl GameData {
     pub fn tank_ref(&self, id: &str) -> Result<&TankModel> {
         self.try_tank_ref(id).ok_or(error(format!("uknown tank {}", id)))
     }
+
+    pub fn try_fixture_ref(&self, id: &str) -> Option<&FixtureModel> {
+        self.fixtures.iter().find(|f| f.id.eq(id))
+    }
+
+    pub fn fixture_ref(&self, id: &str) -> Result<&FixtureModel> {
+        self.try_fixture_ref(id).ok_or(error(format!("unknown fixture {}", id)))
+    }
 }
 
 fn fuzzy_match_string<'a, T, F: Fn(&T) -> &str, P: Fn(&T) -> bool>(f: F, predicate: P, search_string: &str, list: &'a [T]) -> Vec<&'a T> {
@@ -89,6 +97,12 @@ pub fn read_game_data() -> Result<GameData> {
     Ok(result)
 }
 
+pub fn read_hosting_tank(o: &Value, id: u64) -> Result<u64> {
+    o["hosting"]["host"]
+        .as_u64()
+        .ok_or(Box::new(bad_json(format!("no host id for {}", id))))
+}
+
 pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<'a>> {
     let directory = find_save_dir();
     let json = read_json(&directory, &(save_name.to_string() + ".sav"))?;
@@ -97,6 +111,7 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<
 
     let mut animals: HashMap<u64, Vec<AnimalRef<'a>>> = HashMap::new();
     let mut tanks: Vec<(String, TankRef)> = Vec::new();
+    let mut fixtures: HashMap<u64, Vec<FixtureRef<'a>>> = HashMap::new();
 
     // sort the tank models by length of id so we always choose the longest prefix
     let mut models: Vec<&'a TankModel> = data.tanks.iter().map(|t| t).collect();
@@ -117,19 +132,32 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<
         if let Some(a) = obj.get("animal") {
             let id = o["uid"].as_u64().ok_or("no id")?;
             let species_id = o["specId"].as_str().ok_or("no specId")?;
+            println!("Reading animal {} of species {}", id, species_id);
             let species = data.species_ref(species_id)?;
+            let tank = read_hosting_tank(o, id)?;
 
             let animal = AnimalRef {
                 id: id,
                 species: species,
                 growth: read_growth(a, species)?,
             };
-            let tank = o["hosting"]["host"]
-                .as_u64()
-                .ok_or(bad_json(format!("no host string for {}", id)))?;
 
             let vec = animals.entry(tank).or_insert(Vec::new());
             vec.push(animal);
+        }
+
+        if obj.contains_key("aquascaping") || obj.contains_key("cornerMounted") {
+            let id = o["uid"].as_u64().ok_or("no id")?;
+            let spec_id = o["specId"].as_str().ok_or("no specId")?;
+
+            // we don't model everything the game considers fixtures, so skip ones we don't know about
+            if let Some(model) = data.try_fixture_ref(spec_id) {
+                let tank = read_hosting_tank(o, id)?;
+                let fixture = FixtureRef { id, model };
+
+                let vec = fixtures.entry(tank).or_insert(Vec::new());
+                vec.push(fixture);
+            }
         }
 
         if obj.contains_key("tank") {
@@ -174,8 +202,17 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<
                 Some(list) => list,
                 None => Vec::new(),
             };
+            let fixtures = match fixtures.remove(&tank.id) {
+                Some(list) => list,
+                None => Vec::new(),
+            };
 
-            ExhibitRef { name, tank, animals }
+            ExhibitRef {
+                name,
+                tank,
+                animals,
+                fixtures,
+            }
         })
         .collect();
 
@@ -626,7 +663,8 @@ fn read_single_fixture_model(o: &Value) -> Result<Option<FixtureModel>> {
         return Ok(None);
     }
 
-    let stats = obj.get("aquascaping")
+    let stats = obj
+        .get("aquascaping")
         .and_then(|a| a.as_object())
         .and_then(|a| a.get("stats"))
         .and_then(|s| s.as_object());

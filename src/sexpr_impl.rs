@@ -202,6 +202,21 @@ impl ToSexp for FixtureModel {
     }
 }
 
+impl ToSexp for Fixture {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        sexp!((fixture ,(self.id) ,(self.model.clone())))
+    }
+}
+
+impl FromSexp for Fixture {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<Fixture> {
+        let obj = match_list_that_starts_with(value, "fixture")?;
+        let (id, model) = match_two_args(obj, match_u64, match_string)?;
+        Ok(Fixture { id, model })
+    }
+}
+
 impl ToSexp for Environment {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
@@ -249,7 +264,8 @@ impl ToSexp for ExhibitDesc {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
         let animals = self.animals.iter().map(|e| e.to_sexp());
-        sexp!((exhibit #:name ,(self.name.as_str()) #:tank ,(self.tank.to_sexp()) #:animals ,(Value::list(animals))))
+        let fixtures = self.fixtures.iter().map(|f| f.to_sexp());
+        sexp!((exhibit #:name ,(self.name.as_str()) #:tank ,(self.tank.to_sexp()) #:animals ,(Value::list(animals)) #:fixtures ,(Value::list(fixtures))))
     }
 }
 
@@ -258,9 +274,18 @@ impl FromSexp for ExhibitDesc {
         let mut obj = match_list_that_starts_with(value, "exhibit")?;
         let name = consume_keyword_arg(&mut obj, "name")?.as_str().ok_or(bad_sexp("expected name to be string"))?.to_string();
         let tank = Tank::from_sexp(consume_keyword_arg(&mut obj, "tank")?)?;
-        let animal_list = consume_keyword_arg(&mut obj, "animals")?.list_iter().ok_or(bad_sexp("expected error to be list"))?;
+        let animal_list = consume_keyword_arg(&mut obj, "animals")?.list_iter().ok_or(bad_sexp("expected animals to be list"))?;
         let animals: util::Result<Vec<AnimalDesc>> = animal_list.map(|x| AnimalDesc::from_sexp(x)).collect();
-        Ok(ExhibitDesc { name, tank, animals: animals? })
+
+        let fixtures = match try_consume_keyword_arg(&mut obj, "fixtures")? {
+            Some(v) => {
+                let list = v.list_iter().ok_or(bad_sexp("expected fixtures to be list"))?;
+                list.map(|x| Fixture::from_sexp(x)).collect::<util::Result<Vec<_>>>()?
+            }
+            None => vec![],
+        };
+
+        Ok(ExhibitDesc { name, tank, animals: animals?, fixtures })
     }
 }
 

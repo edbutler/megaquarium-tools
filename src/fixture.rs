@@ -1,9 +1,15 @@
-
 pub type FixtureId = u64;
 
+#[derive(Debug)]
 pub struct Fixture {
     pub id: FixtureId,
     pub model: String,
+}
+
+#[derive(Debug)]
+pub struct FixtureRef<'a> {
+    pub id: FixtureId,
+    pub model: &'a FixtureModel,
 }
 
 #[derive(Debug)]

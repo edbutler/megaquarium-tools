@@ -315,6 +315,7 @@ mod test {
             name: "Test Tank".to_string(),
             tank: tank_ref,
             animals,
+            fixtures: vec![],
         };
 
         let aquarium = AquariumRef { exhibits: vec![exhibit] };
@@ -368,6 +369,7 @@ mod test {
             name: "Mixed Temperature Tank".to_string(),
             tank: tank_ref,
             animals,
+            fixtures: vec![],
         };
 
         let aquarium = AquariumRef { exhibits: vec![exhibit] };
@@ -422,6 +424,7 @@ mod test {
             name: "Mixed Salinity Tank".to_string(),
             tank: tank_ref,
             animals,
+            fixtures: vec![],
         };
 
         let aquarium = AquariumRef { exhibits: vec![exhibit] };
@@ -472,7 +475,8 @@ mod test {
         let exhibit = ExhibitRef {
             name: "Empty Tank".to_string(),
             tank: tank_ref,
-            animals: vec![], // The key: empty animals vector
+            animals: vec![],
+            fixtures: vec![],
         };
 
         let aquarium = AquariumRef { exhibits: vec![exhibit] };
