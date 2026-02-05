@@ -76,6 +76,22 @@ pub struct Environment {
     pub different_decorations: Option<u8>,
 }
 
+/// The properties of a tank that we can load from a save file.
+#[derive(Debug, Copy, Clone)]
+pub struct LoadedEnvironment {
+    pub size: u16,
+    pub light: u8,
+    pub plants: u16,
+    pub rocks: u16,
+    pub caves: u16,
+    pub bogwood: u16,
+    pub flat_surfaces: u16,
+    pub vertical_surfaces: u16,
+    pub fluffy_foliage: u16,
+    pub interior: Option<Interior>,
+    pub different_decorations: u8,
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Interior {
     Rounded,

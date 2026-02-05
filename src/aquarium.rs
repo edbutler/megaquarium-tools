@@ -57,7 +57,25 @@ pub struct FixtureCount {
     pub count: u16,
 }
 
-pub fn animals_to_counts(animals: &[AnimalRef]) -> Vec<SpeciesCount> {
+impl ExhibitRef<'_> {
+    pub fn loaded_environment(&self) -> LoadedEnvironment {
+        LoadedEnvironment {
+            size: self.tank.volume(),
+            light: 0,
+            plants: 0,
+            rocks: 0,
+            caves: 0,
+            bogwood: 0,
+            flat_surfaces: 0,
+            vertical_surfaces: 0,
+            fluffy_foliage: 0,
+            interior: self.tank.model.interior,
+            different_decorations: 0,
+        }
+    }
+}
+
+fn animals_to_counts(animals: &[AnimalRef]) -> Vec<SpeciesCount> {
     let mut animals: Vec<_> = animals.iter().collect();
     animals.sort_by_key(|a| &a.species.id);
 
@@ -89,7 +107,7 @@ pub fn animals_to_counts(animals: &[AnimalRef]) -> Vec<SpeciesCount> {
     result
 }
 
-pub fn fixtures_to_counts(fixtures: &[FixtureRef]) -> Vec<FixtureCount> {
+fn fixtures_to_counts(fixtures: &[FixtureRef]) -> Vec<FixtureCount> {
     let mut fixtures: Vec<_> = fixtures.iter().collect();
     fixtures.sort_by_key(|f| &f.model.id);
 
