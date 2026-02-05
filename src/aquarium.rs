@@ -30,7 +30,7 @@ pub struct ExhibitDesc {
     pub name: String,
     pub tank: Tank,
     pub animals: Vec<AnimalDesc>,
-    pub fixtures: Vec<Fixture>,
+    pub fixtures: Vec<FixtureDesc>,
 }
 
 #[derive(Debug)]
@@ -42,6 +42,18 @@ pub enum AnimalDesc {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpeciesCount {
     pub species: String,
+    pub count: u16,
+}
+
+#[derive(Debug)]
+pub enum FixtureDesc {
+    Individual(Fixture),
+    Summary(FixtureCount),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FixtureCount {
+    pub model: String,
     pub count: u16,
 }
 
@@ -77,6 +89,38 @@ pub fn animals_to_counts(animals: &[AnimalRef]) -> Vec<SpeciesCount> {
     result
 }
 
+pub fn fixtures_to_counts(fixtures: &[FixtureRef]) -> Vec<FixtureCount> {
+    let mut fixtures: Vec<_> = fixtures.iter().collect();
+    fixtures.sort_by_key(|f| &f.model.id);
+
+    let mut result = Vec::new();
+
+    let acc = fixtures.into_iter().fold(None, |acc, f| match acc {
+        None => Some(FixtureCount {
+            model: f.model.id.clone(),
+            count: 1,
+        }),
+        Some(mut c) => {
+            if c.model == f.model.id {
+                c.count += 1;
+                Some(c)
+            } else {
+                result.push(c);
+                Some(FixtureCount {
+                    model: f.model.id.clone(),
+                    count: 1,
+                })
+            }
+        }
+    });
+
+    if let Some(s) = acc {
+        result.push(s);
+    }
+
+    result
+}
+
 impl AquariumRef<'_> {
     pub fn description(&self, summarize: bool) -> AquariumDesc {
         let exhibits = self
@@ -97,14 +141,19 @@ impl AquariumRef<'_> {
                         size: e.tank.size,
                     },
                     animals,
-                    fixtures: e
-                        .fixtures
-                        .iter()
-                        .map(|f| Fixture {
-                            id: f.id,
-                            model: f.model.id.clone(),
-                        })
-                        .collect(),
+                    fixtures: if summarize {
+                        fixtures_to_counts(&e.fixtures).into_iter().map(FixtureDesc::Summary).collect()
+                    } else {
+                        e.fixtures
+                            .iter()
+                            .map(|f| {
+                                FixtureDesc::Individual(Fixture {
+                                    id: f.id,
+                                    model: f.model.id.clone(),
+                                })
+                            })
+                            .collect()
+                    },
                 }
             })
             .collect();
@@ -116,6 +165,7 @@ impl AquariumRef<'_> {
 impl AquariumDesc {
     pub fn to_ref<'a>(&self, data: &'a GameData, options: &RuleOptions) -> Result<AquariumRef<'a>> {
         let mut counter = 0;
+        let mut fixture_counter: u64 = 0;
 
         let exhibits: Result<Vec<_>> = self
             .exhibits
@@ -160,17 +210,36 @@ impl AquariumDesc {
                     }
                 }
 
-                let fixtures: Result<Vec<_>> = exhibit
-                    .fixtures
-                    .iter()
-                    .map(|f| data.fixture_ref(&f.model).map(|model| FixtureRef { id: f.id, model }))
-                    .collect();
+                let mut fixtures = Vec::new();
+
+                for desc in &exhibit.fixtures {
+                    match desc {
+                        FixtureDesc::Summary(FixtureCount { model, count }) => {
+                            let model = data.fixture_ref(model)?;
+                            for _ in 0..*count {
+                                fixture_counter += 1;
+                                fixtures.push(FixtureRef {
+                                    id: fixture_counter,
+                                    model,
+                                });
+                            }
+                        }
+                        FixtureDesc::Individual(Fixture { model, .. }) => {
+                            let model = data.fixture_ref(model)?;
+                            fixture_counter += 1;
+                            fixtures.push(FixtureRef {
+                                id: fixture_counter,
+                                model,
+                            });
+                        }
+                    }
+                }
 
                 Ok(ExhibitRef {
                     name: exhibit.name.clone(),
                     animals,
                     tank,
-                    fixtures: fixtures?,
+                    fixtures,
                 })
             })
             .collect();

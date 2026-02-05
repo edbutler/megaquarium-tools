@@ -217,6 +217,35 @@ impl FromSexp for Fixture {
     }
 }
 
+impl ToSexp for FixtureDesc {
+    #[allow(unused_parens)]
+    fn to_sexp(&self) -> lexpr::Value {
+        match self {
+            FixtureDesc::Summary(FixtureCount { model, count }) =>
+                sexp!((fixtures ,(model.clone()) ,(*count))),
+            FixtureDesc::Individual(fixture) =>
+                fixture.to_sexp(),
+        }
+    }
+}
+
+impl FromSexp for FixtureDesc {
+    fn from_sexp(value: &lexpr::Value) -> util::Result<FixtureDesc> {
+        let (symbol, obj) = match_list_with_any_opening_symbol(value)?;
+        match symbol {
+            "fixtures" => {
+                let (model, count) = match_two_args(obj, match_string, match_u16)?;
+                Ok(FixtureDesc::Summary(FixtureCount { model, count }))
+            }
+            "fixture" => {
+                let (id, model) = match_two_args(obj, match_u64, match_string)?;
+                Ok(FixtureDesc::Individual(Fixture { id, model }))
+            },
+            _ => Err(Box::new(bad_sexp("expected (fixture ...) or (fixtures ...)")))
+        }
+    }
+}
+
 impl ToSexp for Environment {
     #[allow(unused_parens)]
     fn to_sexp(&self) -> lexpr::Value {
@@ -280,7 +309,7 @@ impl FromSexp for ExhibitDesc {
         let fixtures = match try_consume_keyword_arg(&mut obj, "fixtures")? {
             Some(v) => {
                 let list = v.list_iter().ok_or(bad_sexp("expected fixtures to be list"))?;
-                list.map(|x| Fixture::from_sexp(x)).collect::<util::Result<Vec<_>>>()?
+                list.map(|x| FixtureDesc::from_sexp(x)).collect::<util::Result<Vec<_>>>()?
             }
             None => vec![],
         };
@@ -485,9 +514,17 @@ mod tests {
 
     #[test]
     fn test_fixture_roundtrip() {
-        let fixture = Fixture { id: 42, model: "coral_rock".to_string() };
+        let fixture = FixtureDesc::Individual(Fixture { id: 42, model: "coral_rock".to_string() });
         let original = fixture.to_sexp().to_string();
         let roundtripped = roundtrip_string(&fixture);
+        assert_eq!(original, roundtripped);
+    }
+
+    #[test]
+    fn test_fixture_desc_summary_roundtrip() {
+        let desc = FixtureDesc::Summary(FixtureCount { model: "live_rock".to_string(), count: 3 });
+        let original = desc.to_sexp().to_string();
+        let roundtripped = roundtrip_string(&desc);
         assert_eq!(original, roundtripped);
     }
 
@@ -562,8 +599,8 @@ mod tests {
                 AnimalDesc::Individual(Animal { id: 5, species: "angelfish".to_string(), growth: Growth::Final }),
             ],
             fixtures: vec![
-                Fixture { id: 10, model: "live_rock".to_string() },
-                Fixture { id: 11, model: "anemone".to_string() },
+                FixtureDesc::Individual(Fixture { id: 10, model: "live_rock".to_string() }),
+                FixtureDesc::Individual(Fixture { id: 11, model: "anemone".to_string() }),
             ],
         };
         let original = exhibit.to_sexp().to_string();
@@ -586,7 +623,7 @@ mod tests {
                 name: "Main Tank".to_string(),
                 tank: Tank { id: 1, model: "display_tank".to_string(), size: (10, 5) },
                 animals: vec![AnimalDesc::Summary(SpeciesCount { species: "goldfish".to_string(), count: 3 })],
-                fixtures: vec![Fixture { id: 1, model: "plant".to_string() }],
+                fixtures: vec![FixtureDesc::Individual(Fixture { id: 1, model: "plant".to_string() })],
             }],
         };
         let original = aquarium.to_sexp().to_string();
@@ -608,7 +645,7 @@ mod tests {
                     name: "Coldwater".to_string(),
                     tank: Tank { id: 2, model: "tank_b".to_string(), size: (6, 4) },
                     animals: vec![AnimalDesc::Individual(Animal { id: 10, species: "trout".to_string(), growth: Growth::Final })],
-                    fixtures: vec![Fixture { id: 20, model: "rock".to_string() }],
+                    fixtures: vec![FixtureDesc::Individual(Fixture { id: 20, model: "rock".to_string() })],
                 },
             ],
         };
