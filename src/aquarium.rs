@@ -59,18 +59,32 @@ pub struct FixtureCount {
 
 impl ExhibitRef<'_> {
     pub fn loaded_environment(&self) -> LoadedEnvironment {
+        let f = &self.fixtures;
+        let light = f.iter().map(|f| f.model.light.unwrap_or(0)).sum();
+        let plants = f.iter().map(|f| f.model.plants.unwrap_or(0) as u16).sum();
+        let rocks = f.iter().map(|f| f.model.rocks.unwrap_or(0) as u16).sum();
+        let caves = f.iter().map(|f| f.model.caves.unwrap_or(0) as u16).sum();
+        let bogwood = f.iter().map(|f| f.model.bogwood.unwrap_or(0) as u16).sum();
+        let flat_surfaces = f.iter().map(|f| f.model.flat_surfaces.unwrap_or(0) as u16).sum();
+        let vertical_surfaces = f.iter().map(|f| f.model.vertical_surfaces.unwrap_or(0) as u16).sum();
+        let fluffy_foliage = f.iter().map(|f| f.model.fluffy_foliage.unwrap_or(0) as u16).sum();
+
+        let mut distinct_models: Vec<&str> = f.iter().map(|f| f.model.id.as_str()).collect();
+        distinct_models.sort();
+        distinct_models.dedup();
+
         LoadedEnvironment {
             size: self.tank.volume(),
-            light: 0,
-            plants: 0,
-            rocks: 0,
-            caves: 0,
-            bogwood: 0,
-            flat_surfaces: 0,
-            vertical_surfaces: 0,
-            fluffy_foliage: 0,
+            light,
+            plants,
+            rocks,
+            caves,
+            bogwood,
+            flat_surfaces,
+            vertical_surfaces,
+            fluffy_foliage,
             interior: self.tank.model.interior,
-            different_decorations: 0,
+            different_decorations: distinct_models.len() as u8,
         }
     }
 }
