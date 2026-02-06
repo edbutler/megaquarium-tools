@@ -77,7 +77,7 @@ pub struct Environment {
 }
 
 /// The properties of a tank that we can load from a save file.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct LoadedEnvironment {
     pub size: u16,
     pub light: u8,

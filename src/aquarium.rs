@@ -285,8 +285,10 @@ mod test {
     use super::*;
     use crate::animal::test::*;
     use crate::data::GameData;
+    use crate::fixture::FixtureModel;
     use crate::rules::RuleOptions;
     use crate::tank::test::test_tank_model;
+    use crate::tank::{Interior, LoadedEnvironment, TankModel, TankRef};
 
     #[test]
     fn test_animals_to_spec() {
@@ -432,5 +434,73 @@ mod test {
         let result = aquarium_desc.to_ref(&data, &options).unwrap();
 
         assert_eq!(result.exhibits[0].animals[0].growth, Growth::Final);
+    }
+
+    #[test]
+    fn test_loaded_environment() {
+        let tank_model = TankModel {
+            id: "round_tank".to_string(),
+            min_size: (1, 1),
+            max_size: (10, 10),
+            double_density: 4,
+            interior: Some(Interior::Rounded),
+        };
+
+        let fixture_model_a = FixtureModel {
+            id: "coral_rock".to_string(),
+            light: Some(3),
+            plants: Some(2),
+            rocks: Some(4),
+            caves: Some(1),
+            bogwood: Some(2),
+            flat_surfaces: Some(3),
+            vertical_surfaces: Some(1),
+            fluffy_foliage: Some(2),
+        };
+
+        let fixture_model_b = FixtureModel {
+            id: "tall_plant".to_string(),
+            light: Some(1),
+            plants: Some(5),
+            rocks: Some(1),
+            caves: Some(2),
+            bogwood: Some(1),
+            flat_surfaces: Some(1),
+            vertical_surfaces: Some(3),
+            fluffy_foliage: Some(4),
+        };
+
+        let exhibit = ExhibitRef {
+            name: "Test Tank".to_string(),
+            tank: TankRef {
+                id: 1,
+                model: &tank_model,
+                size: (3, 5),
+            },
+            animals: vec![],
+            fixtures: vec![
+                FixtureRef { id: 1, model: &fixture_model_a },
+                FixtureRef { id: 2, model: &fixture_model_b },
+            ],
+        };
+
+        let result = exhibit.loaded_environment();
+
+        assert_eq!(
+            result,
+            LoadedEnvironment {
+                size: 30, // 3 * 5 * 4 / 2
+                light: 4, // 3 + 1
+                plants: 7, // 2 + 5
+                rocks: 5, // 4 + 1
+                caves: 3, // 1 + 2
+                bogwood: 3, // 2 + 1
+                flat_surfaces: 4, // 3 + 1
+                vertical_surfaces: 4, // 1 + 3
+                fluffy_foliage: 6, // 2 + 4
+                interior: Some(Interior::Rounded),
+                different_decorations: 2,
+            }
+        );
     }
 }
