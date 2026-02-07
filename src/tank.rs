@@ -57,7 +57,7 @@ impl TankModel {
 
 /// Properties of a tank. a None value for a property means "unconstrained," in that any animal with a
 /// need for that property will not be satisfied by this tank.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub struct Environment {
     pub size: u16,
     pub temperature: Temperature,
@@ -133,6 +133,12 @@ impl Temperature {
 
 as_str_display!(Temperature);
 
+impl Default for Temperature {
+    fn default() -> Self {
+        Temperature::Warm
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Salinity {
     Salty,
@@ -157,28 +163,18 @@ impl Salinity {
 
 as_str_display!(Salinity);
 
+impl Default for Salinity {
+    fn default() -> Self {
+        Salinity::Salty
+    }
+}
+
 #[cfg(test)]
 pub mod test {
     use super::*;
 
     pub fn test_environment() -> Environment {
-        Environment {
-            size: 0,
-            temperature: Temperature::Warm,
-            salinity: Salinity::Salty,
-            quality: 0,
-            light: None,
-            plants: None,
-            rocks: None,
-            caves: None,
-            flat_surfaces: None,
-            vertical_surfaces: None,
-            fluffy_foliage: None,
-            bogwood: None,
-            interior: None,
-            open_space: None,
-            different_decorations: None,
-        }
+        Environment::default()
     }
 
     pub fn test_tank_model<S: Into<String>>(id: S) -> TankModel {

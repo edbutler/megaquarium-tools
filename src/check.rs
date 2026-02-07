@@ -59,10 +59,6 @@ pub fn validate_aquarium(data: &data::GameData, args: &ValidateArgs) -> Aquarium
     let mut exhibits = Vec::new();
 
     for exhibit in &args.aquarium.exhibits {
-        if exhibit.animals.is_empty() {
-            continue;
-        }
-
         let minimum_viable_environment = minimum_viable_tank(&exhibit.animals);
         let food = minimum_required_food(data, &exhibit.animals);
 
@@ -155,8 +151,8 @@ pub fn environment_for_exhibit(exhibit: &ExhibitRef) -> Environment {
 // Guess at the minimum viable tank for the given species.
 // Still requires checking for constraint violations.
 fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
-    if animals.len() == 0 {
-        panic!("need to specify at least some animals");
+    if animals.is_empty() {
+        return Environment::default();
     }
 
     let mut size = animals.iter().map(|a| a.species.maximum_size()).sum();
@@ -455,17 +451,15 @@ mod test {
 
     #[test]
     fn test_validate_aquarium_with_empty_exhibit() {
-        // Setup: Create minimal test data - we need a tank model but no species
         let tank_model = test_tank_model("empty_tank");
 
         let data = GameData {
-            species: vec![], // No species needed for empty exhibit
+            species: vec![],
             tanks: vec![tank_model.clone()],
             fixtures: vec![],
             food: vec![],
         };
 
-        // Create an exhibit with no animals
         let tank_ref = TankRef {
             id: 1,
             model: &data.tanks[0],
@@ -480,18 +474,80 @@ mod test {
         };
 
         let aquarium = AquariumRef { exhibits: vec![exhibit] };
-
         let args = ValidateArgs { aquarium: &aquarium };
 
-        // Execute
         let result = validate_aquarium(&data, &args);
 
-        // Verify: Empty exhibits should be skipped, resulting in no violations and no exhibits in result
         assert!(result.is_okay(), "Empty exhibit should not cause violations");
-        assert_eq!(
-            result.exhibits.len(),
-            0,
-            "Empty exhibits should be skipped and not appear in results"
-        );
+        assert_eq!(result.exhibits.len(), 1, "Empty exhibits should appear in results");
+        assert_eq!(result.exhibits[0].name, "Empty Tank");
+        assert!(result.exhibits[0].violations.is_empty());
+        assert!(result.exhibits[0].food.is_empty());
+        assert_eq!(result.exhibits[0].minimum_viable_environment, Environment::default());
+    }
+
+    #[test]
+    fn test_minimum_viable_tank_empty() {
+        let result = minimum_viable_tank(&[]);
+        assert_eq!(result, Environment::default());
+    }
+
+    #[test]
+    fn test_check_for_viable_tank_empty() {
+        let data = GameData {
+            species: vec![],
+            tanks: vec![],
+            fixtures: vec![],
+            food: vec![],
+        };
+
+        let result = check_for_viable_tank(&data, &[]);
+
+        assert!(result.is_okay());
+        assert!(result.violations.is_empty());
+        assert!(result.food.is_empty());
+        assert_eq!(result.minimum_viable_environment, Environment::default());
+    }
+
+    #[test]
+    fn test_validate_aquarium_mixed_empty_and_populated() {
+        let species = test_species("clownfish");
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![species.clone()],
+            tanks: vec![tank_model.clone()],
+            fixtures: vec![],
+            food: vec![],
+        };
+
+        let tank_ref1 = TankRef { id: 1, model: &data.tanks[0], size: (5, 5) };
+        let tank_ref2 = TankRef { id: 2, model: &data.tanks[0], size: (5, 5) };
+
+        let empty_exhibit = ExhibitRef {
+            name: "Empty Tank".to_string(),
+            tank: tank_ref1,
+            animals: vec![],
+            fixtures: vec![],
+        };
+
+        let populated_exhibit = ExhibitRef {
+            name: "Fish Tank".to_string(),
+            tank: tank_ref2,
+            animals: vec![AnimalRef { id: 1, species: &data.species[0], growth: Growth::Final }],
+            fixtures: vec![],
+        };
+
+        let aquarium = AquariumRef { exhibits: vec![empty_exhibit, populated_exhibit] };
+        let args = ValidateArgs { aquarium: &aquarium };
+
+        let result = validate_aquarium(&data, &args);
+
+        assert_eq!(result.exhibits.len(), 2);
+        assert_eq!(result.exhibits[0].name, "Empty Tank");
+        assert!(result.exhibits[0].violations.is_empty());
+        assert_eq!(result.exhibits[0].minimum_viable_environment, Environment::default());
+        assert_eq!(result.exhibits[1].name, "Fish Tank");
+        assert!(result.exhibits[1].violations.is_empty());
     }
 }
