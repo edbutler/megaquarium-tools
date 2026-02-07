@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 
-use crate::check::{AquariumCheckResult, CheckQuery, ExhibitCheckResult};
+use crate::check::{AquariumCheckResult, CheckQuery, ExhibitCheckResult, ExhibitValidation};
 use crate::rules::Violation;
 use crate::sexpr_format::PrettyPrinted;
 use crate::sexpr_format::ToSexp;
@@ -84,6 +84,47 @@ pub fn print_environment_differences(old: &Environment, new: &Environment) {
     compare_opt("light", old.light, new.light);
 }
 
+fn print_exhibit_environment(exhibit: &ExhibitValidation) {
+    let loaded = &exhibit.loaded_environment;
+    let needed = &exhibit.minimum_viable_environment;
+
+    // size is {needed} / {actual} because it's an upper bound
+    println!("- size: {}/{}", needed.size, loaded.size);
+    println!("- quality: {}%", needed.quality);
+
+    // the rest are {actual} / {needed} because they're lower bounds
+    if let Some(v) = needed.light {
+        println!("- light: {}/{}", loaded.light, v);
+    }
+    if let Some(v) = needed.plants {
+        println!("- plants: {}/{}", loaded.plants, v);
+    }
+    if let Some(v) = needed.rocks {
+        println!("- rocks: {}/{}", loaded.rocks, v);
+    }
+    if let Some(v) = needed.caves {
+        println!("- caves: {}/{}", loaded.caves, v);
+    }
+    if let Some(v) = needed.bogwood {
+        println!("- bogwood: {}/{}", loaded.bogwood, v);
+    }
+    if let Some(v) = needed.flat_surfaces {
+        println!("- flat_surfaces: {}/{}", loaded.flat_surfaces, v);
+    }
+    if let Some(v) = needed.vertical_surfaces {
+        println!("- vertical_surfaces: {}/{}", loaded.vertical_surfaces, v);
+    }
+    if let Some(v) = needed.fluffy_foliage {
+        println!("- fluffy_foliage: {}/{}", loaded.fluffy_foliage, v);
+    }
+    if let Some(v) = needed.different_decorations {
+        println!("- different_decorations: {}/{}", loaded.different_decorations, v);
+    }
+    if let Some(v) = needed.interior {
+        println!("- interior: {}/{}", loaded.interior.map_or("none".to_string(), |i| i.to_string()), v);
+    }
+}
+
 pub fn print_aquarium_result(result: &AquariumCheckResult, debug: bool) {
     println!("Checking {} tanks...", result.exhibits.len());
 
@@ -91,12 +132,10 @@ pub fn print_aquarium_result(result: &AquariumCheckResult, debug: bool) {
         println!("{}:", exhibit.name);
 
         if debug {
-            println!("{:#?}", exhibit.minimum_viable_environment);
+            println!("loaded: {:#?}", exhibit.loaded_environment);
+            println!("needed: {:#?}", exhibit.minimum_viable_environment);
         } else {
-            println!(
-                "- {}/{}, {}%",
-                exhibit.minimum_viable_environment.size, exhibit.tank_volume, exhibit.minimum_viable_environment.quality
-            );
+            print_exhibit_environment(exhibit);
         }
 
         for item in &exhibit.food {

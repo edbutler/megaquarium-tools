@@ -34,7 +34,7 @@ impl ExhibitCheckResult {
 #[derive(Debug)]
 pub struct ExhibitValidation {
     pub name: String,
-    pub tank_volume: u16,
+    pub loaded_environment: LoadedEnvironment,
     pub minimum_viable_environment: Environment,
     pub food: Vec<FoodAmount>,
     pub violations: Vec<Violation>,
@@ -75,7 +75,7 @@ pub fn validate_aquarium(data: &data::GameData, args: &ValidateArgs) -> Aquarium
 
         exhibits.push(ExhibitValidation {
             name: exhibit.name.clone(),
-            tank_volume: exhibit.tank.volume(),
+            loaded_environment: exhibit.loaded_environment(),
             minimum_viable_environment,
             food,
             violations,

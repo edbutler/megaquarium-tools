@@ -132,7 +132,6 @@ pub fn read_save<'a>(data: &'a GameData, save_name: &str) -> Result<AquariumRef<
         if let Some(a) = obj.get("animal") {
             let id = o["uid"].as_u64().ok_or("no id")?;
             let species_id = o["specId"].as_str().ok_or("no specId")?;
-            println!("Reading animal {} of species {}", id, species_id);
             let species = data.species_ref(species_id)?;
             let tank = read_hosting_tank(o, id)?;
 
