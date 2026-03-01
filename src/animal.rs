@@ -219,6 +219,9 @@ pub enum PreyType {
     Clam,
     Gorgonian,
     Anemone,
+    TubeWorm,
+    SeaSquirt,
+    Gastropod,
 }
 
 impl PreyType {
@@ -233,6 +236,9 @@ impl PreyType {
             PreyType::Clam => "clam",
             PreyType::Gorgonian => "gorgonian",
             PreyType::Anemone => "anemone",
+            PreyType::TubeWorm => "tubeWorm",
+            PreyType::SeaSquirt => "seaSquirt",
+            PreyType::Gastropod => "gastropod",
         }
     }
 
@@ -246,6 +252,9 @@ impl PreyType {
             "clam" => Some(PreyType::Clam),
             "gorgonian" => Some(PreyType::Gorgonian),
             "anemone" => Some(PreyType::Anemone),
+            "tubeWorm" => Some(PreyType::TubeWorm),
+            "seaSquirt" => Some(PreyType::SeaSquirt),
+            "gastropod" => Some(PreyType::Gastropod),
             _ => None,
         }
     }

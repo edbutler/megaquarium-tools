@@ -570,6 +570,12 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
             Ok(PreyType::Gorgonian)
         } else if has_stat(stats, "isAnemone") {
             Ok(PreyType::Anemone)
+        } else if has_stat(stats, "isTubeWorm") {
+            Ok(PreyType::TubeWorm)
+        } else if has_stat(stats, "isSeaSquirt") {
+            Ok(PreyType::SeaSquirt)
+        } else if has_stat(stats, "isGastropod") {
+            Ok(PreyType::Gastropod)
         } else {
             Err(bad_json("unknown prey type"))
         }
