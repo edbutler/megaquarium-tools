@@ -206,13 +206,14 @@ fn minimum_viable_tank(animals: &[AnimalRef<'_>]) -> Environment {
 pub struct FoodAmount {
     pub food: String,
     pub count: u16,
+    pub skill: u8,
 }
 
 fn minimum_required_food(data: &GameData, species: &[AnimalRef<'_>]) -> Vec<FoodAmount> {
-    let diets: Vec<(&String, u16)> = species
+    let diets: Vec<(&String, u16, u8)> = species
         .iter()
         .filter_map(|s| match &s.species.diet {
-            Diet::Food { food, period: _ } => Some((food, s.species.amount_food_eaten())),
+            Diet::Food { food, period: _, skill } => Some((food, s.species.amount_food_eaten(), *skill)),
             _ => None,
         })
         .collect();
@@ -220,9 +221,18 @@ fn minimum_required_food(data: &GameData, species: &[AnimalRef<'_>]) -> Vec<Food
     data.food
         .iter()
         .filter_map(|food| {
-            let count = diets.iter().filter_map(|(x, c)| if food == *x { Some(c) } else { None }).sum();
+            let count = diets.iter().filter_map(|(x, c, _)| if food == *x { Some(c) } else { None }).sum();
+            let skill = diets
+                .iter()
+                .filter_map(|(x, _, s)| if food == *x { Some(*s) } else { None })
+                .max()
+                .unwrap_or(0);
             if count > 0 {
-                Some(FoodAmount { food: food.clone(), count })
+                Some(FoodAmount {
+                    food: food.clone(),
+                    count,
+                    skill,
+                })
             } else {
                 None
             }
@@ -521,8 +531,16 @@ mod test {
             food: vec![],
         };
 
-        let tank_ref1 = TankRef { id: 1, model: &data.tanks[0], size: (5, 5) };
-        let tank_ref2 = TankRef { id: 2, model: &data.tanks[0], size: (5, 5) };
+        let tank_ref1 = TankRef {
+            id: 1,
+            model: &data.tanks[0],
+            size: (5, 5),
+        };
+        let tank_ref2 = TankRef {
+            id: 2,
+            model: &data.tanks[0],
+            size: (5, 5),
+        };
 
         let empty_exhibit = ExhibitRef {
             name: "Empty Tank".to_string(),
@@ -534,11 +552,17 @@ mod test {
         let populated_exhibit = ExhibitRef {
             name: "Fish Tank".to_string(),
             tank: tank_ref2,
-            animals: vec![AnimalRef { id: 1, species: &data.species[0], growth: Growth::Final }],
+            animals: vec![AnimalRef {
+                id: 1,
+                species: &data.species[0],
+                growth: Growth::Final,
+            }],
             fixtures: vec![],
         };
 
-        let aquarium = AquariumRef { exhibits: vec![empty_exhibit, populated_exhibit] };
+        let aquarium = AquariumRef {
+            exhibits: vec![empty_exhibit, populated_exhibit],
+        };
         let args = ValidateArgs { aquarium: &aquarium };
 
         let result = validate_aquarium(&data, &args);
@@ -549,5 +573,142 @@ mod test {
         assert_eq!(result.exhibits[0].minimum_viable_environment, Environment::default());
         assert_eq!(result.exhibits[1].name, "Fish Tank");
         assert!(result.exhibits[1].violations.is_empty());
+    }
+
+    #[test]
+    fn test_skill_aggregation_two_species_same_food_different_skills() {
+        // AC3.1: Two species eating flakes with skill 1 and skill 2 → food line shows (skill 2)
+        let mut species1 = test_species("fish_with_skill_1");
+        species1.diet = Diet::Food {
+            food: "flakes".to_string(),
+            period: 1,
+            skill: 1,
+        };
+
+        let mut species2 = test_species("fish_with_skill_2");
+        species2.diet = Diet::Food {
+            food: "flakes".to_string(),
+            period: 1,
+            skill: 2,
+        };
+
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![species1.clone(), species2.clone()],
+            tanks: vec![tank_model.clone()],
+            fixtures: vec![],
+            food: vec!["flakes".to_string()],
+        };
+
+        let animals = vec![
+            AnimalRef {
+                id: 1,
+                species: &data.species[0],
+                growth: Growth::Final,
+            },
+            AnimalRef {
+                id: 2,
+                species: &data.species[1],
+                growth: Growth::Final,
+            },
+        ];
+
+        let result = check_for_viable_tank(&data, &animals);
+
+        assert_eq!(result.food.len(), 1);
+        assert_eq!(result.food[0].food, "flakes");
+        assert_eq!(result.food[0].skill, 2, "Expected max skill of 2");
+    }
+
+    #[test]
+    fn test_skill_aggregation_zero_skill() {
+        // AC3.2: Species eating flakes with skill 0 → shows skill 0
+        let mut species = test_species("fish_with_zero_skill");
+        species.diet = Diet::Food {
+            food: "flakes".to_string(),
+            period: 1,
+            skill: 0,
+        };
+
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![species.clone()],
+            tanks: vec![tank_model.clone()],
+            fixtures: vec![],
+            food: vec!["flakes".to_string()],
+        };
+
+        let animals = vec![AnimalRef {
+            id: 1,
+            species: &data.species[0],
+            growth: Growth::Final,
+        }];
+
+        let result = check_for_viable_tank(&data, &animals);
+
+        assert_eq!(result.food.len(), 1);
+        assert_eq!(result.food[0].food, "flakes");
+        assert_eq!(result.food[0].skill, 0, "Expected skill 0");
+    }
+
+    #[test]
+    fn test_skill_aggregation_multiple_food_types_independent_skills() {
+        // AC3.3: Multiple food types each display their own independent max skill
+        let mut species1 = test_species("fish_eating_flakes");
+        species1.diet = Diet::Food {
+            food: "flakes".to_string(),
+            period: 1,
+            skill: 1,
+        };
+
+        let mut species2 = test_species("fish_eating_krill");
+        species2.diet = Diet::Food {
+            food: "krill".to_string(),
+            period: 1,
+            skill: 3,
+        };
+
+        let tank_model = test_tank_model("basic_tank");
+
+        let data = GameData {
+            species: vec![species1.clone(), species2.clone()],
+            tanks: vec![tank_model.clone()],
+            fixtures: vec![],
+            food: vec!["flakes".to_string(), "krill".to_string()],
+        };
+
+        let animals = vec![
+            AnimalRef {
+                id: 1,
+                species: &data.species[0],
+                growth: Growth::Final,
+            },
+            AnimalRef {
+                id: 2,
+                species: &data.species[1],
+                growth: Growth::Final,
+            },
+        ];
+
+        let result = check_for_viable_tank(&data, &animals);
+
+        assert_eq!(result.food.len(), 2);
+
+        // Find flakes and krill in results
+        let flakes = result
+            .food
+            .iter()
+            .find(|f| f.food == "flakes")
+            .expect("flakes should be in food list");
+        let krill = result
+            .food
+            .iter()
+            .find(|f| f.food == "krill")
+            .expect("krill should be in food list");
+
+        assert_eq!(flakes.skill, 1, "Expected flakes skill 1");
+        assert_eq!(krill.skill, 3, "Expected krill skill 3");
     }
 }

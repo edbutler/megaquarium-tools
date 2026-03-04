@@ -39,7 +39,11 @@ pub fn print_exhibit_result(args: &CheckQuery, result: &ExhibitCheckResult) {
 
         println!("\nWill require food (average per day):");
         for item in &result.food {
-            println!("- {}x {}", item.count, item.food);
+            if item.skill > 0 {
+                println!("- {}x {} (skill {})", item.count, item.food, item.skill);
+            } else {
+                println!("- {}x {}", item.count, item.food);
+            }
         }
     } else {
         println!("\nA valid tank is not possible:");
@@ -121,7 +125,11 @@ fn print_exhibit_environment(exhibit: &ExhibitValidation) {
         println!("- different_decorations: {}/{}", loaded.different_decorations, v);
     }
     if let Some(v) = needed.interior {
-        println!("- interior: {}/{}", loaded.interior.map_or("none".to_string(), |i| i.to_string()), v);
+        println!(
+            "- interior: {}/{}",
+            loaded.interior.map_or("none".to_string(), |i| i.to_string()),
+            v
+        );
     }
 }
 
@@ -139,7 +147,11 @@ pub fn print_aquarium_result(result: &AquariumCheckResult, debug: bool) {
         }
 
         for item in &exhibit.food {
-            println!("- {}x {}", item.count, item.food);
+            if item.skill > 0 {
+                println!("- {}x {} (skill {})", item.count, item.food, item.skill);
+            } else {
+                println!("- {}x {}", item.count, item.food);
+            }
         }
 
         print_violations(&exhibit.violations);

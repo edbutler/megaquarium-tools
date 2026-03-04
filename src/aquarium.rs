@@ -479,8 +479,14 @@ mod test {
             },
             animals: vec![],
             fixtures: vec![
-                FixtureRef { id: 1, model: &fixture_model_a },
-                FixtureRef { id: 2, model: &fixture_model_b },
+                FixtureRef {
+                    id: 1,
+                    model: &fixture_model_a,
+                },
+                FixtureRef {
+                    id: 2,
+                    model: &fixture_model_b,
+                },
             ],
         };
 
@@ -489,15 +495,15 @@ mod test {
         assert_eq!(
             result,
             LoadedEnvironment {
-                size: 30, // 3 * 5 * 4 / 2
-                light: 4, // 3 + 1
-                plants: 7, // 2 + 5
-                rocks: 5, // 4 + 1
-                caves: 3, // 1 + 2
-                bogwood: 3, // 2 + 1
-                flat_surfaces: 4, // 3 + 1
+                size: 30,             // 3 * 5 * 4 / 2
+                light: 4,             // 3 + 1
+                plants: 7,            // 2 + 5
+                rocks: 5,             // 4 + 1
+                caves: 3,             // 1 + 2
+                bogwood: 3,           // 2 + 1
+                flat_surfaces: 4,     // 3 + 1
                 vertical_surfaces: 4, // 1 + 3
-                fluffy_foliage: 6, // 2 + 4
+                fluffy_foliage: 6,    // 2 + 4
                 interior: Some(Interior::Rounded),
                 different_decorations: 2,
             }

@@ -495,8 +495,9 @@ fn read_single_species(o: &Value) -> Result<Option<Species>> {
         if let Some(e) = &stats.get("eats") {
             let food = e["item"].as_str().ok_or(UBJ)?.to_string();
             let period = uint_or_default(&e["daysBetweenFeed"], 0)? + 1;
+            let skill = stat_value(stats, "needsFeedingSkill")?.unwrap_or(0);
 
-            Diet::Food { food, period }
+            Diet::Food { food, period, skill }
         } else if stats.contains_key("scavenger") {
             Diet::Scavenger
         } else {
@@ -855,5 +856,55 @@ mod test {
         let data = read_game_data().unwrap();
         let species = data.species_ref("11_yellow_tang").unwrap();
         assert_eq!(species.size.final_size, 5);
+    }
+
+    #[test]
+    fn test_feeding_skill_ac1_1_skill_loaded_from_game_data() {
+        let data = read_game_data().unwrap();
+        let species = data.species_ref("33_arabian_butterflyfish").unwrap();
+        match &species.diet {
+            Diet::Food { skill, .. } => {
+                assert_eq!(*skill, 1, "Arabian butterflyfish should have needsFeedingSkill: 1");
+            }
+            _ => panic!("Arabian butterflyfish should have Diet::Food variant"),
+        }
+    }
+
+    #[test]
+    fn test_feeding_skill_ac1_2_skill_defaults_to_zero() {
+        let data = read_game_data().unwrap();
+        let species = data.species_ref("1_azure_demoiselle").unwrap();
+        match &species.diet {
+            Diet::Food { skill, .. } => {
+                assert_eq!(
+                    *skill, 0,
+                    "Azure demoiselle should have skill: 0 (no needsFeedingSkill in game data)"
+                );
+            }
+            _ => panic!("Azure demoiselle should have Diet::Food variant"),
+        }
+    }
+
+    #[test]
+    fn test_feeding_skill_ac1_3_other_diet_types_unaffected() {
+        let data = read_game_data().unwrap();
+
+        // Scavenger variant should be unaffected
+        let scavenger = data.species_ref("53_blue_knuckle_hermit_crab").unwrap();
+        match &scavenger.diet {
+            Diet::Scavenger => {
+                // Success: scavenger variant is unchanged
+            }
+            _ => panic!("Blue knuckle hermit crab should be Diet::Scavenger"),
+        }
+
+        // DoesNotEat variant should be unaffected
+        let does_not_eat = data.species_ref("1_red_bellied_piranha.egg").unwrap();
+        match &does_not_eat.diet {
+            Diet::DoesNotEat => {
+                // Success: DoesNotEat variant is unchanged
+            }
+            _ => panic!("Red bellied piranha egg should have Diet::DoesNotEat"),
+        }
     }
 }

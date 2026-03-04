@@ -62,6 +62,7 @@ The codebase follows a Functional Core / Imperative Shell pattern:
 - Cohabitation rules: congeners-only, no-conspecifics, pairs-only, communal groups
 - Shoaling: some fish need minimum group sizes
 - Tank requirements accumulate (fixtures sum, quality takes max)
+- Feeding skill: some food types require a minimum staff skill level (`Diet::Food.skill`); tank summaries report the max skill needed per food type
 
 ## Code Style
 

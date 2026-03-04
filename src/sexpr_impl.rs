@@ -48,7 +48,18 @@ impl ToSexp for Species {
 
         let diet =
             match &self.diet {
-                Diet::Food { food, period } => sexp!((food ,(symbol_of_string(food)) ,(*period))),
+                Diet::Food { food, period, skill } => {
+                    let mut items: Vec<Value> = vec![
+                        Value::symbol("food"),
+                        symbol_of_string(food),
+                        Value::from(*period as i64),
+                    ];
+                    if *skill > 0 {
+                        items.push(Value::keyword("skill"));
+                        items.push(Value::from(*skill as i64));
+                    }
+                    Value::list(items)
+                },
                 Diet::Scavenger => sexp!((scavenger)),
                 Diet::DoesNotEat => sexp!((#"no-food")),
             };
@@ -853,7 +864,7 @@ mod tests {
                 active_swimmer: false,
                 territorial: false,
             },
-            diet: Diet::Food { food: "flakes".to_string(), period: 3 },
+            diet: Diet::Food { food: "flakes".to_string(), period: 3, skill: 0 },
             greedy: true,
             needs: Needs {
                 light: None, plants: None, rocks: None, caves: None,
@@ -870,6 +881,40 @@ mod tests {
         };
         let result = species.to_sexp().to_string();
         assert_eq!(result, "(species #:id \"hungry_fish\" #:genus Hungrius #:prey-type fish #:size 8 #:habitat (habitat #:temperature cold #:salinity fresh #:quality 60) #:diet (food flakes 3) #:greedy #t)");
+    }
+
+    #[test]
+    fn test_species_with_diet_food_skill_nonzero_to_sexp() {
+        let species = Species {
+            id: "skilled_fish".to_string(),
+            genus: "Skillius".to_string(),
+            prey_type: PreyType::Fish,
+            size: Size { stages: vec![], final_size: 6, armored: false, immobile: false },
+            habitat: Habitat {
+                temperature: Temperature::Warm,
+                salinity: Some(Salinity::Salty),
+                minimum_quality: 55,
+                interior: None,
+                active_swimmer: false,
+                territorial: false,
+            },
+            diet: Diet::Food { food: "krill".to_string(), period: 2, skill: 2 },
+            greedy: false,
+            needs: Needs {
+                light: None, plants: None, rocks: None, caves: None,
+                bogwood: None, flat_surfaces: None, vertical_surfaces: None,
+                fluffy_foliage: None, open_space: None, explorer: None,
+            },
+            shoaling: None,
+            fighting: None,
+            nibbling: None,
+            cohabitation: None,
+            predation: vec![],
+            communal: None,
+            breeding: Breeding::CannotBread,
+        };
+        let result = species.to_sexp().to_string();
+        assert!(result.contains("#:diet (food krill 2 #:skill 2)"));
     }
 
     #[test]
@@ -921,7 +966,7 @@ mod tests {
                 active_swimmer: true,
                 territorial: true,
             },
-            diet: Diet::Food { food: "pellets".to_string(), period: 2 },
+            diet: Diet::Food { food: "pellets".to_string(), period: 2, skill: 0 },
             greedy: true,
             needs: Needs {
                 light: Some(Need::Loves(3)),

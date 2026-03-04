@@ -182,10 +182,14 @@ fn check_constraint<'a>(exhibit: &'a ExhibitSpec<'a>, anim: &'a AnimalRef<'a>, c
                 .all(|a| std::ptr::eq(a, anim) || !std::ptr::eq(anim.species, a.species)),
         ),
         Cohabitation(Cohabitation::NoFoodCompetitors) => match &anim.species.diet {
-            Diet::Food { food: myfood, period: _ } => if_conflict(exhibit.animals.iter().find(|a| {
+            Diet::Food {
+                food: myfood,
+                period: _,
+                skill: _,
+            } => if_conflict(exhibit.animals.iter().find(|a| {
                 !std::ptr::eq(anim.species, a.species)
                     && match &a.species.diet {
-                        Diet::Food { food, period: _ } => myfood == food,
+                        Diet::Food { food, period: _, skill: _ } => myfood == food,
                         _ => false,
                     }
             })),
@@ -295,6 +299,7 @@ pub mod test {
         s.diet = Diet::Food {
             food: food.to_string(),
             period: 1,
+            skill: 0,
         };
         s
     }

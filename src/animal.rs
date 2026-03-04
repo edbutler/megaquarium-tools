@@ -140,7 +140,7 @@ impl Species {
 
     pub fn amount_food_eaten(&self) -> u16 {
         match self.diet {
-            Diet::Food { food: _, period } => {
+            Diet::Food { food: _, period, skill: _ } => {
                 let size = self.maximum_size();
                 let per_feed = if self.greedy { (4 * size) / 3 } else { size };
                 // TODO should this be a float?
@@ -264,7 +264,7 @@ as_str_display!(PreyType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Diet {
-    Food { food: String, period: u16 },
+    Food { food: String, period: u16, skill: u8 },
     Scavenger,
     DoesNotEat,
 }
